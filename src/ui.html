@@ -1,149 +1,239 @@
 <!DOCTYPE html>
-<html><head>
+<html lang="en"><head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lab</title>
 <style>
+  :root {
+    --bg: #fafafa; --surface: #fff; --surface-alt: #f5f5f5;
+    --border: #e0e0e0; --border-focus: #bbb;
+    --text: #1a1a1a; --text-2: #666; --text-3: #999;
+    --accent: #1a1a1a; --accent-hover: #333;
+    --code-bg: #f8f8f8; --code-text: #333;
+    --cap-on-bg: #e8f5e9; --cap-on-text: #2e7d32; --cap-on-border: #c8e6c9;
+    --cap-off-bg: #fce4ec; --cap-off-text: #c62828; --cap-off-border: #f8bbd0;
+    --mono: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    --radius: 6px;
+  }
   * { margin: 0; box-sizing: border-box; }
-  body { font-family: monospace; background: #0a0a0a; color: #e0e0e0; padding: 2rem; max-width: 900px; margin: 0 auto; }
-  h1 { font-size: 1.4rem; color: #f90; }
-  p.sub { color: #666; font-size: 12px; margin-bottom: 1.5rem; }
-  .tabs { display: flex; gap: 0; margin-bottom: 0; }
-  .tab { padding: 0.5rem 1rem; cursor: pointer; background: #111; border: 1px solid #333;
-    border-bottom: none; color: #666; font-family: monospace; font-size: 13px; }
-  .tab.active { color: #f90; background: #1a1a1a; border-bottom: 1px solid #1a1a1a; }
-  textarea { width: 100%; height: 180px; background: #1a1a1a; color: #0f0; border: 1px solid #333;
-    border-top: none; padding: 1rem; font-family: monospace; font-size: 14px; resize: vertical; }
-  button { background: #f90; color: #000; border: none; padding: 0.5rem 1.5rem;
-    font-family: monospace; font-weight: bold; cursor: pointer; margin-top: 0.5rem; }
-  button:hover { background: #fa0; }
-  button.secondary { background: #333; color: #ccc; }
-  button.secondary:hover { background: #444; }
-  pre { background: #111; border: 1px solid #333; padding: 1rem; margin-top: 1rem;
-    white-space: pre-wrap; min-height: 60px; font-size: 13px; overflow-x: auto; }
-  .meta { color: #555; font-size: 11px; margin-top: 0.5rem; }
-  .cap-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; margin-right: 4px; }
-  .cap-on { background: #1a3a1a; color: #4f4; border: 1px solid #2a5a2a; }
-  .cap-off { background: #3a1a1a; color: #f44; border: 1px solid #5a2a2a; }
-  .chain-container { display: none; padding: 1rem; background: #1a1a1a; border: 1px solid #333; border-top: none; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.5; }
+
+  .container { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
+  @media (max-width: 500px) { .container { padding: 1.25rem 1rem; } }
+
+  /* Header */
+  header { margin-bottom: 2rem; }
+  header h1 { font-size: 1.125rem; font-weight: 600; letter-spacing: -0.02em; }
+  header p { color: var(--text-3); font-size: 0.8125rem; margin-top: 0.125rem; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 0.5rem 0.875rem; cursor: pointer; font-size: 0.8125rem;
+    color: var(--text-3); white-space: nowrap; border-bottom: 2px solid transparent;
+    font-family: var(--sans); font-weight: 500; background: none; border-top: none;
+    border-left: none; border-right: none; transition: color 0.15s, border-color 0.15s;
+  }
+  .tab:hover { color: var(--text-2); }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+  /* Code editor */
+  textarea {
+    width: 100%; height: 160px; background: var(--code-bg); color: var(--code-text);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.875rem; font-family: var(--mono); font-size: 0.8125rem;
+    resize: vertical; margin-top: 1rem; line-height: 1.6;
+    transition: border-color 0.15s;
+  }
+  textarea:focus { outline: none; border-color: var(--border-focus); }
+  @media (max-width: 500px) { textarea { font-size: 0.75rem; height: 140px; } }
+
+  /* Actions row */
+  .actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem; }
+  button {
+    font-family: var(--sans); font-size: 0.8125rem; font-weight: 500;
+    padding: 0.4375rem 1rem; border-radius: var(--radius); cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btn-primary {
+    background: var(--accent); color: #fff; border: 1px solid var(--accent);
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary {
+    background: var(--surface); color: var(--text-2); border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--surface-alt); }
+
+  /* Capability badges */
+  .caps { display: flex; gap: 0.375rem; flex-wrap: wrap; align-items: center; }
+  .cap-badge {
+    display: inline-flex; align-items: center; padding: 0.125rem 0.5rem;
+    border-radius: 100px; font-size: 0.6875rem; font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+  .cap-on { background: var(--cap-on-bg); color: var(--cap-on-text); border: 1px solid var(--cap-on-border); }
+  .cap-off { background: var(--cap-off-bg); color: var(--cap-off-text); border: 1px solid var(--cap-off-border); }
+
+  /* Output */
+  .output-label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); margin-top: 1.25rem; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.875rem; margin-top: 0.375rem; white-space: pre-wrap;
+    font-family: var(--mono); font-size: 0.8125rem; line-height: 1.6;
+    overflow-x: auto; color: var(--code-text); min-height: 3rem;
+  }
+  .meta { color: var(--text-3); font-size: 0.6875rem; margin-top: 0.375rem; }
+
+  /* Chain container */
+  .chain-container { display: none; margin-top: 1rem; }
   .chain-container.active { display: block; }
-  .chain-step { background: #0f0f0f; border: 1px solid #333; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
-  .chain-step-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-  .chain-step-name { color: #f90; font-weight: bold; font-size: 14px; }
-  .chain-step-time { color: #666; font-size: 11px; }
+  .chain-info {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1rem; font-size: 0.8125rem; color: var(--text-2); line-height: 1.7;
+  }
+  .chain-info strong { color: var(--text); font-weight: 600; }
+  .chain-info ul { margin: 0.5rem 0 0 1.25rem; padding: 0; }
+  .chain-info li { margin-bottom: 0.125rem; }
+
+  /* Chain trace steps */
+  .chain-step {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.875rem; margin-bottom: 0.75rem;
+  }
+  .chain-step-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.375rem; }
+  .chain-step-name { font-weight: 600; font-size: 0.8125rem; }
+  .chain-step-time { color: var(--text-3); font-size: 0.75rem; font-family: var(--mono); }
   .chain-step-caps { margin-bottom: 0.5rem; }
-  .chain-data { background: #0a0a0a; border: 1px solid #222; padding: 0.5rem; margin-top: 0.5rem; font-size: 12px; border-radius: 2px; }
-  .chain-data-label { color: #888; font-size: 10px; margin-bottom: 0.25rem; text-transform: uppercase; }
-  .chain-data-value { color: #0f0; }
-  .chain-arrow { color: #f90; margin: 0.5rem 0; text-align: center; }
-  .chain-info { color: #888; font-size: 13px; margin-bottom: 1rem; line-height: 1.6; }
-  .code-container { display: block; }
-  .code-container.hidden { display: none; }
-  .gen-container { display: none; padding: 1rem; background: #1a1a1a; border: 1px solid #333; border-top: none; }
+  .chain-data-row { display: flex; gap: 0.75rem; }
+  @media (max-width: 500px) { .chain-data-row { flex-direction: column; gap: 0.5rem; } }
+  .chain-data { flex: 1; background: var(--surface-alt); border-radius: 4px; padding: 0.5rem 0.625rem; }
+  .chain-data-label { font-size: 0.625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); margin-bottom: 0.25rem; }
+  .chain-data-value { font-family: var(--mono); font-size: 0.75rem; color: var(--code-text); word-break: break-all; }
+  .chain-arrow { text-align: center; color: var(--text-3); font-size: 1rem; margin: 0.25rem 0; }
+
+  /* Generate container */
+  .gen-container { display: none; margin-top: 1rem; }
   .gen-container.active { display: block; }
-  .gen-prompt { width: 100%; height: 80px; background: #0f0f0f; color: #e0e0e0; border: 1px solid #333;
-    padding: 0.75rem; font-family: monospace; font-size: 14px; resize: vertical; margin-bottom: 0.75rem; }
-  .gen-caps { margin-bottom: 0.75rem; }
-  .gen-caps label { color: #aaa; font-size: 13px; margin-right: 1rem; cursor: pointer; }
-  .gen-caps input { margin-right: 4px; accent-color: #f90; }
-  .gen-code { background: #0a0a0a; border: 1px solid #222; padding: 0.75rem; margin-top: 0.75rem;
-    font-family: monospace; font-size: 12px; color: #0f0; white-space: pre-wrap; min-height: 40px; }
-  .gen-code-label { color: #888; font-size: 10px; text-transform: uppercase; margin-top: 0.75rem; }
-  .gen-timing { color: #666; font-size: 11px; margin-top: 0.5rem; }
-  .gen-timing span { color: #f90; }
+  .gen-prompt {
+    width: 100%; height: 80px; background: var(--code-bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.75rem; font-family: var(--sans); font-size: 0.8125rem;
+    resize: vertical; line-height: 1.5;
+  }
+  .gen-prompt:focus { outline: none; border-color: var(--border-focus); }
+  .gen-caps { margin-top: 0.5rem; }
+  .gen-caps label { color: var(--text-2); font-size: 0.8125rem; cursor: pointer; margin-right: 1rem; }
+  .gen-caps input { margin-right: 0.25rem; }
+  .gen-code-label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); margin-top: 1rem; }
+  .gen-code {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0.75rem; margin-top: 0.375rem; font-family: var(--mono); font-size: 0.75rem;
+    white-space: pre-wrap; color: var(--code-text); line-height: 1.6;
+  }
+
+  /* Visibility helpers */
+  .code-container.hidden { display: none; }
 </style>
 </head><body>
-<h1>lab</h1>
-<p class="sub">Effect + Worker Loaders. Capabilities as types.</p>
+<div class="container">
+  <header>
+    <h1>lab</h1>
+    <p>Effect + Worker Loaders — capabilities as types</p>
+  </header>
 
-<div class="tabs">
-  <div class="tab active" id="tab-sandbox" onclick="switchTab('sandbox')">01: sandbox</div>
-  <div class="tab" id="tab-kv" onclick="switchTab('kv')">02: kv read</div>
-  <div class="tab" id="tab-chain" onclick="switchTab('chain')">03: chain</div>
-  <div class="tab" id="tab-generate" onclick="switchTab('generate')">04: generate</div>
-  <div class="tab" id="tab-spawn" onclick="switchTab('spawn')">05: spawn</div>
-</div>
-
-<textarea id="code" class="code-container"></textarea>
-
-<div class="chain-container" id="chain-container">
-  <div class="chain-info">
-    <strong>Capability Chain Demo</strong><br>
-    This chain demonstrates sequential composition with different capability levels:
-    <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
-      <li><strong>Step 1 — Reader</strong> (kvRead): Loads all users from KV store</li>
-      <li><strong>Step 2 — Validator</strong> (no caps): Filters to admins only, validates structure</li>
-      <li><strong>Step 3 — Formatter</strong> (no caps): Formats admins into summary string</li>
-    </ul>
+  <div class="tabs">
+    <button class="tab active" id="tab-sandbox" onclick="switchTab('sandbox')">Sandbox</button>
+    <button class="tab" id="tab-kv" onclick="switchTab('kv')">KV Read</button>
+    <button class="tab" id="tab-chain" onclick="switchTab('chain')">Chain</button>
+    <button class="tab" id="tab-generate" onclick="switchTab('generate')">Generate</button>
+    <button class="tab" id="tab-spawn" onclick="switchTab('spawn')">Spawn</button>
   </div>
-</div>
 
-<div class="gen-container" id="gen-container">
-  <textarea class="gen-prompt" id="gen-prompt" placeholder="Describe what you want the isolate to compute..."></textarea>
-  <div class="gen-caps">
-    <label><input type="checkbox" id="gen-cap-kvread"> kv read</label>
+  <textarea id="code" class="code-container"></textarea>
+
+  <div class="chain-container" id="chain-container">
+    <div class="chain-info">
+      <strong>Capability chain</strong><br>
+      Three isolates in sequence, each with different trust levels:
+      <ul>
+        <li><strong>Reader</strong> — kvRead granted, loads users from KV</li>
+        <li><strong>Validator</strong> — no capabilities, filters to admins</li>
+        <li><strong>Formatter</strong> — no capabilities, produces summary</li>
+      </ul>
+    </div>
   </div>
-</div>
 
-<div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.5rem">
-  <button onclick="run()">run</button>
-  <button class="secondary" onclick="seed()">seed kv</button>
-  <span id="caps"></span>
-</div>
+  <div class="gen-container" id="gen-container">
+    <textarea class="gen-prompt" id="gen-prompt" placeholder="Describe what the isolate should compute…"></textarea>
+    <div class="gen-caps">
+      <label><input type="checkbox" id="gen-cap-kvread"> KV Read</label>
+    </div>
+  </div>
 
-<pre id="out">// output</pre>
-<div id="chain-trace"></div>
-<p class="meta" id="meta"></p>
+  <div class="actions">
+    <button class="btn-primary" onclick="run()">Run</button>
+    <button class="btn-secondary" onclick="seed()">Seed KV</button>
+    <div class="caps" id="caps"></div>
+  </div>
+
+  <div class="output-label">Output</div>
+  <pre id="out">—</pre>
+  <div id="chain-trace"></div>
+  <p class="meta" id="meta"></p>
+</div>
 
 <script>
 var tabs = {
   sandbox: {
-    code: "// sandboxed isolate. no capabilities.\n// try: return { n: Math.random(), ts: new Date().toISOString() }\n\nreturn { sum: [1,2,3].reduce((a,b) => a+b, 0) };",
+    code: '// Sandboxed isolate — no capabilities\n// Try: return { n: Math.random(), ts: new Date().toISOString() }\n\nreturn { sum: [1,2,3].reduce((a,b) => a+b, 0) };',
     endpoint: '/run',
     caps: [['network', false], ['kv read', false], ['kv write', false]],
-    meta: 'phase 1: pure compute. globalOutbound = null.',
+    meta: 'Pure compute. globalOutbound = null.',
     isChain: false
   },
   kv: {
-    code: "// this isolate can read KV. try:\n// const val = await kv.get(\"user:1\");\n// const keys = await kv.list(\"user:\");\n\nconst keys = await kv.list(\"user:\");\nconst users = [];\nfor (const key of keys) {\n  const raw = await kv.get(key);\n  users.push(JSON.parse(raw));\n}\nreturn { users };",
+    code: '// KV Read capability granted\n\nconst keys = await kv.list("user:");\nconst users = [];\nfor (const key of keys) {\n  const raw = await kv.get(key);\n  users.push(JSON.parse(raw));\n}\nreturn { users };',
     endpoint: '/run/kv',
     caps: [['network', false], ['kv read', true], ['kv write', false]],
-    meta: 'phase 2: KvRead capability granted. can read, cannot write, cannot fetch.',
+    meta: 'KvRead capability granted. Can read, cannot write, cannot fetch.',
     isChain: false
   },
   spawn: {
-    code: "// this isolate can spawn children!\n// each child gets: fewer capabilities, less depth\n// depth 0 = no more spawning (fork bomb prevention)\n\n// spawn 3 workers to compute in parallel\nconst results = await Promise.all([\n  spawn('return { id: 1, sq: 10 * 10 }', []),\n  spawn('return { id: 2, sq: 20 * 20 }', []),\n  spawn('return { id: 3, sq: 30 * 30 }', []),\n]);\n\nreturn { parent: 'orchestrator', children: results };",
+    code: '// Spawn 3 child isolates in parallel\n// Each child gets attenuated capabilities\n// Depth 0 = no more spawning (structural fork-bomb prevention)\n\nconst results = await Promise.all([\n  spawn("return { id: 1, sq: 10 * 10 }", []),\n  spawn("return { id: 2, sq: 20 * 20 }", []),\n  spawn("return { id: 3, sq: 30 * 30 }", []),\n]);\n\nreturn { parent: "orchestrator", children: results };',
     endpoint: '/run/spawn',
     caps: [['spawn', true], ['network', false], ['kv read', false]],
-    meta: 'phase 5: recursive spawning. parent spawns children with attenuated capabilities.',
+    meta: 'Recursive spawning with capability attenuation.',
     isChain: false,
     isSpawn: true
   },
   generate: {
     endpoint: '/run/generate',
     caps: [],
-    meta: 'phase 4: LLM generates the isolate code. describe what you want, see it run.',
+    meta: 'Workers AI generates the isolate code from a natural language prompt.',
     isChain: false,
     isGenerate: true
   },
   chain: {
     endpoint: '/run/chain',
     caps: [],
-    meta: 'phase 3: sequential composition. each step can have different capabilities.',
+    meta: 'Sequential composition — each step receives the previous step\'s output.',
     isChain: true,
     steps: [
       {
         name: 'Reader',
-        code: "// Step 1: Read all users from KV (requires kvRead capability)\nconst keys = await kv.list('user:');\nconst users = [];\nfor (const key of keys) {\n  const raw = await kv.get(key);\n  users.push(JSON.parse(raw));\n}\nreturn users;",
+        code: "const keys = await kv.list('user:');\nconst users = [];\nfor (const key of keys) {\n  const raw = await kv.get(key);\n  users.push(JSON.parse(raw));\n}\nreturn users;",
         capabilities: ['kvRead']
       },
       {
         name: 'Validator',
-        code: "// Step 2: Filter to admins only (no capabilities needed)\n// input = array of users from previous step\nconst admins = input.filter(u => u.role === 'admin');\nif (!Array.isArray(admins)) {\n  throw new Error('Invalid input: expected array');\n}\nfor (const admin of admins) {\n  if (!admin.name || !admin.role) {\n    throw new Error('Invalid user shape');\n  }\n}\nreturn admins;",
+        code: "const admins = input.filter(u => u.role === 'admin');\nif (!Array.isArray(admins)) {\n  throw new Error('Invalid input: expected array');\n}\nfor (const admin of admins) {\n  if (!admin.name || !admin.role) {\n    throw new Error('Invalid user shape');\n  }\n}\nreturn admins;",
         capabilities: []
       },
       {
         name: 'Formatter',
-        code: "// Step 3: Format admins into summary (no capabilities needed)\n// input = array of admin users\nconst names = input.map(u => u.name);\nreturn `Found ${input.length} admin(s): ${names.join(', ')}`;",
+        code: "const names = input.map(u => u.name);\nreturn `Found ${input.length} admin(s): ${names.join(', ')}`;",
         capabilities: []
       }
     ]
@@ -157,16 +247,16 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   document.getElementById('tab-' + name).classList.add('active');
   var t = tabs[name];
-  
+
   var codeEl = document.getElementById('code');
   var chainEl = document.getElementById('chain-container');
   var genEl = document.getElementById('gen-container');
   var chainTraceEl = document.getElementById('chain-trace');
-  
+
   codeEl.classList.add('hidden');
   chainEl.classList.remove('active');
   genEl.classList.remove('active');
-  
+
   if (t.isChain) {
     chainEl.classList.add('active');
   } else if (t.isGenerate) {
@@ -178,12 +268,12 @@ function switchTab(name) {
     codeEl.classList.remove('hidden');
     if (t.code) codeEl.value = t.code;
   }
-  
+
   document.getElementById('caps').innerHTML = t.caps.map(function(c) {
     return '<span class="cap-badge ' + (c[1] ? 'cap-on' : 'cap-off') + '">' + c[0] + '</span>';
   }).join('');
   document.getElementById('meta').textContent = t.meta;
-  document.getElementById('out').textContent = '// output';
+  document.getElementById('out').textContent = '\u2014';
   chainTraceEl.innerHTML = '';
 }
 
@@ -191,24 +281,13 @@ function run() {
   var out = document.getElementById('out');
   var chainTraceEl = document.getElementById('chain-trace');
   var t = tabs[current];
-  
-  if (t.isChain) {
-    runChain();
-    return;
-  }
-  
-  if (t.isGenerate) {
-    runGenerate();
-    return;
-  }
-  
-  if (t.isSpawn) {
-    runSpawn();
-    return;
-  }
-  
+
+  if (t.isChain) { runChain(); return; }
+  if (t.isGenerate) { runGenerate(); return; }
+  if (t.isSpawn) { runSpawn(); return; }
+
   var code = document.getElementById('code').value;
-  out.textContent = 'running...';
+  out.textContent = 'Running\u2026';
   chainTraceEl.innerHTML = '';
   var t0 = performance.now();
   fetch(t.endpoint, {
@@ -217,41 +296,34 @@ function run() {
     body: JSON.stringify({ code: code }),
   }).then(function(r) { return r.json(); }).then(function(json) {
     var ms = (performance.now() - t0).toFixed(1);
-    out.textContent = JSON.stringify(json, null, 2) + '\n\n// ' + ms + 'ms';
-  }).catch(function(e) {
-    out.textContent = 'error: ' + e.message;
-  });
+    out.textContent = JSON.stringify(json, null, 2) + '\n\n' + ms + ' ms';
+  }).catch(function(e) { out.textContent = 'Error: ' + e.message; });
 }
 
 function runChain() {
   var out = document.getElementById('out');
   var chainTraceEl = document.getElementById('chain-trace');
   var t = tabs.chain;
-  
-  out.textContent = 'running chain...';
+
+  out.textContent = 'Running chain\u2026';
   chainTraceEl.innerHTML = '';
-  
-  var steps = t.steps.map(function(s) {
-    return { code: s.code, capabilities: s.capabilities };
-  });
-  
+
+  var steps = t.steps.map(function(s) { return { code: s.code, capabilities: s.capabilities }; });
   var t0 = performance.now();
+
   fetch(t.endpoint, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ steps: steps }),
   }).then(function(r) { return r.json(); }).then(function(json) {
     var totalMs = (performance.now() - t0).toFixed(1);
-    
     if (json.ok && json.trace) {
-      out.textContent = JSON.stringify({ ok: true, result: json.result }, null, 2) + '\n\n// chain completed in ' + totalMs + 'ms';
+      out.textContent = JSON.stringify({ ok: true, result: json.result }, null, 2) + '\n\n' + totalMs + ' ms';
       renderTrace(json.trace);
     } else {
-      out.textContent = JSON.stringify(json, null, 2) + '\n\n// ' + totalMs + 'ms';
+      out.textContent = JSON.stringify(json, null, 2) + '\n\n' + totalMs + ' ms';
     }
-  }).catch(function(e) {
-    out.textContent = 'error: ' + e.message;
-  });
+  }).catch(function(e) { out.textContent = 'Error: ' + e.message; });
 }
 
 function runSpawn() {
@@ -259,8 +331,8 @@ function runSpawn() {
   var chainTraceEl = document.getElementById('chain-trace');
   var code = document.getElementById('code').value;
   if (!code) { out.textContent = '// enter code'; return; }
-  
-  out.textContent = 'spawning isolates...';
+
+  out.textContent = 'Spawning isolates\u2026';
   chainTraceEl.innerHTML = '';
   var t0 = performance.now();
   fetch('/run/spawn', {
@@ -269,24 +341,22 @@ function runSpawn() {
     body: JSON.stringify({ code: code, capabilities: ['spawn'], depth: 2 }),
   }).then(function(r) { return r.json(); }).then(function(json) {
     var ms = (performance.now() - t0).toFixed(1);
-    out.textContent = JSON.stringify(json, null, 2) + '\n\n// ' + ms + 'ms';
-  }).catch(function(e) {
-    out.textContent = 'error: ' + e.message;
-  });
+    out.textContent = JSON.stringify(json, null, 2) + '\n\n' + ms + ' ms';
+  }).catch(function(e) { out.textContent = 'Error: ' + e.message; });
 }
 
 function runGenerate() {
   var out = document.getElementById('out');
   var chainTraceEl = document.getElementById('chain-trace');
   var prompt = document.getElementById('gen-prompt').value;
-  if (!prompt) { out.textContent = '// enter a prompt'; return; }
-  
+  if (!prompt) { out.textContent = 'Enter a prompt.'; return; }
+
   var capabilities = [];
   if (document.getElementById('gen-cap-kvread').checked) capabilities.push('kvRead');
-  
-  out.textContent = 'generating code...';
+
+  out.textContent = 'Generating\u2026';
   chainTraceEl.innerHTML = '';
-  
+
   fetch('/run/generate', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -299,67 +369,55 @@ function runGenerate() {
       lines.push(JSON.stringify({ ok: false, error: json.error, reason: json.reason }, null, 2));
     }
     lines.push('');
-    if (json.generateMs !== undefined) lines.push('// generate: ' + json.generateMs + 'ms, run: ' + json.runMs + 'ms');
+    if (json.generateMs !== undefined) lines.push('generate: ' + json.generateMs + ' ms, run: ' + json.runMs + ' ms');
     out.textContent = lines.join('\n');
-    
+
     if (json.generated) {
-      chainTraceEl.innerHTML = '<div class="gen-code-label">generated code</div>' +
+      chainTraceEl.innerHTML = '<div class="gen-code-label">Generated code</div>' +
         '<div class="gen-code">' + escapeHtml(json.generated) + '</div>';
     }
-  }).catch(function(e) {
-    out.textContent = 'error: ' + e.message;
-  });
+  }).catch(function(e) { out.textContent = 'Error: ' + e.message; });
 }
 
 function renderTrace(trace) {
   var chainTraceEl = document.getElementById('chain-trace');
-  var html = '';
-  
+  var html = '<div class="output-label" style="margin-top:1rem">Trace</div>';
+
   trace.forEach(function(entry, idx) {
     var stepInfo = tabs.chain.steps[entry.step];
     var capsHtml = entry.capabilities.length > 0
       ? entry.capabilities.map(function(c) {
           return '<span class="cap-badge cap-on">' + c + '</span>';
         }).join('')
-      : '<span class="cap-badge cap-off">no capabilities</span>';
-    
+      : '<span class="cap-badge cap-off">none</span>';
+
     var inputStr = formatData(entry.input);
     var outputStr = formatData(entry.output);
-    
+
     html += '<div class="chain-step">';
     html += '<div class="chain-step-header">';
-    html += '<div class="chain-step-name">Step ' + (entry.step + 1) + ': ' + stepInfo.name + '</div>';
-    html += '<div class="chain-step-time">' + entry.ms + 'ms</div>';
+    html += '<div class="chain-step-name">' + (entry.step + 1) + '. ' + stepInfo.name + '</div>';
+    html += '<div class="chain-step-time">' + entry.ms + ' ms</div>';
     html += '</div>';
     html += '<div class="chain-step-caps">' + capsHtml + '</div>';
-    html += '<div style="display:flex;gap:1rem">';
-    html += '<div class="chain-data" style="flex:1">';
-    html += '<div class="chain-data-label">input</div>';
-    html += '<div class="chain-data-value">' + inputStr + '</div>';
-    html += '</div>';
-    html += '<div class="chain-data" style="flex:1">';
-    html += '<div class="chain-data-label">output</div>';
-    html += '<div class="chain-data-value">' + outputStr + '</div>';
-    html += '</div>';
-    html += '</div>';
-    html += '</div>';
-    
+    html += '<div class="chain-data-row">';
+    html += '<div class="chain-data"><div class="chain-data-label">Input</div><div class="chain-data-value">' + inputStr + '</div></div>';
+    html += '<div class="chain-data"><div class="chain-data-label">Output</div><div class="chain-data-value">' + outputStr + '</div></div>';
+    html += '</div></div>';
+
     if (idx < trace.length - 1) {
-      html += '<div style="text-align:center;color:#f90;font-size:18px;margin:0.25rem 0">⬇</div>';
+      html += '<div class="chain-arrow">\u2193</div>';
     }
   });
-  
+
   chainTraceEl.innerHTML = html;
 }
 
 function formatData(data) {
-  if (data === undefined) return '<em style="color:#666">undefined</em>';
-  if (data === null) return '<em style="color:#666">null</em>';
-  
+  if (data === undefined) return '<em style="color:var(--text-3)">undefined</em>';
+  if (data === null) return '<em style="color:var(--text-3)">null</em>';
   var str = JSON.stringify(data, null, 2);
-  if (str.length > 300) {
-    str = str.substring(0, 300) + '... (truncated)';
-  }
+  if (str.length > 300) str = str.substring(0, 300) + '\u2026';
   return escapeHtml(str);
 }
 
@@ -371,12 +429,12 @@ function escapeHtml(text) {
 
 function seed() {
   var out = document.getElementById('out');
+  out.textContent = 'Seeding\u2026';
   fetch('/seed', { method: 'POST' }).then(function(r) { return r.json(); }).then(function(json) {
     out.textContent = JSON.stringify(json, null, 2);
   });
 }
 
-// Initialize
 switchTab('sandbox');
 </script>
 </body></html>
