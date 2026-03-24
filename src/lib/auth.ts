@@ -7,9 +7,10 @@ import { getRequestEvent } from '$app/server';
 
 import type { D1Database } from '@cloudflare/workers-types';
 
-let authInstance: ReturnType<typeof betterAuth> | null = null;
-let authBaseURL: string | null = null;
 let drizzleInstance: ReturnType<typeof drizzle> | null = null;
+
+// Cache auth instances per origin so multiple origins work in the same isolate
+const authInstances = new Map<string, ReturnType<typeof betterAuth>>();
 
 export function getDrizzle(): ReturnType<typeof drizzle> {
   if (!drizzleInstance) {
@@ -38,15 +39,10 @@ export function initAuth(db: D1Database, env: any, baseURL: string) {
     });
   }
 
-  if (authInstance) {
-    if (authBaseURL !== baseURL) {
-      throw new Error(`Auth already initialized for ${authBaseURL}, cannot re-init for ${baseURL}`);
-    }
-    return authInstance;
-  }
+  const existing = authInstances.get(baseURL);
+  if (existing) return existing;
 
-  authBaseURL = baseURL;
-  authInstance = betterAuth({
+  const instance = betterAuth({
     trustedOrigins: [
       "http://localhost:5173",
       "https://lab.coey.dev",
@@ -76,5 +72,6 @@ export function initAuth(db: D1Database, env: any, baseURL: string) {
     plugins: [sveltekitCookies(getRequestEvent as any)],
   });
 
-  return authInstance;
+  authInstances.set(baseURL, instance);
+  return instance;
 }

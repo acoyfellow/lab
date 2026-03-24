@@ -1,7 +1,46 @@
 <script lang="ts">
+  import { page } from '$app/state';
+  import { invalidateAll } from '$app/navigation';
+  import { signIn, signOut, signUp } from '$lib/auth-client';
   import { runSandbox, runKv, runChain, runSpawn, runGenerate, seedKv } from './data.remote';
 
   type TabName = 'sandbox' | 'kv' | 'chain' | 'generate' | 'spawn';
+
+  // Auth state
+  let authEmail = $state('');
+  let authPassword = $state('');
+  let authLoading = $state(false);
+  let showAuthForm = $state(false);
+
+  async function handleSignIn() {
+    if (!authEmail.trim() || !authPassword.trim()) return;
+    authLoading = true;
+    try {
+      const result = await signIn.email({ email: authEmail, password: authPassword });
+      if (result.error) { alert(result.error.message); return; }
+      authEmail = ''; authPassword = ''; showAuthForm = false;
+      await invalidateAll();
+    } catch (e: any) { alert('Sign in failed: ' + e.message); }
+    finally { authLoading = false; }
+  }
+
+  async function handleSignUp() {
+    if (!authEmail.trim() || !authPassword.trim()) return;
+    if (authPassword.length < 6) { alert('Password must be at least 6 characters'); return; }
+    authLoading = true;
+    try {
+      const result = await signUp.email({ email: authEmail, password: authPassword, name: authEmail.split('@')[0] });
+      if (result.error) { alert(result.error.message); return; }
+      authEmail = ''; authPassword = ''; showAuthForm = false;
+      await invalidateAll();
+    } catch (e: any) { alert('Sign up failed: ' + e.message); }
+    finally { authLoading = false; }
+  }
+
+  async function handleSignOut() {
+    await signOut();
+    await invalidateAll();
+  }
 
   type CapBadge = { name: string; on: boolean };
 
@@ -175,9 +214,6 @@
     }
   }
 
-  $effect(() => {
-    current;
-  });
 </script>
 
 <svelte:head>
@@ -186,13 +222,47 @@
 
 <div class="max-w-[720px] mx-auto px-6 py-8 max-sm:px-4 max-sm:py-5">
   <!-- Header -->
-  <header class="flex justify-between items-start mb-8">
+  <header class="flex justify-between items-start mb-8 gap-4">
     <div>
       <h1 class="text-lg font-semibold tracking-tight">lab</h1>
       <p class="text-[color:var(--text-3)] text-[0.8125rem] mt-0.5">Sandboxed isolates on Cloudflare with typed capabilities</p>
     </div>
-    <a href="https://github.com/acoyfellow/lab" target="_blank" class="text-[color:var(--text-3)] text-[0.8125rem] no-underline hover:text-[color:var(--text)]">GitHub &#8599;</a>
+    <div class="flex items-center gap-3 text-[0.8125rem]">
+      <a href="https://github.com/acoyfellow/lab" target="_blank" class="text-[color:var(--text-3)] no-underline hover:text-[color:var(--text)]">GitHub &#8599;</a>
+      {#if page.data.user}
+        <span class="text-[color:var(--text-2)]">{page.data.user.email}</span>
+        <button onclick={handleSignOut} class="text-[color:var(--text-3)] bg-[color:var(--surface)] border border-[color:var(--border)] rounded-[var(--radius)] px-2.5 py-1 cursor-pointer hover:text-[color:var(--text)] text-[0.8125rem] font-[family-name:var(--sans)]">Sign out</button>
+      {:else}
+        <button onclick={() => showAuthForm = !showAuthForm} class="text-[color:var(--text-3)] bg-[color:var(--surface)] border border-[color:var(--border)] rounded-[var(--radius)] px-2.5 py-1 cursor-pointer hover:text-[color:var(--text)] text-[0.8125rem] font-[family-name:var(--sans)]">Sign in</button>
+      {/if}
+    </div>
   </header>
+
+  <!-- Auth form (inline, collapsible) -->
+  {#if showAuthForm && !page.data.user}
+    <div class="mb-6 bg-[color:var(--surface)] border border-[color:var(--border)] rounded-[var(--radius)] p-4">
+      <div class="flex gap-2 items-end flex-wrap">
+        <div class="flex-1 min-w-[140px]">
+          <label for="auth-email" class="block text-[0.6875rem] font-semibold uppercase tracking-wider text-[color:var(--text-3)] mb-1">Email</label>
+          <input id="auth-email" type="email" bind:value={authEmail} placeholder="you@example.com"
+            class="w-full px-2.5 py-1.5 border border-[color:var(--border)] rounded-[var(--radius)] text-[0.8125rem] focus:outline-none focus:border-[color:var(--border-focus)]" />
+        </div>
+        <div class="flex-1 min-w-[140px]">
+          <label for="auth-password" class="block text-[0.6875rem] font-semibold uppercase tracking-wider text-[color:var(--text-3)] mb-1">Password</label>
+          <input id="auth-password" type="password" bind:value={authPassword} placeholder="••••••"
+            class="w-full px-2.5 py-1.5 border border-[color:var(--border)] rounded-[var(--radius)] text-[0.8125rem] focus:outline-none focus:border-[color:var(--border-focus)]" />
+        </div>
+        <button onclick={handleSignIn} disabled={authLoading}
+          class="font-[family-name:var(--sans)] text-[0.8125rem] font-medium px-3 py-1.5 rounded-[var(--radius)] cursor-pointer bg-[color:var(--accent)] text-white border border-[color:var(--accent)] hover:bg-[color:var(--accent-hover)] disabled:opacity-50">
+          {authLoading ? '...' : 'Sign in'}
+        </button>
+        <button onclick={handleSignUp} disabled={authLoading}
+          class="font-[family-name:var(--sans)] text-[0.8125rem] font-medium px-3 py-1.5 rounded-[var(--radius)] cursor-pointer bg-[color:var(--surface)] text-[color:var(--text-2)] border border-[color:var(--border)] hover:bg-[color:var(--surface-alt)] disabled:opacity-50">
+          {authLoading ? '...' : 'Sign up'}
+        </button>
+      </div>
+    </div>
+  {/if}
 
   <!-- Tabs -->
   <div class="flex border-b border-[color:var(--border)] overflow-x-auto [&::-webkit-scrollbar]:hidden">
