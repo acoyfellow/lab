@@ -31,6 +31,7 @@ const KV = await KVNamespace(`${projectName}-kv`);
 
 // D1 database for Better Auth
 const DB = await D1Database(`${projectName}-db`, {
+  name: `${projectName}-db`,
   migrationsDir: "migrations",
   adopt: true,
 });
