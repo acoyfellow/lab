@@ -26,6 +26,7 @@ Endpoint: `POST /run` with `{ code: string }`
 
 ### Phase 2: Capabilities as Types ✅
 
+
 `src/Capability.ts` — `KvRead` capability as a `Context.Tag`.
 
 - `KvRead` service: `get(key)` and `list(prefix?)`
@@ -40,27 +41,24 @@ Endpoints:
 - `POST /run/kv` — KvRead granted
 - `POST /seed` — seeds demo KV data (Alice/Bob/Carol users)
 
-## What's next
-
-### Phase 3: Capability Chains
+### Phase 3: Capability Chains ✅
 
 Multiple isolates in sequence, each with different trust levels.
 
-```typescript
-const chain = pipe(
-  Isolate.run(userCode, {}),                              // untrusted, no caps
-  Effect.flatMap(raw => Isolate.run(validatorCode, {})),   // has schema, no I/O
-  Effect.flatMap(valid => Isolate.run(enricherCode, { kvRead })),  // can read KV
-  Effect.flatMap(enriched => Isolate.run(writerCode, { d1Write })) // can write D1
-)
-```
+- `POST /run/chain` endpoint: takes `{ steps: [{ code, capabilities }] }`, runs sequentially
+- Each step's output feeds as `input` to the next step's isolate code
+- `Isolate.run(code, caps, input)` — input parameter added to service interface
+- Input baked into isolate hash so cached isolates don't serve stale results
+- `Effect.reduce` over steps for clean sequential composition without let mutation
+- Trace output: `{ step, capabilities, input, output, ms }` per step
+- UI tab "03: chain" with demo: Reader (kvRead) → Validator (no caps) → Formatter (no caps)
+- Step-by-step trace visualization: side-by-side input/output, capability badges, timing, arrows
+- Demo chain: reads all KV users → filters to admins → formats summary string
+- Total chain time ~150ms for 3 isolates
 
-Needs:
-- Add `KvWrite` and `D1Write` capability tags to `Capability.ts`
-- Add `POST /run/chain` endpoint
-- Update `wrangler.jsonc` to add D1 binding
-- New UI tab showing the chain executing step by step (show each isolate's input/output)
-- The chain is interruptible, retryable, and observable via Effect
+Endpoint: `POST /run/chain` with `{ steps: Array<{ code: string, capabilities: string[] }> }`
+
+## What's next
 
 ### Phase 4: Generated Compute
 
