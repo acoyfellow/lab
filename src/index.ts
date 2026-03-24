@@ -172,7 +172,8 @@ export default {
           ? "Available: `kv.get(key)` returns string|null, `kv.list(prefix?)` returns string[]. Both are async."
           : "No external APIs available. Pure compute only.",
         "Do NOT use import/export. Do NOT use fetch. Do NOT use console.log.",
-        "Keep it short. Just the function body.",
+        "Do NOT wrap in an async function or IIFE. The code already runs inside an async context.",
+        "Just write statements and use `return` for the final value.",
       ].join("\n")
 
       const t0 = Date.now()
@@ -192,11 +193,8 @@ export default {
       const generateMs = Date.now() - t0
       const raw = aiResult.response ?? ""
 
-      // Normalize: strip markdown fences
-      const code = raw
-        .replace(/^```(?:javascript|js|typescript|ts)?\n?/gm, "")
-        .replace(/^```\s*$/gm, "")
-        .trim()
+      // Normalize: strip markdown fences, unwrap IIFE
+      const code = normalizeGenerated(raw)
 
       if (!code) {
         return Response.json(
@@ -257,6 +255,25 @@ export default {
 
     return Response.json({ error: "not found" }, { status: 404 })
   },
+}
+
+function normalizeGenerated(raw: string): string {
+  // Strip markdown fences
+  let code = raw
+    .replace(/^```(?:javascript|js|typescript|ts)?\n?/gm, "")
+    .replace(/^```\s*$/gm, "")
+    .trim()
+
+  // Unwrap async IIFE: (async () => { ... })() or (async function() { ... })()
+  // The wrapper already provides an async IIFE context
+  const iifeMatch = code.match(
+    /^\(?async\s+(?:(?:function\s*\(\))|(?:\(\)\s*=>))\s*\{([\s\S]*)\}\)?\(\);?$/
+  )
+  if (iifeMatch) {
+    code = iifeMatch[1].trim()
+  }
+
+  return code
 }
 
 async function runToResponse(
