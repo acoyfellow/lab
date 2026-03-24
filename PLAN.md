@@ -1,205 +1,71 @@
-# loader-lab
+# Why this architecture
 
-Spawn sandboxed code on Cloudflare in milliseconds. Control what it can do with types.
+## The problem
 
-## What this is
+You want to run untrusted code on Cloudflare. You want to control what that code can do. You want to compose multiple pieces of untrusted code into a pipeline where each piece has different permissions.
 
-Cloudflare Worker Loaders let you create V8 isolates at runtime from a string of code. Effect lets you describe what a program needs before it runs. This project connects them.
+Cloudflare Worker Loaders solve the first part — they create V8 isolates at runtime from a string of code, with millisecond startup and near-zero cost. But they don't have a built-in permission model. An isolate either has `globalOutbound` (can make any request) or doesn't (can't make any request). There's nothing in between.
 
-You write an Effect program. It says what it needs — KV, AI, network, whatever. You hand it to a Loader. The Loader runs it in a fresh isolate with exactly those things. Nothing else.
+## The approach
 
-If the program asks for something it wasn't given, it doesn't compile. Not a runtime error. A red squiggle in your editor.
+This project uses Effect's type system as the permission model.
 
-## Architecture
+Each capability (KV read, spawn, etc.) is an Effect `Context.Tag`. A `CapabilitySet` is a plain object where each key is an optional capability. The parent worker inspects the capability set before creating the isolate and injects the right shims.
 
-```
-loader-lab/
-├── src/
-│   ├── index.ts              # Worker entrypoint + web UI
-│   ├── Loader.ts             # Effect Service wrapping LOADER binding
-│   ├── Capability.ts         # Capability types as Context.Tags
-│   ├── Isolate.ts            # Isolate lifecycle as Effect programs
-│   ├── Chain.ts              # Capability chain composition
-│   └── experiments/          # Individual experiments
-│       ├── 01-sandbox.ts     # Pure compute (no capabilities)
-│       ├── 02-kv-reader.ts   # Read-only KV access
-│       ├── 03-chain.ts       # Multi-isolate capability chain
-│       ├── 04-generated.ts   # LLM generates the Effect program
-│       └── 05-recursive.ts   # Isolate that spawns isolates
-└── wrangler.jsonc
-```
+This means:
 
-## Phase 1: Effect Service for Worker Loader
+- **Capabilities are additive.** An isolate starts with nothing. You add what it needs.
+- **Capabilities are visible.** You can see what an isolate can do by reading its capability set.
+- **Capabilities are attenuating.** A child isolate can have fewer capabilities than its parent, never more.
 
-The foundation. Model the Loader binding as an Effect Service.
+## How KV read works without a binding
 
-```typescript
-import { Context, Effect, Layer } from "effect"
+Cloudflare's `KVNamespace` object cannot be passed into a Worker Loader's `env` — the runtime throws a serialization error. The workaround: the parent reads all KV data into memory before creating the isolate, serializes it as JSON, and injects it into the isolate's wrapper code. The isolate gets `kv.get()` and `kv.list()` functions backed by that in-memory snapshot.
 
-// The raw CF binding, as a tagged service
-class LoaderBinding extends Context.Tag("LoaderBinding")<
-  LoaderBinding,
-  { readonly get: (id: string, cb: () => Promise<WorkerCode>) => WorkerStub }
->() {}
+This has tradeoffs. The snapshot is a point-in-time copy. If KV changes between snapshot and execution, the isolate sees stale data. For the use cases this project targets (short-lived compute tasks), that's acceptable.
 
-// Our abstraction: run code in an isolate
-class Isolate extends Context.Tag("Isolate")<
-  Isolate,
-  {
-    readonly run: <A>(
-      code: string,
-      capabilities?: CapabilitySet
-    ) => Effect.Effect<A, IsolateError>
-  }
->() {}
+## How spawn works
 
-// Errors are typed, not strings
-class IsolateError extends Data.TaggedError("IsolateError")<{
-  readonly reason: "timeout" | "sandbox_violation" | "runtime" | "capability_denied"
-  readonly message: string
-  readonly code?: string
-}> {}
-```
+An isolate can't create other isolates directly — it doesn't have the `LOADER` binding. Instead, it makes a fetch request that routes back to the parent worker.
 
-Every experiment uses `Isolate.run()`. The implementation details (hashing, wrapping, Loader.get) are hidden behind the Effect Layer.
+The mechanism: `wrangler.jsonc` declares a `SELF` service binding that points to the worker itself. When an isolate has the spawn capability, its `globalOutbound` is set to this `SELF` fetcher. The isolate's `spawn()` function calls `fetch("http://internal/spawn/child", ...)`, which the parent worker handles by creating a new isolate.
 
-## Phase 2: Capabilities as Types
+Depth is decremented at each level. At depth 0, the spawn shim throws synchronously instead of making a fetch request. No outbound is needed and the isolate can't work around it.
 
-An isolate that can read KV and an isolate that can read+write KV are different types. You can see the difference before anything runs.
+## How chains work
 
-```typescript
-// Each capability is a tagged service
-class KvRead extends Context.Tag("KvRead")<KvRead, { readonly get: (key: string) => Effect.Effect<string | null> }>() {}
-class KvWrite extends Context.Tag("KvWrite")<KvWrite, { readonly put: (key: string, value: string) => Effect.Effect<void> }>() {}
-class NetFetch extends Context.Tag("NetFetch")<NetFetch, { readonly fetch: (url: string) => Effect.Effect<Response> }>() {}
-class AiComplete extends Context.Tag("AiComplete")<AiComplete, { readonly complete: (prompt: string) => Effect.Effect<string> }>() {}
+A chain is a sequence of isolates where each step's output becomes the next step's `input`. The parent runs them sequentially using `Effect.reduce` — each step is an Effect that yields the next input value.
 
-// A capability set is just the union of services an isolate requires
-type ReadOnly = KvRead
-type ReadWrite = KvRead | KvWrite
-type Full = KvRead | KvWrite | NetFetch | AiComplete
-```
+Each step has its own capability set. The first step might have KV read. The second might have nothing. The third might have spawn. This is the "attenuating permissions" pattern applied sequentially.
 
-Give an isolate `KvRead` and it can read. Give it `KvRead | KvWrite` and it can read and write. Try to give it `KvWrite` when you only have `KvRead` to offer — compiler says no.
+The input is serialized as JSON and injected into the isolate's wrapper code, same as KV data. It's included in the isolate's hash key so cached isolates don't return stale results from a previous chain run.
 
-## Phase 3: Capability Chains
+## How code generation works
 
-Multiple isolates, each with different trust levels, composed as an Effect pipeline.
+The `/run/generate` endpoint takes a natural language prompt and a capability list. It builds a system prompt that tells Workers AI what APIs are available (based on the granted capabilities), then runs the model. The generated code gets normalized:
 
-```typescript
-const chain = pipe(
-  // Step 1: User code (untrusted). No capabilities.
-  Isolate.run(userCode, {}),
-  // Step 2: Validate output. Has schema, no I/O.
-  Effect.flatMap(raw => Isolate.run(validatorCode, { schema: Schema })),
-  // Step 3: Enrich. Can read KV, nothing else.
-  Effect.flatMap(valid => Isolate.run(enricherCode, { kv: KvRead })),
-  // Step 4: Write. Can write D1, nothing else.
-  Effect.flatMap(enriched => Isolate.run(writerCode, { db: D1Write })),
-)
-```
+1. Strip markdown fences (LLMs often wrap code in ` ```js ` blocks)
+2. Unwrap async IIFE wrappers (the isolate already runs inside one)
+3. Auto-prepend `return` to the last expression if there's no top-level return
 
-Four isolates. Four different permission sets. Each step can only do what it says it can do. The whole chain is one program you can interrupt, retry, or time out.
+The normalized code runs in a sandboxed isolate with the declared capabilities.
 
-## Phase 4: Generated Compute via Effect
+## What Worker Loaders are
 
-Tell an LLM: "you have KV read, AI, and D1 write. Get user 123, summarize them, save it." It writes:
+Worker Loaders are a Cloudflare feature (closed beta) that lets a Worker create child V8 isolates at runtime. You provide:
 
-```typescript
-// The LLM sees this prompt:
-// "Write an Effect program that reads user data from KV,
-//  enriches it with AI, and writes to D1.
-//  You have: KvRead, AiComplete, D1Write."
+- A module string (the code)
+- An ID (used for caching — same ID reuses the same compiled isolate)
+- Optional `env` bindings and `globalOutbound` fetcher
 
-// The LLM generates:
-const program = Effect.gen(function* () {
-  const kv = yield* KvRead
-  const ai = yield* AiComplete
-  const db = yield* D1Write
+The isolate starts in single-digit milliseconds. It's the cheapest spawn primitive available on any cloud platform.
 
-  const user = yield* kv.get("user:123")
-  const enriched = yield* ai.complete(`Summarize: ${user}`)
-  yield* db.put("enriched:123", enriched)
+## What Effect provides
 
-  return { enriched }
-})
-```
+Effect is used for:
 
-The LLM wrote code that uses three capabilities. It runs in an isolate that has those three capabilities. It can't use `fetch()`, it can't write to a different table, it can't spawn anything. It does what it said it would do.
-
-Because Effect programs are values, you can hash them. Same program = same hash = cached isolate. Two agents that independently write the same solution reuse the same cached code.
-
-## Phase 5: Recursive Spawning with Attenuation
-
-An isolate that can spawn child isolates — but each child gets fewer capabilities.
-
-```typescript
-// Spawn is itself a capability
-class Spawn extends Context.Tag("Spawn")<
-  Spawn,
-  {
-    readonly child: <A>(
-      code: string,
-      capabilities: AttenuatedCapabilities
-    ) => Effect.Effect<A, IsolateError>
-  }
->() {}
-
-// Attenuation is structural
-type AttenuatedCapabilities = {
-  readonly budget: Duration       // less time than parent
-  readonly memory: number         // less memory than parent  
-  readonly depth: number          // decremented each level
-  readonly capabilities: CapabilitySet  // subset of parent's
-}
-
-// Fork bomb prevention is in the types:
-// when depth reaches 0, Spawn is not in the capability set.
-// The child literally cannot spawn. Type error.
-```
-
-Each child gets less than its parent. Less time, less memory, fewer capabilities. When budget hits zero, `Spawn` isn't in the capability set anymore. The child can't spawn. Recursion stops.
-
-## Experiments
-
-Each one runs in the browser. Paste code, hit run, see what happens.
-
-### 01: Sandbox
-Code goes in. Result comes out. No network. No storage. Just compute.
-
-### 02: KV Reader
-Same sandbox, but now it can read from KV. Still can't write. Still can't fetch.
-
-### 03: Chain
-Four isolates in sequence. First one parses. Second one validates. Third one enriches (can read KV). Fourth one writes (can write D1). Each one can only do its job.
-
-### 04: AI Writes the Code
-Describe what you want. AI writes an Effect program. The program runs with only the capabilities you specified. You can see exactly what it can do before it runs.
-
-### 05: Spawner
-An isolate that creates child isolates. Each child gets less budget. Watch the tree grow until it can't anymore.
-
-## How it works
-
-You define capabilities as types. You compose them into layers. You hand code to a Loader with a specific set of layers. The code runs with those layers and nothing else.
-
-If you want to see what an isolate can do, read its type signature. If you want to change what it can do, change the layers you provide. If you want to chain isolates together, compose the programs. If you want to cache a program, hash it.
-
-The interesting part isn't any one of these things. It's that they're all the same mechanism.
-
-## Stack
-
-- **Runtime:** Cloudflare Workers + Worker Loader binding
-- **Language:** TypeScript + Effect
-- **AI:** Workers AI (for experiment 04)
-- **Storage:** KV (for experiments 02-05)
-- **UI:** Inline HTML (no framework, no build step)
-- **Deploy:** `wrangler deploy`
-
-## Open Questions
-
-- Can an Effect program generated by an LLM be reliably parsed and validated before execution? (The `acorn` approach from codemode, but for Effect.gen syntax)
-- What's the serialization format for an Effect program that crosses an isolate boundary? (Effect has `Schema` — can we use it to serialize programs?)
-- Can Worker Loader isolates communicate bidirectionally, or only request/response? (Relevant for streaming generated compute)
-- What's the practical depth limit for recursive spawning before Loader overhead accumulates?
-- Can we use Effect's `Schedule` to model long-running generated compute (the cron/webhook gap from research)?
+- **Service tags** (`Context.Tag`) — model capabilities as typed dependencies
+- **Error types** (`Data.TaggedError`) — `IsolateError` with tagged reasons
+- **Composition** (`Effect.gen`, `Effect.reduce`) — chain steps without mutable state
+- **Tracing** (`Effect.fn`) — all effectful functions are named for observability
+- **Promise interop** (`Effect.tryPromise`, `Effect.promise`) — wrap Cloudflare APIs

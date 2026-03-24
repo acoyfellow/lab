@@ -140,7 +140,7 @@
 <div class="container">
   <header>
     <h1>lab</h1>
-    <p>Effect + Worker Loaders — capabilities as types</p>
+    <p>Sandboxed isolates on Cloudflare with typed capabilities</p>
   </header>
 
   <div class="tabs">
@@ -155,12 +155,12 @@
 
   <div class="chain-container" id="chain-container">
     <div class="chain-info">
-      <strong>Capability chain</strong><br>
-      Three isolates in sequence, each with different trust levels:
+      <strong>Three isolates in sequence</strong><br>
+      Each step receives the previous step's output as <code>input</code>. Click "Seed KV" first.
       <ul>
-        <li><strong>Reader</strong> — kvRead granted, loads users from KV</li>
-        <li><strong>Validator</strong> — no capabilities, filters to admins</li>
-        <li><strong>Formatter</strong> — no capabilities, produces summary</li>
+        <li><strong>Reader</strong> (kvRead) — reads all users from KV, returns an array</li>
+        <li><strong>Validator</strong> (none) — filters the array to admins only</li>
+        <li><strong>Formatter</strong> (none) — produces a summary string</li>
       </ul>
     </div>
   </div>
@@ -187,38 +187,38 @@
 <script>
 var tabs = {
   sandbox: {
-    code: '// Sandboxed isolate — no capabilities\n// Try: return { n: Math.random(), ts: new Date().toISOString() }\n\nreturn { sum: [1,2,3].reduce((a,b) => a+b, 0) };',
+    code: '// No capabilities granted.\n// The isolate cannot access the network, storage, or any external service.\n// Use `return` to produce output.\n\nreturn { sum: [1,2,3].reduce((a,b) => a+b, 0) };',
     endpoint: '/run',
     caps: [['network', false], ['kv read', false], ['kv write', false]],
-    meta: 'Pure compute. globalOutbound = null.',
+    meta: 'Runs in a V8 isolate with no outbound access.',
     isChain: false
   },
   kv: {
-    code: '// KV Read capability granted\n\nconst keys = await kv.list("user:");\nconst users = [];\nfor (const key of keys) {\n  const raw = await kv.get(key);\n  users.push(JSON.parse(raw));\n}\nreturn { users };',
+    code: '// This isolate can read from KV.\n// `kv.get(key)` returns a string or null.\n// `kv.list(prefix)` returns an array of keys.\n// Click "Seed KV" first to populate demo data.\n\nconst keys = await kv.list("user:");\nconst users = [];\nfor (const key of keys) {\n  const raw = await kv.get(key);\n  users.push(JSON.parse(raw));\n}\nreturn { users };',
     endpoint: '/run/kv',
     caps: [['network', false], ['kv read', true], ['kv write', false]],
-    meta: 'KvRead capability granted. Can read, cannot write, cannot fetch.',
+    meta: 'KV data is snapshot before the isolate starts. The isolate reads from memory, not from KV directly.',
     isChain: false
   },
   spawn: {
-    code: '// Spawn 3 child isolates in parallel\n// Each child gets attenuated capabilities\n// Depth 0 = no more spawning (structural fork-bomb prevention)\n\nconst results = await Promise.all([\n  spawn("return { id: 1, sq: 10 * 10 }", []),\n  spawn("return { id: 2, sq: 20 * 20 }", []),\n  spawn("return { id: 3, sq: 30 * 30 }", []),\n]);\n\nreturn { parent: "orchestrator", children: results };',
+    code: '// This isolate can create child isolates.\n// `spawn(code, capabilities)` runs code in a new isolate.\n// Children cannot spawn (depth decrements to 0).\n\nconst results = await Promise.all([\n  spawn("return { id: 1, sq: 10 * 10 }", []),\n  spawn("return { id: 2, sq: 20 * 20 }", []),\n  spawn("return { id: 3, sq: 30 * 30 }", []),\n]);\n\nreturn { parent: "orchestrator", children: results };',
     endpoint: '/run/spawn',
     caps: [['spawn', true], ['network', false], ['kv read', false]],
-    meta: 'Recursive spawning with capability attenuation.',
+    meta: 'Children receive depth - 1. At depth 0, spawn is unavailable.',
     isChain: false,
     isSpawn: true
   },
   generate: {
     endpoint: '/run/generate',
     caps: [],
-    meta: 'Workers AI generates the isolate code from a natural language prompt.',
+    meta: 'Workers AI writes the code. The generated code runs in a sandboxed isolate with the declared capabilities.',
     isChain: false,
     isGenerate: true
   },
   chain: {
     endpoint: '/run/chain',
     caps: [],
-    meta: 'Sequential composition — each step receives the previous step\'s output.',
+    meta: 'Each step receives the previous step\'s output as `input`. Each step has its own capability set.',
     isChain: true,
     steps: [
       {
