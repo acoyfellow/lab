@@ -1,8 +1,42 @@
 <script lang="ts">
-  import { page } from '$app/state';
+  type TraceRequest = {
+    prompt?: string;
+    code?: string;
+    capabilities?: string[];
+    steps?: Array<{ name?: string; code: string; capabilities: string[] }>;
+  };
+
+  type TraceRow = {
+    step: number;
+    name?: string;
+    capabilities: string[];
+    input: unknown;
+    output: unknown;
+    ms: number;
+  };
+
+  type TracePageData = {
+    id: string;
+    type: string;
+    createdAt: string;
+    request: TraceRequest;
+    outcome: { ok: boolean; result?: unknown; error?: string; reason?: string };
+    timing?: Record<string, number>;
+    generated?: string;
+    trace?: TraceRow[];
+  };
 
   let { data } = $props();
-  const trace = data.trace;
+  const trace = $derived(data.trace as TracePageData);
+
+  const timingItems = $derived.by(() => {
+    const t = trace.timing;
+    const items: string[] = [];
+    if (t?.totalMs !== undefined) items.push(`total ${t.totalMs} ms`);
+    if (t?.generateMs !== undefined) items.push(`generate ${t.generateMs} ms`);
+    if (t?.runMs !== undefined) items.push(`run ${t.runMs} ms`);
+    return items;
+  });
 
   function formatValue(value: unknown): string {
     if (value === undefined) return 'undefined';
@@ -13,11 +47,6 @@
   function copyUrl() {
     navigator.clipboard.writeText(window.location.href);
   }
-
-  const timingItems: string[] = [];
-  if (trace.timing?.totalMs !== undefined) timingItems.push(`total ${trace.timing.totalMs} ms`);
-  if (trace.timing?.generateMs !== undefined) timingItems.push(`generate ${trace.timing.generateMs} ms`);
-  if (trace.timing?.runMs !== undefined) timingItems.push(`run ${trace.timing.runMs} ms`);
 </script>
 
 <svelte:head>
@@ -32,7 +61,7 @@
       <div class="text-[color:var(--text-3)] text-[0.8125rem] mt-0.5">id {trace.id} &middot; {trace.createdAt}</div>
     </div>
     <div class="flex gap-3 flex-wrap text-[0.8125rem]">
-      <a href="/" class="text-[color:var(--text-2)] no-underline bg-[color:var(--surface)] border border-[color:var(--border)] rounded-[var(--radius)] px-3 py-1.5 hover:text-[color:var(--text)]">Back</a>
+      <a href="/" class="text-[color:var(--text-2)] no-underline bg-[color:var(--surface)] border border-[color:var(--border)] rounded-[var(--radius)] px-3 py-1.5 hover:text-[color:var(--text)]">Home</a>
       <a href="/t/{trace.id}.json" class="text-[color:var(--text-2)] no-underline bg-[color:var(--surface)] border border-[color:var(--border)] rounded-[var(--radius)] px-3 py-1.5 hover:text-[color:var(--text)]">JSON</a>
       <button onclick={copyUrl} class="text-[color:var(--text-2)] bg-[color:var(--surface)] border border-[color:var(--border)] rounded-[var(--radius)] px-3 py-1.5 cursor-pointer hover:text-[color:var(--text)] text-[0.8125rem] font-[family-name:var(--sans)]">Copy URL</button>
     </div>

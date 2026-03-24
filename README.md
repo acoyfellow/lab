@@ -1,24 +1,57 @@
 # lab
 
-Run sandboxed JavaScript on Cloudflare Workers at runtime. Control what each isolate can access using typed capabilities.
+**Primitives for orchestration of bounded, traceable compute** on [Cloudflare Workers](https://workers.cloudflare.com/). Built for **builders** shipping agents, tools, and backends who need **sandboxed isolates**, **explicit capabilities** (least privilege), and a **durable, shareable trace** of what actually ran.
 
 **Live:** https://lab.coy.workers.dev
 
-## What this does
+## Why come back here
 
-You send a string of JavaScript to a Cloudflare Worker. The Worker creates a V8 isolate and runs your code inside it. The isolate has no network access, no storage access, and no way to reach the outside world — unless you explicitly grant capabilities.
+1. **Compose** — Run **chains** of isolates: each step gets the previous step’s output as `input`, with its own capability set.
+2. **Run** — Code executes in a fresh V8 isolate per step; no network unless you grant it.
+3. **Share the trace** — Successful runs return a **`traceId`**; open **`/t/{id}`** for code, capabilities, per-step I/O, timing, and a stable URL you can paste into tickets or docs.
 
-Capabilities are typed with [Effect](https://effect.website). If an isolate has `KvRead`, it can read from KV. If it doesn't, attempting to read throws. This is checked before the isolate runs, not after.
+That loop (compose → run → trace URL) is the product shape. The web UI is optimized for **chains first**; other modes are still available for single-shot experiments.
 
-The project has five features, each building on the previous:
+Capabilities are typed with [Effect](https://effect.website). If an isolate does not have `KvRead`, any `kv` access fails **before** execution. This is static checking of the capability set, not runtime probing.
 
-| Feature | What it does | Endpoint |
-|---------|-------------|----------|
-| **Sandbox** | Runs code with no capabilities | `POST /run` |
-| **KV Read** | Grants read-only access to a KV namespace | `POST /run/kv` |
-| **Chain** | Runs isolates in sequence, each with different capabilities | `POST /run/chain` |
-| **Generate** | An LLM writes the code, then it runs in a sandboxed isolate | `POST /run/generate` |
-| **Spawn** | An isolate creates child isolates with fewer capabilities | `POST /run/spawn` |
+## Habit loop (today) and what’s next
+
+| Stage | What it gives you |
+|-------|-------------------|
+| **Trace** (now) | Shareable record: request, outcome, timing, per-step trace for chains |
+| **Compose** (now) | Multi-step flows with different capabilities per step |
+| **Fork / remix** (later) | Branch from a trace or saved flow — not shipped in this repo yet |
+| **Saved recipes** (later) | Named, loadable playbooks in storage — not shipped yet |
+
+## Run modes
+
+Each mode maps to an HTTP endpoint. Use **Chain** when you need **orchestration + a trace**; use the others for focused demos or API integration.
+
+| Mode | When to use it | Endpoint |
+|------|----------------|----------|
+| **Chain** | Multi-step pipeline, different caps per step, full `trace` array | `POST /run/chain` |
+| **Sandbox** | Single isolate, no capabilities | `POST /run` |
+| **KV Read** | Single isolate with read-only KV snapshot | `POST /run/kv` |
+| **Generate** | LLM writes code, then runs it in a sandboxed isolate | `POST /run/generate` |
+| **Spawn** | Parent isolate creates child isolates (bounded depth) | `POST /run/spawn` |
+
+---
+
+## How to run a chain
+
+```bash
+curl -X POST https://lab.coy.workers.dev/run/chain \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "steps": [
+      { "code": "return [1, 2, 3]", "capabilities": [] },
+      { "code": "return input.map(n => n * n)", "capabilities": [] },
+      { "code": "return { squares: input, total: input.reduce((a,b)=>a+b,0) }", "capabilities": [] }
+    ]
+  }'
+```
+
+Optional per-step **`name`** is accepted for documentation and traces. Each step receives the previous step’s output as `input`. The response includes a **`trace`** array (per-step input, output, timing) and, when persisted, a **`traceId`** for **`GET /t/{id}`**.
 
 ---
 
@@ -51,22 +84,6 @@ curl -X POST https://lab.coy.workers.dev/run/kv \
 ```
 
 Inside the isolate, `kv.get(key)` and `kv.list(prefix?)` are available. The KV data is snapshot before the isolate starts — the isolate reads from an in-memory copy, not from KV directly.
-
-## How to run a chain
-
-```bash
-curl -X POST https://lab.coy.workers.dev/run/chain \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "steps": [
-      { "code": "return [1, 2, 3]", "capabilities": [] },
-      { "code": "return input.map(n => n * n)", "capabilities": [] },
-      { "code": "return { squares: input, total: input.reduce((a,b)=>a+b,0) }", "capabilities": [] }
-    ]
-  }'
-```
-
-Each step receives the previous step's output as `input`. Each step declares which capabilities it needs. The response includes a `trace` array showing each step's input, output, and timing.
 
 ## How to generate code with AI
 
@@ -119,7 +136,7 @@ Run code with KV Read capability.
 
 Run a sequence of isolates. Each step's output becomes the next step's `input`.
 
-**Request body:** `{ steps: Array<{ code: string, capabilities: string[] }> }`
+**Request body:** `{ steps: Array<{ name?: string, code: string, capabilities: string[] }> }`
 
 **Response:** `{ ok: boolean, result: any, trace: Array<{ step: number, capabilities: string[], input: any, output: any, ms: number }> }`
 
@@ -175,28 +192,30 @@ For more on the architecture decisions, see [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ```
 src/
-  index.ts        Worker entrypoint, routing, all endpoints
-  Loader.ts       Isolate service, code wrapping, spawn outbound handler
-  Capability.ts   KvRead service tag, CapabilitySet type
-  ui.html         Web interface (no framework, no build step)
-  env.d.ts        TypeScript module declaration for .html imports
-wrangler.jsonc    Worker config: LOADER, KV, AI, SELF bindings
+  routes/           SvelteKit UI (home, trace viewer, auth)
+  lib/              Auth client, schemas
+worker/
+  index.ts          Worker entrypoint, routing, traces
+  Loader.ts         Isolate service, spawn outbound
+  Capability.ts     KvRead tag, CapabilitySet
+alchemy.run.ts      Alchemy deploy config
+wrangler.jsonc      Worker bindings: LOADER, KV, AI, SELF
 ```
 
 ### Bindings
 
 | Binding | Type | Purpose |
-|---------|------|--------|
+|---------|------|---------|
 | `LOADER` | Worker Loader | Creates V8 isolates from code strings |
-| `KV` | KV Namespace | Storage for demo data |
-| `AI` | Workers AI | Code generation (phase 4) |
-| `SELF` | Service Binding | Routes child spawn requests back to this worker |
+| `KV` | KV Namespace | Demo data + trace storage |
+| `AI` | Workers AI | Code generation |
+| `SELF` | Service Binding | Child spawn requests |
 
 ### Dependencies
 
 - `effect` — typed services, error handling, composition
-- `@cloudflare/workers-types` — type definitions for Worker APIs
-- `wrangler` — dev server and deploy tool
+- `@cloudflare/workers-types` — Worker API types
+- `wrangler` — dev and deploy
 - `typescript` — type checking
 
 ---

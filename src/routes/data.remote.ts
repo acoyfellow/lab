@@ -93,33 +93,44 @@ export const runChain = query('unchecked', async (steps: Array<{ name?: string; 
   });
 });
 
-// Spawn recursive isolates
-export const runSpawn = query('unchecked', async (code: string, capabilities: string[], depth: number): Promise<RunResult> => {
-  const platform = getRequestEvent().platform;
-  return callWorkerJSON<RunResult>(platform, '/run/spawn', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code, capabilities, depth }),
-  });
-});
+// Spawn recursive isolates (single payload for remote query)
+export const runSpawn = query(
+  'unchecked',
+  async (payload: { code: string; capabilities: string[]; depth: number }): Promise<RunResult> => {
+    const platform = getRequestEvent().platform;
+    const { code, capabilities, depth } = payload;
+    return callWorkerJSON<RunResult>(platform, '/run/spawn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, capabilities, depth }),
+    });
+  },
+);
 
 // Generate and run code via LLM
-export const runGenerate = query('unchecked', async (prompt: string, capabilities: string[]): Promise<RunResult> => {
-  const platform = getRequestEvent().platform;
-  return callWorkerJSON<RunResult>(platform, '/run/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, capabilities }),
-  });
-});
+export const runGenerate = query(
+  'unchecked',
+  async (payload: { prompt: string; capabilities: string[] }): Promise<RunResult> => {
+    const platform = getRequestEvent().platform;
+    const { prompt, capabilities } = payload;
+    return callWorkerJSON<RunResult>(platform, '/run/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, capabilities }),
+    });
+  },
+);
 
 // Seed KV with demo data
-export const seedKv = command('unchecked', async (): Promise<{ ok: boolean; seeded: number }> => {
-  const platform = getRequestEvent().platform;
-  return callWorkerJSON<{ ok: boolean; seeded: number }>(platform, '/seed', {
-    method: 'POST',
-  });
-});
+export const seedKv = command(
+  'unchecked',
+  async (_payload: void | undefined): Promise<{ ok: boolean; seeded: number }> => {
+    const platform = getRequestEvent().platform;
+    return callWorkerJSON<{ ok: boolean; seeded: number }>(platform, '/seed', {
+      method: 'POST',
+    });
+  },
+);
 
 // Get a trace by ID
 export const getTrace = query('unchecked', async (traceId: string): Promise<TraceData | { error: string }> => {
