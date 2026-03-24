@@ -16,5 +16,11 @@
   ],
   "ai": {
     "binding": "AI"
-  }
+  },
+  "services": [
+    {
+      "binding": "SELF",
+      "service": "lab"
+    }
+  ]
 }

@@ -6,6 +6,7 @@ interface Env {
   LOADER: WorkerLoaderBinding
   KV: KVNamespace
   AI: Ai
+  SELF: Fetcher
 }
 
 export default {
@@ -14,6 +15,16 @@ export default {
 
     if (req.method === "GET" && url.pathname === "/") {
       return new Response(UI, { headers: { "content-type": "text/html" } })
+    }
+
+    // Shared KV read service builder
+    const kvReadService = {
+      get: (key: string) => Effect.promise(() => env.KV.get(key)),
+      list: (prefix?: string) =>
+        Effect.promise(async () => {
+          const list = await env.KV.list({ prefix })
+          return list.keys.map((k) => k.name)
+        }),
     }
 
     // --- Seed KV with demo data ---
@@ -44,19 +55,9 @@ export default {
       const { code } = (await req.json()) as { code: string }
       if (!code) return Response.json({ error: "no code" }, { status: 400 })
 
-      const kvRead = {
-        get: (key: string) =>
-          Effect.promise(() => env.KV.get(key)),
-        list: (prefix?: string) =>
-          Effect.promise(async () => {
-            const list = await env.KV.list({ prefix })
-            return list.keys.map((k) => k.name)
-          }),
-      }
-
       const program = Effect.gen(function* () {
         const isolate = yield* Isolate
-        return yield* isolate.run(code, { kvRead })
+        return yield* isolate.run(code, { kvRead: kvReadService })
       })
 
       const layer = makeIsolateLive(env.LOADER, env.KV)
@@ -72,15 +73,6 @@ export default {
         return Response.json({ error: "no steps" }, { status: 400 })
       }
 
-      const kvRead = {
-        get: (key: string) => Effect.promise(() => env.KV.get(key)),
-        list: (prefix?: string) =>
-          Effect.promise(async () => {
-            const list = await env.KV.list({ prefix })
-            return list.keys.map((k) => k.name)
-          }),
-      }
-
       type TraceEntry = {
         step: number
         capabilities: string[]
@@ -90,9 +82,9 @@ export default {
       }
 
       const buildCaps = (capNames: string[]) => {
-        const caps: { kvRead?: typeof kvRead } = {}
+        const caps: { kvRead?: typeof kvReadService } = {}
         if (capNames.includes("kvRead")) {
-          caps.kvRead = kvRead
+          caps.kvRead = kvReadService
         }
         return caps
       }
@@ -152,6 +144,28 @@ export default {
       })
     }
 
+    // --- Internal spawn child route (called by isolates via globalOutbound) ---
+    if (req.method === "POST" && url.pathname === "/spawn/child") {
+      const { code, capabilities, depth } = (await req.json()) as {
+        code: string
+        capabilities: string[]
+        depth: number
+      }
+      const caps = capabilities ?? []
+
+      const childCaps: { kvRead?: typeof kvReadService; spawn?: { depth: number } } = {}
+      if (caps.includes("kvRead")) childCaps.kvRead = kvReadService
+      if (depth > 0 && caps.includes("spawn")) childCaps.spawn = { depth }
+
+      const program = Effect.gen(function* () {
+        const isolate = yield* Isolate
+        return yield* isolate.run(code, childCaps)
+      })
+
+      const layer = makeIsolateLive(env.LOADER, env.KV, env.SELF)
+      return runToResponse(program.pipe(Effect.provide(layer)))
+    }
+
     // --- Spawn recursive isolates (phase 5) ---
     if (req.method === "POST" && url.pathname === "/run/spawn") {
       const { code, capabilities, depth } = (await req.json()) as {
@@ -161,27 +175,12 @@ export default {
       }
       if (!code) return Response.json({ error: "no code" }, { status: 400 })
 
-      const caps = capabilities ?? []
-      const kvRead = caps.includes("kvRead")
-        ? {
-            get: (key: string) => Effect.promise(() => env.KV.get(key)),
-            list: (prefix?: string) =>
-              Effect.promise(async () => {
-                const list = await env.KV.list({ prefix })
-                return list.keys.map((k) => k.name)
-              }),
-          }
-        : undefined
-
-      const spawnCaps: Record<string, unknown> = {}
-      if (kvRead) spawnCaps["kvRead"] = kvRead
-
       const program = Effect.gen(function* () {
         const isolate = yield* Isolate
-        return yield* isolate.spawn(code, spawnCaps as Parameters<typeof isolate.spawn>[1], depth ?? 2)
+        return yield* isolate.spawn(code, undefined, depth ?? 2)
       })
 
-      const layer = makeIsolateLive(env.LOADER, env.KV)
+      const layer = makeIsolateLive(env.LOADER, env.KV, env.SELF)
       return runToResponse(program.pipe(Effect.provide(layer)))
     }
 
@@ -237,19 +236,7 @@ export default {
         )
       }
 
-      // Build capabilities
-      const kvRead = hasKvRead
-        ? {
-            get: (key: string) => Effect.promise(() => env.KV.get(key)),
-            list: (prefix?: string) =>
-              Effect.promise(async () => {
-                const list = await env.KV.list({ prefix })
-                return list.keys.map((k) => k.name)
-              }),
-          }
-        : undefined
-
-      const runCaps = hasKvRead ? { kvRead } : undefined
+      const runCaps = hasKvRead ? { kvRead: kvReadService } : undefined
 
       // Run the generated code
       const program = Effect.gen(function* () {
