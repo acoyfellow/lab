@@ -13,4 +13,5 @@ export class KvRead extends Context.Tag("@lab/KvRead")<
 // What you pass to an isolate. Only the capabilities you include get injected.
 export type CapabilitySet = {
   readonly kvRead?: Context.Tag.Service<typeof KvRead>
+  readonly spawn?: { depth: number }
 }

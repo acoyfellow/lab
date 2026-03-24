@@ -58,21 +58,23 @@ Multiple isolates in sequence, each with different trust levels.
 
 Endpoint: `POST /run/chain` with `{ steps: Array<{ code: string, capabilities: string[] }> }`
 
-## What's next
-
-### Phase 4: Generated Compute
+### Phase 4: Generated Compute ✅
 
 LLM writes the code that runs in the isolate.
 
-- Add Workers AI binding (`@cf/meta/llama-3.1-8b-instruct` or similar)
+- Workers AI binding (`@cf/meta/llama-3.1-8b-instruct`) added to `wrangler.jsonc`
 - `POST /run/generate` — takes `{ prompt, capabilities }` in English
-- Workers AI generates an async function body
-- Code gets normalized (strip markdown fences, wrap in async IIFE — see Cloudflare codemode's `acorn` approach)
-- Runs in isolate with only the stated capabilities
-- New `AiComplete` capability tag
-- UI tab: describe what you want, see generated code + output
+- System prompt adapts based on granted capabilities (tells LLM what APIs are available)
+- Code normalization: strip markdown fences, unwrap IIFE, auto-prepend return to last expression
+- Prompt engineering: no .then() chains, top-level return, no wrapping in async functions
+- Response includes generated code, generate time, and run time for transparency
+- UI tab "04: generate" with prompt textarea and capability checkboxes
+- Generated code displayed below output so user can see what the LLM wrote
+- Generate: ~500ms-14s (depends on cold start), Run: 3-5ms
 
-Key insight from research: "LLMs are better at writing code than calling tools — they've seen millions of lines of real-world code but only contrived tool-calling examples." (Cloudflare codemode README)
+Endpoint: `POST /run/generate` with `{ prompt: string, capabilities: string[] }`
+
+## What's next
 
 ### Phase 5: Recursive Spawning with Attenuation
 

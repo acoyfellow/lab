@@ -152,6 +152,39 @@ export default {
       })
     }
 
+    // --- Spawn recursive isolates (phase 5) ---
+    if (req.method === "POST" && url.pathname === "/run/spawn") {
+      const { code, capabilities, depth } = (await req.json()) as {
+        code: string
+        capabilities: string[]
+        depth?: number
+      }
+      if (!code) return Response.json({ error: "no code" }, { status: 400 })
+
+      const caps = capabilities ?? []
+      const kvRead = caps.includes("kvRead")
+        ? {
+            get: (key: string) => Effect.promise(() => env.KV.get(key)),
+            list: (prefix?: string) =>
+              Effect.promise(async () => {
+                const list = await env.KV.list({ prefix })
+                return list.keys.map((k) => k.name)
+              }),
+          }
+        : undefined
+
+      const spawnCaps: Record<string, unknown> = {}
+      if (kvRead) spawnCaps["kvRead"] = kvRead
+
+      const program = Effect.gen(function* () {
+        const isolate = yield* Isolate
+        return yield* isolate.spawn(code, spawnCaps as Parameters<typeof isolate.spawn>[1], depth ?? 2)
+      })
+
+      const layer = makeIsolateLive(env.LOADER, env.KV)
+      return runToResponse(program.pipe(Effect.provide(layer)))
+    }
+
     // --- Generate and run code via LLM (phase 4) ---
     if (req.method === "POST" && url.pathname === "/run/generate") {
       const { prompt, capabilities } = (await req.json()) as {

@@ -60,6 +60,7 @@
   <div class="tab" id="tab-kv" onclick="switchTab('kv')">02: kv read</div>
   <div class="tab" id="tab-chain" onclick="switchTab('chain')">03: chain</div>
   <div class="tab" id="tab-generate" onclick="switchTab('generate')">04: generate</div>
+  <div class="tab" id="tab-spawn" onclick="switchTab('spawn')">05: spawn</div>
 </div>
 
 <textarea id="code" class="code-container"></textarea>
@@ -108,6 +109,14 @@ var tabs = {
     caps: [['network', false], ['kv read', true], ['kv write', false]],
     meta: 'phase 2: KvRead capability granted. can read, cannot write, cannot fetch.',
     isChain: false
+  },
+  spawn: {
+    code: "// this isolate can spawn children!\n// each child gets: fewer capabilities, less depth\n// depth 0 = no more spawning (fork bomb prevention)\n\n// spawn 3 workers to compute in parallel\nconst results = await Promise.all([\n  spawn('return { id: 1, sq: 10 * 10 }', []),\n  spawn('return { id: 2, sq: 20 * 20 }', []),\n  spawn('return { id: 3, sq: 30 * 30 }', []),\n]);\n\nreturn { parent: 'orchestrator', children: results };",
+    endpoint: '/run/spawn',
+    caps: [['spawn', true], ['network', false], ['kv read', false]],
+    meta: 'phase 5: recursive spawning. parent spawns children with attenuated capabilities.',
+    isChain: false,
+    isSpawn: true
   },
   generate: {
     endpoint: '/run/generate',
@@ -167,7 +176,7 @@ function switchTab(name) {
     }
   } else {
     codeEl.classList.remove('hidden');
-    codeEl.value = t.code;
+    if (t.code) codeEl.value = t.code;
   }
   
   document.getElementById('caps').innerHTML = t.caps.map(function(c) {
@@ -190,6 +199,11 @@ function run() {
   
   if (t.isGenerate) {
     runGenerate();
+    return;
+  }
+  
+  if (t.isSpawn) {
+    runSpawn();
     return;
   }
   
@@ -235,6 +249,27 @@ function runChain() {
     } else {
       out.textContent = JSON.stringify(json, null, 2) + '\n\n// ' + totalMs + 'ms';
     }
+  }).catch(function(e) {
+    out.textContent = 'error: ' + e.message;
+  });
+}
+
+function runSpawn() {
+  var out = document.getElementById('out');
+  var chainTraceEl = document.getElementById('chain-trace');
+  var code = document.getElementById('code').value;
+  if (!code) { out.textContent = '// enter code'; return; }
+  
+  out.textContent = 'spawning isolates...';
+  chainTraceEl.innerHTML = '';
+  var t0 = performance.now();
+  fetch('/run/spawn', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ code: code, capabilities: ['spawn'], depth: 2 }),
+  }).then(function(r) { return r.json(); }).then(function(json) {
+    var ms = (performance.now() - t0).toFixed(1);
+    out.textContent = JSON.stringify(json, null, 2) + '\n\n// ' + ms + 'ms';
   }).catch(function(e) {
     out.textContent = 'error: ' + e.message;
   });

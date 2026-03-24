@@ -33,6 +33,7 @@ export class Isolate extends Context.Tag("@lab/Isolate")<
   Isolate,
   {
     readonly run: (code: string, capabilities?: CapabilitySet, input?: unknown) => Effect.Effect<unknown, IsolateError>
+    readonly spawn: (code: string, capabilities?: CapabilitySet, depth?: number) => Effect.Effect<unknown, IsolateError>
   }
 >() {}
 
@@ -67,12 +68,30 @@ const wrapCode = (
     ? `const input = ${JSON.stringify(input)};`
     : ``
 
+  const spawnShim = caps?.spawn && caps.spawn.depth > 0
+    ? `
+    const spawn = async (code, caps) => {
+      const res = await fetch("http://spawn/", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ code, capabilities: caps || [] }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "spawn failed");
+      return data.result;
+    };
+`
+    : `
+    const spawn = () => { throw new Error("Spawn capability not granted"); };
+`
+
   return `
 export default {
   async fetch(req, env) {
     try {
       ${inputShim}
       ${kvShim}
+      ${spawnShim}
       const __result = await (async () => {
         ${code}
       })();
@@ -132,13 +151,131 @@ const parseIsolateResponse = Effect.fn("parseIsolateResponse")(
   }
 )
 
+// --- Outbound handler for spawn capability ---
+
+const makeSpawnOutbound = (
+  loader: WorkerLoaderBinding,
+  kvNamespace: KVNamespace | undefined,
+  parentDepth: number
+): { fetch: (req: Request) => Promise<Response> } => {
+  const handler = {
+    fetch: async (req: Request): Promise<Response> => {
+      try {
+        const body = (await req.json()) as { code: string; capabilities: string[] }
+        const childDepth = parentDepth - 1
+
+        // Build child capabilities — can only request subset
+        const childCaps: CapabilitySet = {
+          ...(body.capabilities.includes("kvRead") && kvNamespace
+            ? {
+                kvRead: {
+                  get: (key: string) => Effect.promise(() => kvNamespace.get(key)),
+                  list: (prefix?: string) =>
+                    Effect.promise(async () => {
+                      const list = await kvNamespace.list({ prefix })
+                      return list.keys.map((k) => k.name)
+                    }),
+                },
+              }
+            : {}),
+          ...(childDepth > 0 && body.capabilities.includes("spawn")
+            ? { spawn: { depth: childDepth } }
+            : {}),
+        }
+
+        const childProgram = Effect.gen(function* () {
+          const hasKv = !!childCaps.kvRead
+          const hasSpawn = !!(childCaps.spawn && childCaps.spawn.depth > 0)
+          const capKey = [hasKv ? ":kv" : "", hasSpawn ? `:spawn:${childDepth}` : ""].join("")
+          const childId = yield* hash(body.code + capKey)
+
+          const { snapshot: cs, keys: ck } = hasKv && kvNamespace
+            ? yield* snapshotKv(kvNamespace)
+            : { snapshot: {} as Record<string, string | null>, keys: [] as string[] }
+
+          const childWrapped = wrapCode(body.code, childCaps, cs, ck)
+          const childOutbound = hasSpawn
+            ? makeSpawnOutbound(loader, kvNamespace, childDepth)
+            : null
+
+          const childWorker = loader.get(childId, async () => ({
+            compatibilityDate: "2025-06-01",
+            mainModule: "main.js",
+            modules: { "main.js": childWrapped },
+            globalOutbound: childOutbound,
+          }))
+
+          const childRes = yield* Effect.tryPromise({
+            try: () => childWorker.getEntrypoint().fetch("http://x/"),
+            catch: (e) =>
+              new IsolateError({ reason: "runtime", message: e instanceof Error ? e.message : String(e) }),
+          })
+
+          return yield* parseIsolateResponse(childRes)
+        })
+
+        const result = await Effect.runPromise(childProgram)
+        return Response.json({ ok: true, result })
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        return Response.json({ ok: false, error: msg }, { status: 500 })
+      }
+    },
+  }
+  return handler
+}
+
+// --- Execute an isolate with full config ---
+
+const execIsolate = (
+  loader: WorkerLoaderBinding,
+  kvNamespace: KVNamespace | undefined
+) =>
+  Effect.fn("execIsolate")(function* (
+    code: string,
+    caps: CapabilitySet | undefined,
+    input: unknown | undefined
+  ) {
+    const hasKv = !!(caps?.kvRead && kvNamespace)
+    const hasSpawn = !!(caps?.spawn && caps.spawn.depth > 0)
+    const spawnDepth = hasSpawn ? caps!.spawn!.depth : 0
+    const capKey = [hasKv ? ":kv" : "", hasSpawn ? `:spawn:${spawnDepth}` : ""].join("")
+    const inputKey = input !== undefined ? `:in:${JSON.stringify(input)}` : ""
+    const id = yield* hash(code + capKey + inputKey)
+
+    const { snapshot, keys } = hasKv
+      ? yield* snapshotKv(kvNamespace!)
+      : { snapshot: {} as Record<string, string | null>, keys: [] as string[] }
+
+    const wrapped = wrapCode(code, caps, snapshot, keys, input)
+    const globalOutbound = hasSpawn
+      ? makeSpawnOutbound(loader, kvNamespace, spawnDepth)
+      : null
+
+    const worker = loader.get(id, async () => ({
+      compatibilityDate: "2025-06-01",
+      mainModule: "main.js",
+      modules: { "main.js": wrapped },
+      globalOutbound,
+    }))
+
+    const res = yield* Effect.tryPromise({
+      try: () => worker.getEntrypoint().fetch("http://x/"),
+      catch: (e) =>
+        new IsolateError({ reason: "runtime", message: e instanceof Error ? e.message : String(e) }),
+    })
+
+    return yield* parseIsolateResponse(res)
+  })
+
 // --- Live Layer ---
 
 export const makeIsolateLive = (
   loader: WorkerLoaderBinding,
   kvNamespace?: KVNamespace
-) =>
-  Layer.succeed(
+) => {
+  const exec = execIsolate(loader, kvNamespace)
+  return Layer.succeed(
     Isolate,
     Isolate.of({
       run: Effect.fn("Isolate.run")(function* (
@@ -146,34 +283,20 @@ export const makeIsolateLive = (
         caps?: CapabilitySet,
         input?: unknown
       ) {
-        const hasKv = !!(caps?.kvRead && kvNamespace)
-        const capKey = hasKv ? ":kv" : ""
-        const inputKey = input !== undefined ? `:in:${JSON.stringify(input)}` : ""
-        const id = yield* hash(code + capKey + inputKey)
+        return yield* exec(code, caps, input)
+      }),
 
-        const { snapshot, keys } = hasKv
-          ? yield* snapshotKv(kvNamespace!)
-          : { snapshot: {} as Record<string, string | null>, keys: [] as string[] }
-
-        const wrapped = wrapCode(code, caps, snapshot, keys, input)
-
-        const worker = loader.get(id, async () => ({
-          compatibilityDate: "2025-06-01",
-          mainModule: "main.js",
-          modules: { "main.js": wrapped },
-          globalOutbound: null,
-        }))
-
-        const res = yield* Effect.tryPromise({
-          try: () => worker.getEntrypoint().fetch("http://x/"),
-          catch: (e) =>
-            new IsolateError({
-              reason: "runtime",
-              message: e instanceof Error ? e.message : String(e),
-            }),
-        })
-
-        return yield* parseIsolateResponse(res)
+      spawn: Effect.fn("Isolate.spawn")(function* (
+        code: string,
+        caps?: CapabilitySet,
+        depth?: number
+      ) {
+        const spawnCaps: CapabilitySet = {
+          ...caps,
+          spawn: { depth: depth ?? 2 },
+        }
+        return yield* exec(code, spawnCaps, undefined)
       }),
     })
   )
+}
