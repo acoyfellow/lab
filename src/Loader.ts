@@ -1,9 +1,10 @@
 import { Context, Effect, Data, Layer } from "effect"
+import type { CapabilitySet } from "./Capability"
 
 // --- Errors ---
 
 export class IsolateError extends Data.TaggedError("IsolateError")<{
-  readonly reason: "timeout" | "sandbox_violation" | "runtime"
+  readonly reason: "timeout" | "sandbox_violation" | "runtime" | "capability_denied"
   readonly message: string
 }> {}
 
@@ -17,7 +18,7 @@ export interface WorkerLoaderBinding {
       mainModule: string
       modules: Record<string, string>
       env?: Record<string, unknown>
-      globalOutbound?: null
+      globalOutbound?: null | { fetch: (req: Request) => Promise<Response> }
     }>
   ): {
     getEntrypoint(name?: string): {
@@ -28,27 +29,44 @@ export interface WorkerLoaderBinding {
 
 // --- Isolate Service ---
 
-export class Isolate extends Context.Tag("Isolate")<
+export class Isolate extends Context.Tag("@lab/Isolate")<
   Isolate,
   {
-    readonly run: (code: string) => Effect.Effect<unknown, IsolateError>
+    readonly run: (code: string, capabilities?: CapabilitySet) => Effect.Effect<unknown, IsolateError>
   }
 >() {}
 
-// --- Live implementation backed by a LOADER binding ---
+// --- Wrapper code generation ---
 
-export const makeIsolateLive = (loader: WorkerLoaderBinding) =>
-  Layer.succeed(
-    Isolate,
-    Isolate.of({
-      run: (code: string) =>
-        Effect.gen(function* () {
-          const id = yield* hash(code)
+const wrapCode = (
+  code: string,
+  caps?: CapabilitySet,
+  kvSnapshot?: Record<string, string | null>,
+  kvKeys?: string[]
+): string => {
+  const kvShim = caps?.kvRead
+    ? `
+    const __kvData = ${JSON.stringify(kvSnapshot ?? {})};
+    const __kvKeys = ${JSON.stringify(kvKeys ?? [])};
+    const kv = {
+      async get(key) { return __kvData[key] ?? null; },
+      async list(prefix) {
+        if (!prefix) return __kvKeys;
+        return __kvKeys.filter(k => k.startsWith(prefix));
+      }
+    };
+`
+    : `
+    const kv = new Proxy({}, {
+      get() { throw new Error("KvRead capability not granted"); }
+    });
+`
 
-          const wrapped = `
+  return `
 export default {
   async fetch(req, env) {
     try {
+      ${kvShim}
       const __result = await (async () => {
         ${code}
       })();
@@ -59,51 +77,95 @@ export default {
   }
 };
 `
-          const worker = loader.get(id, async () => ({
-            compatibilityDate: "2025-06-01",
-            mainModule: "main.js",
-            modules: { "main.js": wrapped },
-            globalOutbound: null,
-          }))
+}
 
-          const res = yield* Effect.tryPromise({
-            try: () => worker.getEntrypoint().fetch("http://x/"),
-            catch: (e) =>
-              new IsolateError({
-                reason: "runtime",
-                message: e instanceof Error ? e.message : String(e),
-              }),
-          })
+// --- Named effectful helpers (Effect.fn for call-site tracing) ---
 
-          const body = yield* Effect.tryPromise({
-            try: () => res.json() as Promise<Record<string, unknown>>,
-            catch: () =>
-              new IsolateError({ reason: "runtime", message: "bad json" }),
-          })
+const hash = Effect.fn("hash")(function* (s: string) {
+  const buf = yield* Effect.promise(() =>
+    crypto.subtle.digest("SHA-256", new TextEncoder().encode(s))
+  )
+  return [...new Uint8Array(buf)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 12)
+})
 
-          if (body["ok"] === false) {
-            const errMsg = typeof body["error"] === "string" ? body["error"] : "unknown"
-            if (errMsg.includes("not permitted")) {
-              return yield* new IsolateError({ reason: "sandbox_violation", message: errMsg })
-            }
-            return yield* new IsolateError({ reason: "runtime", message: errMsg })
-          }
+const snapshotKv = Effect.fn("snapshotKv")(function* (kv: KVNamespace) {
+  const list = yield* Effect.promise(() => kv.list())
+  const keys = list.keys.map((k) => k.name)
+  const entries = yield* Effect.promise(() =>
+    Promise.all(keys.map(async (key) => [key, await kv.get(key)] as const))
+  )
+  return {
+    snapshot: Object.fromEntries(entries) as Record<string, string | null>,
+    keys,
+  }
+})
 
-          return body["result"]
-        }),
+const parseIsolateResponse = Effect.fn("parseIsolateResponse")(
+  function* (res: Response) {
+    const body = yield* Effect.tryPromise({
+      try: () => res.json() as Promise<Record<string, unknown>>,
+      catch: () => new IsolateError({ reason: "runtime", message: "bad json" }),
+    })
+
+    if (body["ok"] === false) {
+      const errMsg =
+        typeof body["error"] === "string" ? body["error"] : "unknown"
+      if (errMsg.includes("not permitted")) {
+        return yield* new IsolateError({ reason: "sandbox_violation", message: errMsg })
+      }
+      if (errMsg.includes("capability not granted")) {
+        return yield* new IsolateError({ reason: "capability_denied", message: errMsg })
+      }
+      return yield* new IsolateError({ reason: "runtime", message: errMsg })
+    }
+
+    return body["result"]
+  }
+)
+
+// --- Live Layer ---
+
+export const makeIsolateLive = (
+  loader: WorkerLoaderBinding,
+  kvNamespace?: KVNamespace
+) =>
+  Layer.succeed(
+    Isolate,
+    Isolate.of({
+      run: Effect.fn("Isolate.run")(function* (
+        code: string,
+        caps?: CapabilitySet
+      ) {
+        const hasKv = !!(caps?.kvRead && kvNamespace)
+        const capKey = hasKv ? ":kv" : ""
+        const id = yield* hash(code + capKey)
+
+        const { snapshot, keys } = hasKv
+          ? yield* snapshotKv(kvNamespace!)
+          : { snapshot: {} as Record<string, string | null>, keys: [] as string[] }
+
+        const wrapped = wrapCode(code, caps, snapshot, keys)
+
+        const worker = loader.get(id, async () => ({
+          compatibilityDate: "2025-06-01",
+          mainModule: "main.js",
+          modules: { "main.js": wrapped },
+          globalOutbound: null,
+        }))
+
+        const res = yield* Effect.tryPromise({
+          try: () => worker.getEntrypoint().fetch("http://x/"),
+          catch: (e) =>
+            new IsolateError({
+              reason: "runtime",
+              message: e instanceof Error ? e.message : String(e),
+            }),
+        })
+
+        return yield* parseIsolateResponse(res)
+      }),
     })
   )
-
-// --- Helpers ---
-
-const hash = (s: string) =>
-  Effect.promise(async () => {
-    const buf = await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(s)
-    )
-    return [...new Uint8Array(buf)]
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("")
-      .slice(0, 12)
-  })
