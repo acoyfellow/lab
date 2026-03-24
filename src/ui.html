@@ -38,6 +38,18 @@
   .chain-info { color: #888; font-size: 13px; margin-bottom: 1rem; line-height: 1.6; }
   .code-container { display: block; }
   .code-container.hidden { display: none; }
+  .gen-container { display: none; padding: 1rem; background: #1a1a1a; border: 1px solid #333; border-top: none; }
+  .gen-container.active { display: block; }
+  .gen-prompt { width: 100%; height: 80px; background: #0f0f0f; color: #e0e0e0; border: 1px solid #333;
+    padding: 0.75rem; font-family: monospace; font-size: 14px; resize: vertical; margin-bottom: 0.75rem; }
+  .gen-caps { margin-bottom: 0.75rem; }
+  .gen-caps label { color: #aaa; font-size: 13px; margin-right: 1rem; cursor: pointer; }
+  .gen-caps input { margin-right: 4px; accent-color: #f90; }
+  .gen-code { background: #0a0a0a; border: 1px solid #222; padding: 0.75rem; margin-top: 0.75rem;
+    font-family: monospace; font-size: 12px; color: #0f0; white-space: pre-wrap; min-height: 40px; }
+  .gen-code-label { color: #888; font-size: 10px; text-transform: uppercase; margin-top: 0.75rem; }
+  .gen-timing { color: #666; font-size: 11px; margin-top: 0.5rem; }
+  .gen-timing span { color: #f90; }
 </style>
 </head><body>
 <h1>lab</h1>
@@ -47,6 +59,7 @@
   <div class="tab active" id="tab-sandbox" onclick="switchTab('sandbox')">01: sandbox</div>
   <div class="tab" id="tab-kv" onclick="switchTab('kv')">02: kv read</div>
   <div class="tab" id="tab-chain" onclick="switchTab('chain')">03: chain</div>
+  <div class="tab" id="tab-generate" onclick="switchTab('generate')">04: generate</div>
 </div>
 
 <textarea id="code" class="code-container"></textarea>
@@ -60,6 +73,13 @@
       <li><strong>Step 2 — Validator</strong> (no caps): Filters to admins only, validates structure</li>
       <li><strong>Step 3 — Formatter</strong> (no caps): Formats admins into summary string</li>
     </ul>
+  </div>
+</div>
+
+<div class="gen-container" id="gen-container">
+  <textarea class="gen-prompt" id="gen-prompt" placeholder="Describe what you want the isolate to compute..."></textarea>
+  <div class="gen-caps">
+    <label><input type="checkbox" id="gen-cap-kvread"> kv read</label>
   </div>
 </div>
 
@@ -88,6 +108,13 @@ var tabs = {
     caps: [['network', false], ['kv read', true], ['kv write', false]],
     meta: 'phase 2: KvRead capability granted. can read, cannot write, cannot fetch.',
     isChain: false
+  },
+  generate: {
+    endpoint: '/run/generate',
+    caps: [],
+    meta: 'phase 4: LLM generates the isolate code. describe what you want, see it run.',
+    isChain: false,
+    isGenerate: true
   },
   chain: {
     endpoint: '/run/chain',
@@ -124,14 +151,22 @@ function switchTab(name) {
   
   var codeEl = document.getElementById('code');
   var chainEl = document.getElementById('chain-container');
+  var genEl = document.getElementById('gen-container');
   var chainTraceEl = document.getElementById('chain-trace');
   
+  codeEl.classList.add('hidden');
+  chainEl.classList.remove('active');
+  genEl.classList.remove('active');
+  
   if (t.isChain) {
-    codeEl.classList.add('hidden');
     chainEl.classList.add('active');
+  } else if (t.isGenerate) {
+    genEl.classList.add('active');
+    if (!document.getElementById('gen-prompt').value) {
+      document.getElementById('gen-prompt').value = 'Generate the first 20 fibonacci numbers and return them as an array';
+    }
   } else {
     codeEl.classList.remove('hidden');
-    chainEl.classList.remove('active');
     codeEl.value = t.code;
   }
   
@@ -150,6 +185,11 @@ function run() {
   
   if (t.isChain) {
     runChain();
+    return;
+  }
+  
+  if (t.isGenerate) {
+    runGenerate();
     return;
   }
   
@@ -194,6 +234,42 @@ function runChain() {
       renderTrace(json.trace);
     } else {
       out.textContent = JSON.stringify(json, null, 2) + '\n\n// ' + totalMs + 'ms';
+    }
+  }).catch(function(e) {
+    out.textContent = 'error: ' + e.message;
+  });
+}
+
+function runGenerate() {
+  var out = document.getElementById('out');
+  var chainTraceEl = document.getElementById('chain-trace');
+  var prompt = document.getElementById('gen-prompt').value;
+  if (!prompt) { out.textContent = '// enter a prompt'; return; }
+  
+  var capabilities = [];
+  if (document.getElementById('gen-cap-kvread').checked) capabilities.push('kvRead');
+  
+  out.textContent = 'generating code...';
+  chainTraceEl.innerHTML = '';
+  
+  fetch('/run/generate', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ prompt: prompt, capabilities: capabilities }),
+  }).then(function(r) { return r.json(); }).then(function(json) {
+    var lines = [];
+    if (json.ok) {
+      lines.push(JSON.stringify({ ok: true, result: json.result }, null, 2));
+    } else {
+      lines.push(JSON.stringify({ ok: false, error: json.error, reason: json.reason }, null, 2));
+    }
+    lines.push('');
+    if (json.generateMs !== undefined) lines.push('// generate: ' + json.generateMs + 'ms, run: ' + json.runMs + 'ms');
+    out.textContent = lines.join('\n');
+    
+    if (json.generated) {
+      chainTraceEl.innerHTML = '<div class="gen-code-label">generated code</div>' +
+        '<div class="gen-code">' + escapeHtml(json.generated) + '</div>';
     }
   }).catch(function(e) {
     out.textContent = 'error: ' + e.message;

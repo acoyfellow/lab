@@ -5,6 +5,7 @@ import UI from "./ui.html"
 interface Env {
   LOADER: WorkerLoaderBinding
   KV: KVNamespace
+  AI: Ai
 }
 
 export default {
@@ -148,6 +149,109 @@ export default {
         },
         onSuccess: ({ result, trace }) =>
           Response.json({ ok: true, result, trace }),
+      })
+    }
+
+    // --- Generate and run code via LLM (phase 4) ---
+    if (req.method === "POST" && url.pathname === "/run/generate") {
+      const { prompt, capabilities } = (await req.json()) as {
+        prompt: string
+        capabilities: string[]
+      }
+      if (!prompt) return Response.json({ error: "no prompt" }, { status: 400 })
+
+      const caps = capabilities ?? []
+      const hasKvRead = caps.includes("kvRead")
+
+      const systemPrompt = [
+        "You are a code generator. You write JavaScript async function bodies.",
+        "The user describes what they want. You return ONLY the code — no markdown, no explanation.",
+        "The code will run inside an async IIFE in a sandboxed V8 isolate.",
+        "Return the final value with `return`.",
+        hasKvRead
+          ? "Available: `kv.get(key)` returns string|null, `kv.list(prefix?)` returns string[]. Both are async."
+          : "No external APIs available. Pure compute only.",
+        "Do NOT use import/export. Do NOT use fetch. Do NOT use console.log.",
+        "Keep it short. Just the function body.",
+      ].join("\n")
+
+      const t0 = Date.now()
+
+      const aiResult = await env.AI.run(
+        "@cf/meta/llama-3.1-8b-instruct" as Parameters<typeof env.AI.run>[0],
+        {
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: prompt },
+          ],
+          max_tokens: 512,
+          temperature: 0.2,
+        }
+      ) as { response?: string }
+
+      const generateMs = Date.now() - t0
+      const raw = aiResult.response ?? ""
+
+      // Normalize: strip markdown fences
+      const code = raw
+        .replace(/^```(?:javascript|js|typescript|ts)?\n?/gm, "")
+        .replace(/^```\s*$/gm, "")
+        .trim()
+
+      if (!code) {
+        return Response.json(
+          { ok: false, error: "LLM returned empty code", raw },
+          { status: 500 }
+        )
+      }
+
+      // Build capabilities
+      const kvRead = hasKvRead
+        ? {
+            get: (key: string) => Effect.promise(() => env.KV.get(key)),
+            list: (prefix?: string) =>
+              Effect.promise(async () => {
+                const list = await env.KV.list({ prefix })
+                return list.keys.map((k) => k.name)
+              }),
+          }
+        : undefined
+
+      const runCaps = hasKvRead ? { kvRead } : undefined
+
+      // Run the generated code
+      const program = Effect.gen(function* () {
+        const isolate = yield* Isolate
+        return yield* isolate.run(code, runCaps)
+      })
+
+      const layer = makeIsolateLive(env.LOADER, hasKvRead ? env.KV : undefined)
+      const exit = await Effect.runPromiseExit(program.pipe(Effect.provide(layer)))
+      const runMs = Date.now() - t0 - generateMs
+
+      return Exit.match(exit, {
+        onFailure: (cause) => {
+          const failure = Cause.failureOption(cause)
+          if (failure._tag === "Some" && failure.value instanceof IsolateError) {
+            return Response.json(
+              {
+                ok: false,
+                reason: failure.value.reason,
+                error: failure.value.message,
+                generated: code,
+                generateMs,
+                runMs,
+              },
+              { status: 500 }
+            )
+          }
+          return Response.json(
+            { ok: false, error: Cause.pretty(cause), generated: code, generateMs, runMs },
+            { status: 500 }
+          )
+        },
+        onSuccess: (result) =>
+          Response.json({ ok: true, result, generated: code, generateMs, runMs }),
       })
     }
 
