@@ -1,12 +1,14 @@
-# loader-lab: Effect-First Dynamic Compute
+# loader-lab
 
-## The Thesis
+Spawn sandboxed code on Cloudflare in milliseconds. Control what it can do with types.
 
-Worker Loaders are the cheapest spawn primitive that exists. Effect is the best way to model typed, composable, interruptible programs. Nobody is combining them.
+## What this is
 
-Cloudflare's codemode wraps isolates in ad-hoc RPC proxies. Executor wraps them in QuickJS with Proxy objects. Both are reinventing what Effect already solves: typed capabilities as dependencies, structured errors, interruption, resource scoping, and composable programs.
+Cloudflare Worker Loaders let you create V8 isolates at runtime from a string of code. Effect lets you describe what a program needs before it runs. This project connects them.
 
-We're going to model dynamic isolates as Effect Services. A Loader becomes a `Layer`. A capability becomes a `Context.Tag`. A spawned isolate is an `Effect` that requires capabilities and produces results. The type system enforces what each isolate can do — not proxy hacks, not runtime blocks.
+You write an Effect program. It says what it needs — KV, AI, network, whatever. You hand it to a Loader. The Loader runs it in a fresh isolate with exactly those things. Nothing else.
+
+If the program asks for something it wasn't given, it doesn't compile. Not a runtime error. A red squiggle in your editor.
 
 ## Architecture
 
@@ -63,7 +65,7 @@ Every experiment uses `Isolate.run()`. The implementation details (hashing, wrap
 
 ## Phase 2: Capabilities as Types
 
-This is where it diverges from everything else. Capabilities aren't runtime config — they're types.
+An isolate that can read KV and an isolate that can read+write KV are different types. You can see the difference before anything runs.
 
 ```typescript
 // Each capability is a tagged service
@@ -78,9 +80,7 @@ type ReadWrite = KvRead | KvWrite
 type Full = KvRead | KvWrite | NetFetch | AiComplete
 ```
 
-When you spawn an isolate, the type signature tells you EXACTLY what it can do. If an isolate requires `KvWrite` but you only provide `KvRead`, it's a compile error. Not a runtime error. Not a proxy that throws. **A type error.**
-
-The gap from the research: "nobody has per-tool-call authorization." Effect does this naturally. Each capability is a separate service. You compose only what you grant.
+Give an isolate `KvRead` and it can read. Give it `KvRead | KvWrite` and it can read and write. Try to give it `KvWrite` when you only have `KvRead` to offer — compiler says no.
 
 ## Phase 3: Capability Chains
 
@@ -99,13 +99,11 @@ const chain = pipe(
 )
 ```
 
-Four isolates. Four type signatures. Each step's capabilities are visible in the types. The chain is an Effect program that can be interrupted, retried, timed out, observed — all for free.
-
-This is the "Unix pipes but each segment has different permissions" idea, implemented as Effect composition. Nobody is doing this.
+Four isolates. Four different permission sets. Each step can only do what it says it can do. The whole chain is one program you can interrupt, retry, or time out.
 
 ## Phase 4: Generated Compute via Effect
 
-The LLM doesn't generate raw JS. It generates an Effect program. The research says "LLMs are better at writing code than calling tools." But nobody's asking: what if the code they write is *typed, composable, and capability-scoped by construction*?
+Tell an LLM: "you have KV read, AI, and D1 write. Get user 123, summarize them, save it." It writes:
 
 ```typescript
 // The LLM sees this prompt:
@@ -127,9 +125,9 @@ const program = Effect.gen(function* () {
 })
 ```
 
-The generated code CANNOT access anything not in its type signature. Not because of a proxy trap. Because Effect's type system won't let it compile. The sandbox is the type system.
+The LLM wrote code that uses three capabilities. It runs in an isolate that has those three capabilities. It can't use `fetch()`, it can't write to a different table, it can't spawn anything. It does what it said it would do.
 
-Gap from research: "no tool caching / skill libraries." Effect programs are values. You can hash them, cache them, reuse them. Same program = same hash = cached isolate. The skill library is just a Map<Hash, Effect>.
+Because Effect programs are values, you can hash them. Same program = same hash = cached isolate. Two agents that independently write the same solution reuse the same cached code.
 
 ## Phase 5: Recursive Spawning with Attenuation
 
@@ -160,45 +158,34 @@ type AttenuatedCapabilities = {
 // The child literally cannot spawn. Type error.
 ```
 
-Gap from research: "nobody has a built-in model for 'the child gets less than the parent.'" Effect's Layer system does this naturally. Each level provides a Layer with reduced capabilities. When budget is exhausted, the Spawn service is removed from the Layer. No spawn = no recursion = bottoms out.
+Each child gets less than its parent. Less time, less memory, fewer capabilities. When budget hits zero, `Spawn` isn't in the capability set anymore. The child can't spawn. Recursion stops.
 
-## Experiments (the toys)
+## Experiments
 
-Each experiment is a standalone thing you can run from the web UI.
+Each one runs in the browser. Paste code, hit run, see what happens.
 
-### 01: Pure Sandbox
-Paste code. Run in isolate. No capabilities. Proves the Effect-Loader integration works.
-(This is what we already built, but Effect-ified.)
+### 01: Sandbox
+Code goes in. Result comes out. No network. No storage. Just compute.
 
 ### 02: KV Reader
-Isolate gets read-only KV. Can query data. Cannot write. Cannot fetch.
-Demonstrates single-capability granting.
+Same sandbox, but now it can read from KV. Still can't write. Still can't fetch.
 
-### 03: Capability Chain
-User input → Validator → Enricher → Writer. Four isolates, four trust levels.
-The web UI shows the chain executing step by step.
+### 03: Chain
+Four isolates in sequence. First one parses. Second one validates. Third one enriches (can read KV). Fourth one writes (can write D1). Each one can only do its job.
 
-### 04: LLM Generates an Effect Program
-You describe what you want in English. Workers AI generates an Effect program.
-The program runs in an isolate with only the capabilities the AI was told about.
-If the AI tries to use a capability it wasn't given, type error. Not runtime error.
+### 04: AI Writes the Code
+Describe what you want. AI writes an Effect program. The program runs with only the capabilities you specified. You can see exactly what it can do before it runs.
 
-### 05: Recursive Spawner
-An isolate that spawns child isolates. Each child has less budget.
-The web UI shows the spawn tree, capability attenuation at each level,
-and the point where recursion bottoms out.
+### 05: Spawner
+An isolate that creates child isolates. Each child gets less budget. Watch the tree grow until it can't anymore.
 
-## What Makes This Novel
+## How it works
 
-1. **Effect as the sandbox.** Everyone uses runtime proxy traps or `globalOutbound: null` to restrict isolates. We use the type system. Capabilities that aren't in the type signature don't exist.
+You define capabilities as types. You compose them into layers. You hand code to a Loader with a specific set of layers. The code runs with those layers and nothing else.
 
-2. **Composition, not configuration.** Cloudflare codemode configures ToolDispatchers. Executor configures source registries. We compose Effect Layers. The chain IS the program. You can inspect it, transform it, serialize it.
+If you want to see what an isolate can do, read its type signature. If you want to change what it can do, change the layers you provide. If you want to chain isolates together, compose the programs. If you want to cache a program, hash it.
 
-3. **Attenuation as a type-level property.** Fork bomb prevention isn't a quota check. It's the absence of a type. When `Spawn` isn't in your capability set, you can't spawn. The compiler enforces it.
-
-4. **Skill caching for free.** Effect programs are values. Hash them. Cache them. Two agents that generate the same program get the same cached isolate. Natural selection of microservices — good programs survive because they're reused.
-
-5. **Observability for free.** Effect programs are traceable by construction. Every `yield*` is a span. Every error is typed. Every capability access is logged. The audit trail the research says nobody has — Effect gives it to you.
+The interesting part isn't any one of these things. It's that they're all the same mechanism.
 
 ## Stack
 
