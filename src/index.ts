@@ -173,7 +173,8 @@ export default {
           : "No external APIs available. Pure compute only.",
         "Do NOT use import/export. Do NOT use fetch. Do NOT use console.log.",
         "Do NOT wrap in an async function or IIFE. The code already runs inside an async context.",
-        "Just write statements and use `return` for the final value.",
+        "Use `return` at the TOP LEVEL to return the final value. Example: `const x = await kv.list(); return x;`",
+        "Do NOT use .then() chains. Use await instead.",
       ].join("\n")
 
       const t0 = Date.now()
@@ -271,6 +272,20 @@ function normalizeGenerated(raw: string): string {
   )
   if (iifeMatch) {
     code = iifeMatch[1].trim()
+  }
+
+  // If no top-level return, try to add one to the last expression
+  if (!/^\s*return\s/m.test(code)) {
+    const lines = code.split("\n")
+    const last = lines[lines.length - 1].trim()
+    // If last line looks like an expression (not a declaration, block, etc)
+    if (last && !last.startsWith("//") && !last.startsWith("const ") &&
+        !last.startsWith("let ") && !last.startsWith("var ") &&
+        !last.startsWith("}") && !last.startsWith("if ") &&
+        !last.startsWith("for ") && !last.startsWith("while ")) {
+      lines[lines.length - 1] = "return " + lines[lines.length - 1]
+      code = lines.join("\n")
+    }
   }
 
   return code
