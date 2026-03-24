@@ -62,6 +62,95 @@ export default {
       return runToResponse(program.pipe(Effect.provide(layer)))
     }
 
+    // --- Run capability chain (phase 3) ---
+    if (req.method === "POST" && url.pathname === "/run/chain") {
+      const body = (await req.json()) as {
+        steps: Array<{ code: string; capabilities: string[] }>
+      }
+      if (!body.steps || !Array.isArray(body.steps)) {
+        return Response.json({ error: "no steps" }, { status: 400 })
+      }
+
+      const kvRead = {
+        get: (key: string) => Effect.promise(() => env.KV.get(key)),
+        list: (prefix?: string) =>
+          Effect.promise(async () => {
+            const list = await env.KV.list({ prefix })
+            return list.keys.map((k) => k.name)
+          }),
+      }
+
+      type TraceEntry = {
+        step: number
+        capabilities: string[]
+        input: unknown
+        output: unknown
+        ms: number
+      }
+
+      const buildCaps = (capNames: string[]) => {
+        const caps: { kvRead?: typeof kvRead } = {}
+        if (capNames.includes("kvRead")) {
+          caps.kvRead = kvRead
+        }
+        return caps
+      }
+
+      const runChain = Effect.gen(function* () {
+        const isolate = yield* Isolate
+        const trace: TraceEntry[] = []
+
+        const finalResult = yield* Effect.reduce(
+          body.steps,
+          undefined as unknown,
+          (stepInput, step, i) =>
+            Effect.gen(function* () {
+              const t0 = Date.now()
+              const caps = buildCaps(step.capabilities)
+              const output = yield* isolate.run(step.code, caps, stepInput)
+              const ms = Date.now() - t0
+              trace.push({
+                step: i,
+                capabilities: step.capabilities,
+                input: stepInput,
+                output,
+                ms,
+              })
+              return output
+            })
+        )
+
+        return { result: finalResult, trace }
+      })
+
+      const layer = makeIsolateLive(env.LOADER, env.KV)
+      const exit = await Effect.runPromiseExit(
+        runChain.pipe(Effect.provide(layer))
+      )
+
+      return Exit.match(exit, {
+        onFailure: (cause) => {
+          const failure = Cause.failureOption(cause)
+          if (failure._tag === "Some" && failure.value instanceof IsolateError) {
+            return Response.json(
+              {
+                ok: false,
+                reason: failure.value.reason,
+                error: failure.value.message,
+              },
+              { status: 500 }
+            )
+          }
+          return Response.json(
+            { ok: false, error: Cause.pretty(cause) },
+            { status: 500 }
+          )
+        },
+        onSuccess: ({ result, trace }) =>
+          Response.json({ ok: true, result, trace }),
+      })
+    }
+
     return Response.json({ error: "not found" }, { status: 404 })
   },
 }

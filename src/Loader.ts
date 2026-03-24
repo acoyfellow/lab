@@ -32,7 +32,7 @@ export interface WorkerLoaderBinding {
 export class Isolate extends Context.Tag("@lab/Isolate")<
   Isolate,
   {
-    readonly run: (code: string, capabilities?: CapabilitySet) => Effect.Effect<unknown, IsolateError>
+    readonly run: (code: string, capabilities?: CapabilitySet, input?: unknown) => Effect.Effect<unknown, IsolateError>
   }
 >() {}
 
@@ -42,7 +42,8 @@ const wrapCode = (
   code: string,
   caps?: CapabilitySet,
   kvSnapshot?: Record<string, string | null>,
-  kvKeys?: string[]
+  kvKeys?: string[],
+  input?: unknown
 ): string => {
   const kvShim = caps?.kvRead
     ? `
@@ -62,10 +63,15 @@ const wrapCode = (
     });
 `
 
+  const inputShim = input !== undefined
+    ? `const input = ${JSON.stringify(input)};`
+    : ``
+
   return `
 export default {
   async fetch(req, env) {
     try {
+      ${inputShim}
       ${kvShim}
       const __result = await (async () => {
         ${code}
@@ -137,17 +143,19 @@ export const makeIsolateLive = (
     Isolate.of({
       run: Effect.fn("Isolate.run")(function* (
         code: string,
-        caps?: CapabilitySet
+        caps?: CapabilitySet,
+        input?: unknown
       ) {
         const hasKv = !!(caps?.kvRead && kvNamespace)
         const capKey = hasKv ? ":kv" : ""
-        const id = yield* hash(code + capKey)
+        const inputKey = input !== undefined ? `:in:${JSON.stringify(input)}` : ""
+        const id = yield* hash(code + capKey + inputKey)
 
         const { snapshot, keys } = hasKv
           ? yield* snapshotKv(kvNamespace!)
           : { snapshot: {} as Record<string, string | null>, keys: [] as string[] }
 
-        const wrapped = wrapCode(code, caps, snapshot, keys)
+        const wrapped = wrapCode(code, caps, snapshot, keys, input)
 
         const worker = loader.get(id, async () => ({
           compatibilityDate: "2025-06-01",
