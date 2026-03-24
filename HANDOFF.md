@@ -76,27 +76,23 @@ Endpoint: `POST /run/generate` with `{ prompt: string, capabilities: string[] }`
 
 ## What's next
 
-### Phase 5: Recursive Spawning with Attenuation
+### Phase 5: Recursive Spawning with Attenuation ✅
 
-An isolate that can spawn child isolates, each with fewer capabilities.
+Isolates that spawn child isolates via `globalOutbound`.
 
-```typescript
-class Spawn extends Context.Tag("@lab/Spawn")<Spawn, {
-  readonly child: (code: string, caps: CapabilitySet) => Effect.Effect<unknown, IsolateError>
-}>() {}
+- `spawn(code, caps)` in isolate code calls back to parent worker via SELF service binding
+- `SELF` service binding in `wrangler.jsonc` — worker routes to itself at `/spawn/child`
+- Depth decrements each level: depth 2 → child gets depth 1 → grandchild gets depth 0 (no spawn)
+- Children can only request subset of parent's capabilities (attenuation)
+- `CapabilitySet` extended with `spawn: { depth: number }`
+- Fork bomb prevention is structural: depth 0 means spawn shim throws, no outbound needed
+- `Promise.all` in parent code = parallel child execution (3 children in ~50ms)
+- Refactored `execIsolate` as shared core for both `run` and `spawn`
+- UI tab (05: spawn) with demo: orchestrator spawns 3 parallel workers
 
-type AttenuatedCapabilities = {
-  readonly budget: Duration
-  readonly depth: number          // decremented each level
-  readonly capabilities: CapabilitySet  // subset of parent's
-}
-```
-
-- `Spawn` is itself a capability — if it's not in your set, you can't spawn
-- Each child gets: less time, fewer capabilities, decremented depth
-- When depth = 0, `Spawn` is removed from the capability set → recursion stops
-- UI tab: shows spawn tree, capability attenuation at each level
-- Fork bomb prevention is structural, not a quota check
+Endpoints:
+- `POST /run/spawn` — run code with spawn capability at given depth
+- `POST /spawn/child` — internal route for child isolate creation (called via SELF binding)
 
 ### Parallel fan-out (unlocked by Phase 1-2, formalized here)
 
@@ -130,6 +126,8 @@ lab/
 Key bindings in `wrangler.jsonc`:
 - `LOADER` — Worker Loader (closed beta)
 - `KV` — KV namespace (id: `ac980853c9124c97aa517432bc6b8b95`)
+- `AI` — Workers AI (`@cf/meta/llama-3.1-8b-instruct`)
+- `SELF` — Self-referential service binding (routes back to this worker for spawn)
 
 ## Effect patterns (per effect.solutions)
 
