@@ -10,10 +10,20 @@ import {
   Self,
 } from "alchemy/cloudflare";
 
+import { CloudflareStateStore, FileSystemStateStore } from "alchemy/state";
+
 const projectName = "lab";
 
 const project = await alchemy(projectName, {
-  password: process.env.ALCHEMY_PASSWORD || "default-password"
+  password: process.env.ALCHEMY_PASSWORD!,
+  stateStore: (scope) => scope.local 
+    ? new FileSystemStateStore(scope) 
+    : new CloudflareStateStore(scope, {
+      scriptName: `${projectName}-app-state`,
+      apiToken: alchemy.secret(process.env.CLOUDFLARE_API_TOKEN || process.env.CLOUDFLARE_API_KEY || ""),
+      stateToken: alchemy.secret(process.env.ALCHEMY_STATE_TOKEN || ""),
+      forceUpdate: true
+    })
 });
 
 // KV namespace for traces + demo data

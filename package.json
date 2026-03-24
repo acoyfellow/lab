@@ -32,6 +32,7 @@
     "vite": "^7.3.0"
   },
   "dependencies": {
+    "@types/node": "^25.5.0",
     "alchemy": "^0.81.4",
     "better-auth": "1.4.7",
     "drizzle-orm": "^0.45.1",
