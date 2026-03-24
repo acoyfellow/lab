@@ -1,2 +1,8 @@
 node_modules
 .wrangler
+.svelte-kit
+.alchemy
+build
+.env
+.env.*
+!.env.example
