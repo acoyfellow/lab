@@ -23,9 +23,12 @@
   @media (max-width: 500px) { .container { padding: 1.25rem 1rem; } }
 
   /* Header */
-  header { margin-bottom: 2rem; }
+  header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-start; }
+  header div { flex: 1; }
   header h1 { font-size: 1.125rem; font-weight: 600; letter-spacing: -0.02em; }
   header p { color: var(--text-3); font-size: 0.8125rem; margin-top: 0.125rem; }
+  header a.gh { color: var(--text-3); text-decoration: none; font-size: 0.8125rem; padding-top: 0.125rem; }
+  header a.gh:hover { color: var(--text); }
 
   /* Tabs */
   .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -139,8 +142,11 @@
 </head><body>
 <div class="container">
   <header>
-    <h1>lab</h1>
-    <p>Sandboxed isolates on Cloudflare with typed capabilities</p>
+    <div>
+      <h1>lab</h1>
+      <p>Sandboxed isolates on Cloudflare with typed capabilities</p>
+    </div>
+    <a class="gh" href="https://github.com/acoyfellow/lab" target="_blank">GitHub ↗</a>
   </header>
 
   <div class="tabs">

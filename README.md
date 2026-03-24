@@ -167,6 +167,8 @@ Capabilities control what code can do inside an isolate. They are implemented as
 
 **Why snapshot KV instead of passing the binding?** `KVNamespace` cannot be serialized into a Worker Loader's `env`. The runtime throws `"Could not serialize object of type KvNamespace"`. Snapshotting solves this — the isolate gets the data without needing the binding.
 
+For more on the architecture decisions, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
 ---
 
 ## Project structure
