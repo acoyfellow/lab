@@ -14,7 +14,11 @@ jobs:
 
       - run: bun install
 
-      - run: bunx wrangler deploy
+      - run: bun run build
+
+      - run: bun run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
