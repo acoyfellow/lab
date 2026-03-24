@@ -68,6 +68,9 @@
     background: var(--surface); color: var(--text-2); border: 1px solid var(--border);
   }
   .btn-secondary:hover { background: var(--surface-alt); }
+  .btn-secondary:disabled {
+    opacity: 0.5; cursor: default; background: var(--surface); color: var(--text-3);
+  }
 
   /* Capability badges */
   .caps { display: flex; gap: 0.375rem; flex-wrap: wrap; align-items: center; }
@@ -88,6 +91,14 @@
     overflow-x: auto; color: var(--code-text); min-height: 3rem;
   }
   .meta { color: var(--text-3); font-size: 0.6875rem; margin-top: 0.375rem; }
+  .trace-link-row { margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+  .trace-link {
+    display: inline-flex; align-items: center; min-height: 2rem;
+    color: var(--text-2); text-decoration: none; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 0.4375rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+  .trace-link:hover { color: var(--text); background: var(--surface-alt); }
 
   /* Chain container */
   .chain-container { display: none; margin-top: 1rem; }
@@ -181,11 +192,15 @@
   <div class="actions">
     <button class="btn-primary" onclick="run()">Run</button>
     <button class="btn-secondary" onclick="seed()">Seed KV</button>
+    <button class="btn-secondary" id="share-btn" onclick="copyTraceUrl()" disabled>Copy Trace URL</button>
     <div class="caps" id="caps"></div>
   </div>
 
   <div class="output-label">Output</div>
   <pre id="out">—</pre>
+  <div class="trace-link-row" id="trace-link-row" style="display:none">
+    <a class="trace-link" id="trace-link" target="_blank" rel="noreferrer">Open trace</a>
+  </div>
   <div id="chain-trace"></div>
   <p class="meta" id="meta"></p>
 </div>
@@ -247,6 +262,33 @@ var tabs = {
 };
 
 var current = 'sandbox';
+var lastTraceId = null;
+
+function resetTraceLink() {
+  lastTraceId = null;
+  document.getElementById('share-btn').disabled = true;
+  document.getElementById('trace-link-row').style.display = 'none';
+  document.getElementById('trace-link').removeAttribute('href');
+  document.getElementById('trace-link').textContent = 'Open trace';
+}
+
+function setTraceLink(traceId) {
+  if (!traceId) {
+    resetTraceLink();
+    return;
+  }
+  lastTraceId = traceId;
+  var href = '/t/' + traceId;
+  document.getElementById('share-btn').disabled = false;
+  document.getElementById('trace-link-row').style.display = 'flex';
+  document.getElementById('trace-link').href = href;
+  document.getElementById('trace-link').textContent = href;
+}
+
+function copyTraceUrl() {
+  if (!lastTraceId) return;
+  navigator.clipboard.writeText(window.location.origin + '/t/' + lastTraceId);
+}
 
 function switchTab(name) {
   current = name;
@@ -281,6 +323,7 @@ function switchTab(name) {
   document.getElementById('meta').textContent = t.meta;
   document.getElementById('out').textContent = '\u2014';
   chainTraceEl.innerHTML = '';
+  resetTraceLink();
 }
 
 function run() {
@@ -295,6 +338,7 @@ function run() {
   var code = document.getElementById('code').value;
   out.textContent = 'Running\u2026';
   chainTraceEl.innerHTML = '';
+  resetTraceLink();
   var t0 = performance.now();
   fetch(t.endpoint, {
     method: 'POST',
@@ -302,6 +346,7 @@ function run() {
     body: JSON.stringify({ code: code }),
   }).then(function(r) { return r.json(); }).then(function(json) {
     var ms = (performance.now() - t0).toFixed(1);
+    setTraceLink(json.traceId);
     out.textContent = JSON.stringify(json, null, 2) + '\n\n' + ms + ' ms';
   }).catch(function(e) { out.textContent = 'Error: ' + e.message; });
 }
@@ -313,6 +358,7 @@ function runChain() {
 
   out.textContent = 'Running chain\u2026';
   chainTraceEl.innerHTML = '';
+  resetTraceLink();
 
   var steps = t.steps.map(function(s) { return { code: s.code, capabilities: s.capabilities }; });
   var t0 = performance.now();
@@ -323,6 +369,7 @@ function runChain() {
     body: JSON.stringify({ steps: steps }),
   }).then(function(r) { return r.json(); }).then(function(json) {
     var totalMs = (performance.now() - t0).toFixed(1);
+    setTraceLink(json.traceId);
     if (json.ok && json.trace) {
       out.textContent = JSON.stringify({ ok: true, result: json.result }, null, 2) + '\n\n' + totalMs + ' ms';
       renderTrace(json.trace);
@@ -340,6 +387,7 @@ function runSpawn() {
 
   out.textContent = 'Spawning isolates\u2026';
   chainTraceEl.innerHTML = '';
+  resetTraceLink();
   var t0 = performance.now();
   fetch('/run/spawn', {
     method: 'POST',
@@ -347,6 +395,7 @@ function runSpawn() {
     body: JSON.stringify({ code: code, capabilities: ['spawn'], depth: 2 }),
   }).then(function(r) { return r.json(); }).then(function(json) {
     var ms = (performance.now() - t0).toFixed(1);
+    setTraceLink(json.traceId);
     out.textContent = JSON.stringify(json, null, 2) + '\n\n' + ms + ' ms';
   }).catch(function(e) { out.textContent = 'Error: ' + e.message; });
 }
@@ -362,6 +411,7 @@ function runGenerate() {
 
   out.textContent = 'Generating\u2026';
   chainTraceEl.innerHTML = '';
+  resetTraceLink();
 
   fetch('/run/generate', {
     method: 'POST',
@@ -369,6 +419,7 @@ function runGenerate() {
     body: JSON.stringify({ prompt: prompt, capabilities: capabilities }),
   }).then(function(r) { return r.json(); }).then(function(json) {
     var lines = [];
+    setTraceLink(json.traceId);
     if (json.ok) {
       lines.push(JSON.stringify({ ok: true, result: json.result }, null, 2));
     } else {
@@ -436,6 +487,7 @@ function escapeHtml(text) {
 function seed() {
   var out = document.getElementById('out');
   out.textContent = 'Seeding\u2026';
+  resetTraceLink();
   fetch('/seed', { method: 'POST' }).then(function(r) { return r.json(); }).then(function(json) {
     out.textContent = JSON.stringify(json, null, 2);
   });
