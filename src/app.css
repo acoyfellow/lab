@@ -24,5 +24,118 @@
   --radius: 6px;
 }
 
-* { margin: 0; box-sizing: border-box; }
-body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.5; }
+@layer base {
+  * {
+    margin: 0;
+    box-sizing: border-box;
+  }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  /* Anchor targets clear fixed headers / browser chrome */
+  [id] {
+    scroll-margin-top: 1.5rem;
+  }
+
+  /* Shiki SSR (server + Workers): github-light + JS engine */
+  /* Wrap long lines; avoid horizontal scroll on narrow / mobile screenshots */
+  .shiki-code-block pre.shiki {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: hidden;
+    max-width: 100%;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    background-color: var(--code-bg) !important;
+  }
+
+  /* mdsvex markdown (docs/architecture, etc.) */
+  .md-doc :is(h1, h2, h3) {
+    color: var(--text);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .md-doc h1 {
+    font-size: 1.125rem;
+    margin: 0 0 1rem;
+  }
+  .md-doc h2 {
+    font-size: 0.8125rem;
+    margin: 2rem 0 0.75rem;
+  }
+  .md-doc h3 {
+    font-size: 0.8125rem;
+    margin: 1.25rem 0 0.5rem;
+  }
+  .md-doc p {
+    margin: 0 0 0.75rem;
+    max-width: 62ch;
+  }
+  .md-doc ul {
+    margin: 0 0 0.75rem;
+    padding-left: 1.25rem;
+    list-style: disc;
+  }
+  .md-doc li {
+    margin: 0.25rem 0;
+  }
+  .md-doc :is(strong) {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .md-doc :is(code):not(pre code) {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+  }
+  .md-doc pre {
+    margin: 0.5rem 0 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--code-bg);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .md-doc pre code {
+    font-size: inherit;
+  }
+  .md-doc a {
+    color: var(--text-2);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .md-doc a:hover {
+    color: var(--text);
+  }
+  .md-doc {
+    overflow-x: auto;
+  }
+  .md-doc :where(table) {
+    width: 100%;
+    min-width: min(100%, 40rem);
+    border-collapse: collapse;
+    margin: 0.5rem 0 1rem;
+    font-size: 0.8125rem;
+  }
+  .md-doc :is(th, td) {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .md-doc th {
+    color: var(--text);
+    font-weight: 600;
+    background: var(--surface-alt);
+  }
+}

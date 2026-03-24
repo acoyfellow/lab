@@ -2,7 +2,7 @@
 
 **Primitives for orchestration of bounded, traceable compute** on [Cloudflare Workers](https://workers.cloudflare.com/). Built for **builders** shipping agents, tools, and backends who need **sandboxed isolates**, **explicit capabilities** (least privilege), and a **durable, shareable trace** of what actually ran.
 
-**Live:** https://lab.coy.workers.dev
+**Live:** https://lab.coey.dev
 
 ## Why come back here
 
@@ -10,7 +10,7 @@
 2. **Run** — Code executes in a fresh V8 isolate per step; no network unless you grant it.
 3. **Share the trace** — Successful runs return a **`traceId`**; open **`/t/{id}`** for code, capabilities, per-step I/O, timing, and a stable URL you can paste into tickets or docs.
 
-That loop (compose → run → trace URL) is the product shape. The web UI is optimized for **chains first**; other modes are still available for single-shot experiments.
+That loop (compose → run → trace URL) is the product shape. The **web app** includes **Compose** (`/compose` — run any mode in the browser), **Examples** (`/examples`), **Trace schema** (`/docs/trace-schema`), and **Fork** on each trace viewer (hydrates Compose via session storage). The homepage is marketing + curl; deep use is Compose → `/t/{id}`. Live: https://lab.coey.dev/compose
 
 Capabilities are typed with [Effect](https://effect.website). If an isolate does not have `KvRead`, any `kv` access fails **before** execution. This is static checking of the capability set, not runtime probing.
 
@@ -19,9 +19,11 @@ Capabilities are typed with [Effect](https://effect.website). If an isolate does
 | Stage | What it gives you |
 |-------|-------------------|
 | **Trace** (now) | Shareable record: request, outcome, timing, per-step trace for chains |
-| **Compose** (now) | Multi-step flows with different capabilities per step |
-| **Fork / remix** (later) | Branch from a trace or saved flow — not shipped in this repo yet |
+| **Compose** (now) | Multi-step flows with different capabilities per step; browser **Compose** + API |
+| **Fork** (now) | From `/t/{id}`, **Fork** → **Compose** with code / prompt / steps pre-filled |
 | **Saved recipes** (later) | Named, loadable playbooks in storage — not shipped yet |
+
+**Trace JSON:** [`docs/trace-schema.md`](./docs/trace-schema.md) describes the `GET /t/{id}` document. Machine-readable: `GET /t/{id}.json` on the deployed app.
 
 ## Run modes
 
@@ -40,7 +42,7 @@ Each mode maps to an HTTP endpoint. Use **Chain** when you need **orchestration 
 ## How to run a chain
 
 ```bash
-curl -X POST https://lab.coy.workers.dev/run/chain \
+curl -X POST https://lab.coey.dev/run/chain \
   -H 'Content-Type: application/json' \
   -d '{
     "steps": [
@@ -58,7 +60,7 @@ Optional per-step **`name`** is accepted for documentation and traces. Each step
 ## How to run a sandboxed isolate
 
 ```bash
-curl -X POST https://lab.coy.workers.dev/run \
+curl -X POST https://lab.coey.dev/run \
   -H 'Content-Type: application/json' \
   -d '{"code": "return { sum: [1,2,3].reduce((a,b) => a+b, 0) }"}'
 ```
@@ -75,10 +77,10 @@ The code runs inside `await (async () => { <your code> })()`. Use `return` to pr
 
 ```bash
 # Seed demo data first
-curl -X POST https://lab.coy.workers.dev/seed
+curl -X POST https://lab.coey.dev/seed
 
 # Run code with KV Read capability
-curl -X POST https://lab.coy.workers.dev/run/kv \
+curl -X POST https://lab.coey.dev/run/kv \
   -H 'Content-Type: application/json' \
   -d '{"code": "const keys = await kv.list(\"user:\"); return keys;"}'
 ```
@@ -88,7 +90,7 @@ Inside the isolate, `kv.get(key)` and `kv.list(prefix?)` are available. The KV d
 ## How to generate code with AI
 
 ```bash
-curl -X POST https://lab.coy.workers.dev/run/generate \
+curl -X POST https://lab.coey.dev/run/generate \
   -H 'Content-Type: application/json' \
   -d '{
     "prompt": "Return the first 10 prime numbers as an array",
@@ -101,7 +103,7 @@ The response includes `generated` (the code the LLM wrote), `generateMs` (how lo
 ## How to spawn child isolates
 
 ```bash
-curl -X POST https://lab.coy.workers.dev/run/spawn \
+curl -X POST https://lab.coey.dev/run/spawn \
   -H 'Content-Type: application/json' \
   -d '{
     "code": "const a = await spawn(\"return 10 * 10\", []); const b = await spawn(\"return 20 * 20\", []); return { a, b }",
@@ -111,6 +113,52 @@ curl -X POST https://lab.coy.workers.dev/run/spawn \
 ```
 
 Inside the isolate, `spawn(code, capabilities)` creates a child isolate. The `depth` parameter decrements with each level. At depth 0, `spawn` is no longer available — this prevents unbounded recursion structurally, not by quota.
+
+---
+
+## TypeScript client (`@acoyfellow/lab`)
+
+The npm package is a **typed HTTP client** for a deployed Worker origin. It does **not** install Cloudflare tooling or deploy this repo by itself.
+
+**Prerequisite:** Run a lab Worker (deploy or local). See [Deploy](#deploy). Source: [github.com/acoyfellow/lab](https://github.com/acoyfellow/lab).
+
+```bash
+npm install @acoyfellow/lab
+```
+
+Point `baseUrl` at that origin (e.g. `https://lab.coey.dev` or a `LAB_URL` env var):
+
+```ts
+import { createLabClient } from "@acoyfellow/lab";
+
+const lab = createLabClient({
+  baseUrl: process.env.LAB_URL ?? "https://lab.coey.dev",
+});
+
+const out = await lab.runChain([
+  { code: "return [1, 2, 3]", capabilities: [] },
+  { code: "return input.map((n: number) => n * n)", capabilities: [] },
+]);
+```
+
+Available methods: `runSandbox`, `runKv`, `runChain`, `runSpawn`, `runGenerate`, `seed`, `getTrace` — each maps to the endpoints in the table above.
+
+**Non-2xx responses:** JSON is still parsed and returned when the body is JSON (same behavior as the SvelteKit worker proxy), so you may get error-shaped objects without `fetch` throwing.
+
+**Monorepo:** `bun run build:client` builds `packages/lab` to `packages/lab/dist`. Publishing `@acoyfellow/lab` on npm is a separate maintainer step (`npm publish` in `packages/lab`).
+
+### Local dogfood (before npm publish)
+
+The isolate Worker is pinned to **port 1337** in dev (see `alchemy.run.ts`), matching the SvelteKit proxy in `data.remote.ts`. Point the client at the same origin:
+
+1. Terminal A: `bun dev` (starts the Worker on `http://localhost:1337` and the app).
+2. Terminal B: `bun run dogfood:lab` — builds the client and runs [`scripts/dogfood-lab.ts`](scripts/dogfood-lab.ts) against `LAB_URL` (default `http://localhost:1337`).
+
+Override the origin any time: `LAB_URL=https://lab.coey.dev bun run dogfood:lab`.
+
+### Pi (optional)
+
+[Pi](https://github.com/badlogic/pi-mono) is an optional terminal coding harness; **lab does not depend on it at runtime.** Install the CLI per [packages/coding-agent README](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/README.md) (`npm install -g @mariozechner/pi-coding-agent`). The `-p` / `--print` flag is **print mode** (print response and exit); see that README’s CLI reference. Use Pi or any editor to write scripts that import `createLabClient`.
 
 ---
 
@@ -138,7 +186,7 @@ Run a sequence of isolates. Each step's output becomes the next step's `input`.
 
 **Request body:** `{ steps: Array<{ name?: string, code: string, capabilities: string[] }> }`
 
-**Response:** `{ ok: boolean, result: any, trace: Array<{ step: number, capabilities: string[], input: any, output: any, ms: number }> }`
+**Response:** `{ ok: boolean, result: any, trace: Array<{ step: number, name?: string, capabilities: string[], input: any, output: any, ms: number }> }`
 
 **Supported capabilities:** `"kvRead"`
 
@@ -170,6 +218,12 @@ Seeds KV with demo data (3 users + 1 config entry).
 
 Internal route used by child isolates. Not called directly.
 
+### `GET /t/{id}`
+
+Returns the persisted trace document (JSON). Same shape as described in [`docs/trace-schema.md`](./docs/trace-schema.md). On the SvelteKit app, **`GET /t/{id}.json`** proxies the Worker and returns the same JSON.
+
+Successful **run** responses from the Worker also include **`traceId`** (failed runs that are persisted may include it too). **`POST /seed`** does not return a trace id.
+
 ---
 
 ## How capabilities work
@@ -184,16 +238,18 @@ Capabilities control what code can do inside an isolate. They are implemented as
 
 **Why snapshot KV instead of passing the binding?** `KVNamespace` cannot be serialized into a Worker Loader's `env`. The runtime throws `"Could not serialize object of type KvNamespace"`. Snapshotting solves this — the isolate gets the data without needing the binding.
 
-For more on the architecture decisions, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+For more on the architecture decisions, see [`src/lib/content/docs/architecture.svelte.md`](./src/lib/content/docs/architecture.svelte.md) (rendered in the app at **`/docs/architecture`**).
 
 ---
 
 ## Project structure
 
 ```
+packages/lab/       @acoyfellow/lab npm client (typed fetch to Worker HTTP API)
+docs/               trace-schema.md (GET /t/{id} document)
 src/
-  routes/           SvelteKit UI (home, trace viewer, auth)
-  lib/              Auth client, schemas
+  routes/           SvelteKit UI (home, compose, examples, trace viewer, docs/trace-schema)
+  lib/              Auth client, UI helpers
 worker/
   index.ts          Worker entrypoint, routing, traces
   Loader.ts         Isolate service, spawn outbound
@@ -233,8 +289,16 @@ Or push to `main` — GitHub Actions deploys automatically.
 
 ```bash
 bun install
+bun dev
+```
+
+`bun dev` runs Alchemy (app + isolate Worker on **port 1337**). Open **`/compose`** in the app to run modes against the local Worker. To exercise `@acoyfellow/lab` from a script, see **Local dogfood** under [TypeScript client](#typescript-client-acoyfellowlab).
+
+```bash
 bunx wrangler dev --port 8787
 ```
+
+(Standalone Wrangler dev, if you are not using Alchemy.)
 
 ## Type check
 

@@ -2,14 +2,19 @@
   "name": "lab",
   "version": "0.0.1",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "alchemy dev",
+    "dogfood:lab": "bun run build:client && bun scripts/dogfood-lab.ts",
     "deploy": "alchemy deploy",
     "destroy": "alchemy destroy",
     "build": "vite build",
+    "build:client": "cd packages/lab && bun run build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check": "svelte-kit sync && bun run build:client && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "db:better-auth": "bunx @better-auth/cli generate",
     "db:generate": "drizzle-kit generate",
@@ -19,12 +24,15 @@
     "db:remote": "wrangler d1 migrations apply lab-db --remote"
   },
   "devDependencies": {
+    "@acoyfellow/lab": "workspace:*",
+    "@cloudflare/workers-types": "^4.20260317.1",
     "@sveltejs/adapter-cloudflare": "^7.2.8",
     "@sveltejs/kit": "^2.55.0",
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "@tailwindcss/vite": "^4.2.2",
-    "@cloudflare/workers-types": "^4.20260317.1",
     "drizzle-kit": "^0.31.10",
+    "mdsvex": "^0.12.7",
+    "remark-gfm": "^4.0.1",
     "svelte": "^5.55.0",
     "svelte-check": "^4.4.5",
     "tailwindcss": "^4.2.2",
@@ -36,7 +44,8 @@
     "alchemy": "^0.82.1",
     "better-auth": "1.4.7",
     "drizzle-orm": "^0.45.1",
-    "effect": "^3.21.0"
+    "effect": "^3.21.0",
+    "shiki": "^4.0.2"
   },
   "type": "module"
 }

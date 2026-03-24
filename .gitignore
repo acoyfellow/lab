@@ -3,6 +3,7 @@ node_modules
 .svelte-kit
 .alchemy
 build
+packages/lab/dist
 .env
 .env.*
 !.env.example

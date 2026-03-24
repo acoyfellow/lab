@@ -56,6 +56,10 @@ export const WORKER = await Worker(`${projectName}-worker`, {
     SELF: Self,
   },
   url: false,
+  // Same port as SvelteKit dev proxy (`data.remote.ts`) and `@acoyfellow/lab` local dogfood (`LAB_URL`).
+  dev: {
+    port: 1337,
+  },
 });
 
 // SvelteKit app

@@ -18,14 +18,13 @@ They should teach and seed usage, not define the main information architecture.
 
 ## problem statement
 
-Today `lab` is strongest as a concept demo:
+Shipped baseline (keep tightening):
 
-- the homepage is organized as five tabs
-- most runs dump JSON into a generic output box
-- only chain has a real trace view
-- there is no durable artifact to share
-
-That makes the product easy to try once, but weak to revisit, link, cite, or embed.
+- Homepage is marketing + curl; **Compose** (`/compose`) runs all five modes in the browser and returns `traceId` links to `/t/{id}`.
+- **Trace viewer** shows mode-specific sections (KV snapshot note, spawn depth note, collapsible JSON for large payloads).
+- **Fork** on a trace hydrates Compose via `sessionStorage`.
+- **Examples** (`/examples`) and **trace schema** (`/docs/trace-schema`, `docs/trace-schema.md`) support external consumers.
+- **Saved recipes** (named playbooks) and a richer **gallery** are still out of scope until trace URLs prove sticky.
 
 ## product thesis
 
@@ -303,10 +302,10 @@ Recommended order:
 
 Based on the current code:
 
-- `src/index.ts` already has the natural integration point for trace creation because all run routes terminate there
-- `Chain` already exposes a trace structure and is the best seed for the shared schema
-- `src/ui.html` currently centers the tab model and generic output panel, so that file will likely absorb most early product-shell changes
-- `README.md` and `ARCHITECTURE.md` already contain the right raw concepts, but they are framed as implementation/docs rather than product narrative
+- **Trace creation** lives in [`worker/index.ts`](worker/index.ts): `respondWithTrace` + `saveTrace` + Effect-wrapped run paths.
+- **Chain** defines the richest `trace[]` execution shape; other modes use the same `StoredTrace` envelope with type-specific `request` fields.
+- **App shell** is SvelteKit: [`src/routes/compose/+page.svelte`](src/routes/compose/+page.svelte), [`src/routes/t/[id]/+page.svelte`](src/routes/t/[id]/+page.svelte), [`src/routes/data.remote.ts`](src/routes/data.remote.ts) for remote calls to the Worker.
+- **Docs:** [`docs/trace-schema.md`](docs/trace-schema.md) and [`README.md`](README.md) should stay aligned with the Worker’s persisted JSON.
 
 ## open product questions
 
@@ -366,10 +365,9 @@ Preferred way to work:
 
 ## immediate next item
 
-Start with phase 1, specifically:
+Phase 1 foundation is in place. Next highest-leverage gaps (pick one thread at a time):
 
-1. define trace schema
-2. persist traces
-3. add viewer route
-4. return `traceId`
-5. add share button
+1. **Saved recipes** (phase “later” in habit loop) — named, loadable flows in KV, if product validation says yes.
+2. **Gallery** (phase 7) — curated trace IDs + categories; optional `PUBLIC_EXAMPLE_TRACE_ID` for a stable demo link.
+3. **Unified rendering polish** (phase 2) — spawn tree only if Worker returns structured child metadata; otherwise keep shallow spawn notes.
+4. Resolve **open product questions** (expiry, truncation) once KV cost or privacy needs force a decision.

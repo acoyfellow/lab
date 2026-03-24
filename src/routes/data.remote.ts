@@ -1,3 +1,11 @@
+import type {
+  ChainStep,
+  RunGeneratePayload,
+  RunResult,
+  RunSpawnPayload,
+  SeedResult,
+  TraceData,
+} from '@acoyfellow/lab';
 import { query, command, getRequestEvent } from '$app/server';
 import { dev } from '$app/environment';
 
@@ -33,36 +41,6 @@ async function callWorkerJSON<T>(
   }
 }
 
-type RunResult = {
-  ok: boolean;
-  result?: unknown;
-  error?: string;
-  reason?: string;
-  traceId?: string;
-  trace?: Array<{
-    step: number;
-    name?: string;
-    capabilities: string[];
-    input: unknown;
-    output: unknown;
-    ms: number;
-  }>;
-  generated?: string;
-  generateMs?: number;
-  runMs?: number;
-};
-
-type TraceData = {
-  id: string;
-  type: string;
-  createdAt: string;
-  request: Record<string, unknown>;
-  outcome: Record<string, unknown>;
-  timing?: Record<string, number>;
-  generated?: string;
-  trace?: Array<Record<string, unknown>>;
-};
-
 // Run code in sandbox (no capabilities)
 export const runSandbox = query('unchecked', async (code: string): Promise<RunResult> => {
   const platform = getRequestEvent().platform;
@@ -84,7 +62,7 @@ export const runKv = query('unchecked', async (code: string): Promise<RunResult>
 });
 
 // Run a capability chain
-export const runChain = query('unchecked', async (steps: Array<{ name?: string; code: string; capabilities: string[] }>): Promise<RunResult> => {
+export const runChain = query('unchecked', async (steps: ChainStep[]): Promise<RunResult> => {
   const platform = getRequestEvent().platform;
   return callWorkerJSON<RunResult>(platform, '/run/chain', {
     method: 'POST',
@@ -96,7 +74,7 @@ export const runChain = query('unchecked', async (steps: Array<{ name?: string; 
 // Spawn recursive isolates (single payload for remote query)
 export const runSpawn = query(
   'unchecked',
-  async (payload: { code: string; capabilities: string[]; depth: number }): Promise<RunResult> => {
+  async (payload: RunSpawnPayload): Promise<RunResult> => {
     const platform = getRequestEvent().platform;
     const { code, capabilities, depth } = payload;
     return callWorkerJSON<RunResult>(platform, '/run/spawn', {
@@ -110,7 +88,7 @@ export const runSpawn = query(
 // Generate and run code via LLM
 export const runGenerate = query(
   'unchecked',
-  async (payload: { prompt: string; capabilities: string[] }): Promise<RunResult> => {
+  async (payload: RunGeneratePayload): Promise<RunResult> => {
     const platform = getRequestEvent().platform;
     const { prompt, capabilities } = payload;
     return callWorkerJSON<RunResult>(platform, '/run/generate', {
@@ -124,7 +102,7 @@ export const runGenerate = query(
 // Seed KV with demo data
 export const seedKv = command(
   'unchecked',
-  async (_payload: void | undefined): Promise<{ ok: boolean; seeded: number }> => {
+  async (_payload: void | undefined): Promise<SeedResult> => {
     const platform = getRequestEvent().platform;
     return callWorkerJSON<{ ok: boolean; seeded: number }>(platform, '/seed', {
       method: 'POST',

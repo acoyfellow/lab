@@ -1,0 +1,26 @@
+/**
+ * Cloudflare Workers: default Oniguruma WASM is awkward; use the JS regex engine instead.
+ * @see https://shiki.matsu.io/guide/install#cloudflare-workers (WASM) — we skip WASM via RegExp engine.
+ * @see https://shiki.matsu.io/guide/regexp-engines — createJavaScriptRegexEngine
+ */
+import { createHighlighter, createJavaScriptRegexEngine } from 'shiki';
+
+const THEME = 'github-light' as const;
+
+let highlighter: Awaited<ReturnType<typeof createHighlighter>> | undefined;
+
+async function getHighlighter() {
+	if (!highlighter) {
+		highlighter = await createHighlighter({
+			themes: [THEME],
+			langs: ['typescript', 'bash', 'json'],
+			engine: createJavaScriptRegexEngine(),
+		});
+	}
+	return highlighter;
+}
+
+export async function highlightCode(code: string, lang: 'typescript' | 'bash' | 'json'): Promise<string> {
+	const h = await getHighlighter();
+	return h.codeToHtml(code, { lang, theme: THEME });
+}
