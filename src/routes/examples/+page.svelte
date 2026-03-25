@@ -34,7 +34,7 @@
       <ExampleCard 
         data={jsonHealer} 
         variant="card" 
-        onRun={() => window.location.href = '/compose'}
+        onRun={() => window.location.href = '/compose?example=json-healer'}
       />
     </div>
   </section>

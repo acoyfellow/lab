@@ -132,14 +132,14 @@
       <a href="/compose" class="text-[0.8125rem] text-(--accent) hover:underline">Try it →</a>
     </div>
     <a 
-      href="/compose" 
+      href="/compose?example=json-healer" 
       class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 hover:border-(--accent)/30 transition-colors group"
     >
       <div class="flex items-center gap-2 mb-2">
         <span class="text-xl">✨</span>
         <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">JSON Healer</h3>
       </div>
-      <p class="text-[0.8125rem] text-(--text-2)">Fix broken JSON automatically with full audit trail. Select "JSON Healer" preset in Chain mode.</p>
+      <p class="text-[0.8125rem] text-(--text-2)">Fix broken JSON automatically with full audit trail.</p>
     </a>
   </section>
 
