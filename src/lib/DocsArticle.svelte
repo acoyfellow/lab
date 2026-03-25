@@ -1,6 +1,8 @@
 <script lang="ts">
   import AppLink from '$lib/AppLink.svelte';
+  import SEO from '$lib/SEO.svelte';
   import { paths } from '$lib/paths';
+  import { page } from '$app/state';
   import type { Snippet } from 'svelte';
 
   let {
@@ -14,11 +16,14 @@
   } = $props();
 </script>
 
-<svelte:head>
-  <title>{pageTitle} - lab</title>
-</svelte:head>
+<SEO
+  title={`${pageTitle} — lab`}
+  description={`Lab documentation: ${pageTitle}.`}
+  path={page.url.pathname}
+  type="website"
+/>
 
-<div class="max-w-2xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
+<div class="max-w-3xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
   <p class="mb-6">
     <AppLink to={paths.docs} class="text-(--text-3) no-underline hover:text-(--text)">Docs</AppLink>
     <span class="text-(--text-3)"> / </span>

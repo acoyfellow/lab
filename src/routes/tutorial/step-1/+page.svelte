@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { PageProps } from './$types';
   import AppLink from '$lib/AppLink.svelte';
+  import SEO from '$lib/SEO.svelte';
   import MiniSandbox from '$lib/tutorial/MiniSandbox.svelte';
   import TutorialPager from '$lib/tutorial/TutorialPager.svelte';
   import { paths } from '$lib/paths';
@@ -8,9 +9,12 @@
   let { data }: PageProps = $props();
 </script>
 
-<svelte:head>
-  <title>Step 1 · First trace — lab</title>
-</svelte:head>
+<SEO
+  title="Step 1 · First trace — lab"
+  description="One POST → one traceId → inspect it on /t/:id (and .json for raw)."
+  path="/tutorial/step-1"
+  type="website"
+/>
 
 <h1 class="text-lg font-semibold text-(--text) tracking-tight m-0 mb-1">First trace</h1>
 <p class="text-[0.8125rem] text-(--text-3) m-0 mb-8 max-w-[52ch]">

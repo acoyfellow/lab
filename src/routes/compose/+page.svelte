@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import AppLink from '$lib/AppLink.svelte';
+  import SEO from '$lib/SEO.svelte';
   import { paths } from '$lib/paths';
   import { runSandbox, runKv, runChain, runSpawn, runGenerate, seedKv } from '../data.remote';
   import type { ChainStep } from '@acoyfellow/lab';
@@ -148,11 +149,14 @@
   }
 </script>
 
-<svelte:head>
-  <title>Compose - lab</title>
-</svelte:head>
+<SEO
+  title="Compose — lab"
+  description="Run code in sandbox/KV/chain/spawn/generate modes and get a shareable trace ID for every execution."
+  path="/compose"
+  type="website"
+/>
 
-<div class="max-w-2xl mx-auto px-5 py-8 pb-16">
+<div class="max-w-3xl mx-auto px-5 py-8 pb-16">
   <header class="mb-6">
     <h1 class="text-lg font-semibold tracking-tight">Compose</h1>
     <p class="text-[0.8125rem] text-(--text-2) mt-1 max-w-[56ch] leading-relaxed">

@@ -1,13 +1,17 @@
 <script lang="ts">
   import DocFooterNav from '$lib/DocFooterNav.svelte';
+  import SEO from '$lib/SEO.svelte';
   import { paths } from '$lib/paths';
 </script>
 
-<svelte:head>
-  <title>Traces - lab</title>
-</svelte:head>
+<SEO
+  title="Traces — lab"
+  description="How trace IDs work, how to view /t/:id, export JSON, and fork runs back into Compose."
+  path="/guides/traces"
+  type="website"
+/>
 
-<div class="max-w-2xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
+<div class="max-w-3xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
   <p class="mb-6">
     <a href="/guides" class="text-(--text-3) no-underline hover:text-(--text)">Guides</a>
     <span class="text-(--text-3)"> / </span>

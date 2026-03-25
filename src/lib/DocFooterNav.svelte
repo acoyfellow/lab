@@ -47,8 +47,6 @@
       <a
         href={item.href}
         class={linkClass}
-        target={item.href.startsWith('http') ? '_blank' : undefined}
-        rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
       >
         <span class="block text-[0.9375rem] font-semibold tracking-tight text-(--text)">{item.label}</span>
         {#if item.description}

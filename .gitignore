@@ -7,3 +7,4 @@ packages/lab/dist
 .env
 .env.*
 !.env.example
+.sisyphus/

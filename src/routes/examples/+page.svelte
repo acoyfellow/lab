@@ -1,16 +1,20 @@
 <script lang="ts">
   import { env } from '$env/dynamic/public';
   import AppLink from '$lib/AppLink.svelte';
+  import SEO from '$lib/SEO.svelte';
   import { paths } from '$lib/paths';
 
   const exampleId = $derived(env.PUBLIC_EXAMPLE_TRACE_ID ?? '');
 </script>
 
-<svelte:head>
-  <title>Examples - lab</title>
-</svelte:head>
+<SEO
+  title="Examples — lab"
+  description="Outcome-first examples: run something, land on /t/:id, and fork requests back into Compose."
+  path="/examples"
+  type="website"
+/>
 
-<div class="max-w-2xl mx-auto px-5 py-8 pb-16">
+<div class="max-w-3xl mx-auto px-5 py-8 pb-16">
   <header class="mb-8">
     <h1 class="text-lg font-semibold tracking-tight">Examples</h1>
     <p class="text-[0.8125rem] text-(--text-2) mt-2 max-w-[56ch] leading-relaxed">

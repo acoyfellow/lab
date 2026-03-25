@@ -3,7 +3,11 @@
   import TraceDiff from '$lib/TraceDiff.svelte';
   import CollapsiblePre from '$lib/CollapsiblePre.svelte';
   import AppLink from '$lib/AppLink.svelte';
+  import { fade, fly } from 'svelte/transition';
+  import { cubicOut } from 'svelte/easing';
+  import SEO from '$lib/SEO.svelte';
   import { paths } from '$lib/paths';
+  import { page } from '$app/state';
 
   type TraceRequest = {
     template?: string;
@@ -173,11 +177,14 @@
   );
 </script>
 
-<svelte:head>
-  <title>Run {trace.id} — lab</title>
-</svelte:head>
+<SEO
+  title={`Run ${trace.id} — lab`}
+  description="A shareable execution trace: inputs, outputs, errors, and timing across isolates."
+  path={page.url.pathname}
+  type="website"
+/>
 
-<div class="max-w-2xl mx-auto px-5 py-8 pb-12">
+<div class="max-w-3xl mx-auto px-5 py-8 pb-12">
   <!-- Header -->
   <header class="flex justify-between items-start gap-4 mb-6 max-sm:flex-col">
     <div>
@@ -281,12 +288,16 @@
   {#if showDetailPanel && selectedStepData}
     <div class="fixed inset-0 z-50" onclick={() => showDetailPanel = false}>
       <!-- Backdrop -->
-      <div class="absolute inset-0 bg-black/50 transition-opacity"></div>
+      <div
+        class="absolute inset-0 bg-black/50"
+        transition:fade={{ duration: 120 }}
+      ></div>
       
       <!-- Panel -->
       <div 
-        class="absolute right-0 top-0 bottom-0 w-full max-w-2xl bg-(--surface) border-l border-(--border) shadow-2xl overflow-y-auto"
+        class="absolute right-0 top-0 bottom-0 w-full max-w-3xl bg-(--surface) border-l border-(--border) shadow-2xl overflow-y-auto"
         onclick={(e) => e.stopPropagation()}
+        transition:fly={{ x: 28, duration: 160, easing: cubicOut }}
       >
         <div class="p-5">
           <!-- Panel Header -->

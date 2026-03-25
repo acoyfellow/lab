@@ -1,8 +1,15 @@
-<svelte:head>
-  <title>Guides - lab</title>
-</svelte:head>
+<script lang="ts">
+  import SEO from '$lib/SEO.svelte';
+</script>
 
-<div class="max-w-2xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
+<SEO
+  title="Guides — lab"
+  description="Workflow-focused guides: chains, spawn, traces, and how to use Lab effectively."
+  path="/guides"
+  type="website"
+/>
+
+<div class="max-w-3xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
   <h1 class="text-lg font-semibold text-(--text) tracking-tight mb-2">Guides</h1>
   <p class="mb-8 max-w-[62ch]">
     Workflow-focused pages. For guest capability strings, bindings, and caveats, see

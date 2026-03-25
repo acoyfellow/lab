@@ -1,15 +1,19 @@
 <script lang="ts">
   import type { PageProps } from './$types';
   import AppLink from '$lib/AppLink.svelte';
+  import SEO from '$lib/SEO.svelte';
   import TutorialPager from '$lib/tutorial/TutorialPager.svelte';
   import { paths } from '$lib/paths';
 
   let { data }: PageProps = $props();
 </script>
 
-<svelte:head>
-  <title>Step 3 · Agents — lab</title>
-</svelte:head>
+<SEO
+  title="Step 3 · Agents — lab"
+  description="Use the same LAB_URL across CLI agents; generate chain steps, run them, and share traces as handoff artifacts."
+  path="/tutorial/step-3"
+  type="website"
+/>
 
 <h1 class="text-lg font-semibold text-(--text) tracking-tight m-0 mb-1">Many agents, one lab</h1>
 <p class="text-[0.8125rem] text-(--text-3) m-0 mb-6 max-w-[52ch]">
@@ -39,16 +43,12 @@
     <a
       href="https://github.com/acoyfellow/lab/blob/main/scripts/pi-lab-bridge.ts"
       class="text-(--text) underline underline-offset-2"
-      target="_blank"
-      rel="noopener noreferrer"
     ><code class="text-[0.65rem]">scripts/pi-lab-bridge.ts</code></a
     >
     · Pi minimal SDK:
     <a
       href="https://github.com/badlogic/pi-mono/blob/21950c5ba434fcbd2f29f1264b329da0b130082d/packages/coding-agent/examples/sdk/01-minimal.ts"
       class="text-(--text) underline underline-offset-2"
-      target="_blank"
-      rel="noopener noreferrer"
     >01-minimal.ts</a
     >.
   </p>

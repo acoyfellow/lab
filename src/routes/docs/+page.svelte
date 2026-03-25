@@ -1,14 +1,18 @@
 <script lang="ts">
   import AppLink from '$lib/AppLink.svelte';
   import DocFooterNav from '$lib/DocFooterNav.svelte';
+  import SEO from '$lib/SEO.svelte';
   import { paths } from '$lib/paths';
 </script>
 
-<svelte:head>
-  <title>Docs - lab</title>
-</svelte:head>
+<SEO
+  title="Docs — lab"
+  description="HTTP API, architecture, TypeScript client, capabilities, and trace JSON."
+  path="/docs"
+  type="website"
+/>
 
-<div class="max-w-2xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
+<div class="max-w-3xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
   <h1 class="text-lg font-semibold text-(--text) tracking-tight mb-2">Docs</h1>
   <p class="mb-8 max-w-[62ch]">
     HTTP API, architecture, TypeScript client, capabilities, and trace JSON—all served from this app.

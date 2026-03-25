@@ -1,11 +1,15 @@
 <script lang="ts">
   import AppLink from '$lib/AppLink.svelte';
+  import SEO from '$lib/SEO.svelte';
   import { paths } from '$lib/paths';
 </script>
 
-<svelte:head>
-  <title>Tutorial — lab</title>
-</svelte:head>
+<SEO
+  title="Tutorial — lab"
+  description="Three short steps with live runners that hit the real Worker and generate shareable traces."
+  path="/tutorial"
+  type="website"
+/>
 
 <h1 class="text-lg font-semibold text-(--text) tracking-tight m-0 mb-4">Tutorial</h1>
 <p class="text-[0.8125rem] text-(--text-2) leading-relaxed m-0 mb-6 max-w-[52ch]">

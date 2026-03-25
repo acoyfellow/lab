@@ -1,13 +1,17 @@
 <script lang="ts">
   import DocFooterNav from '$lib/DocFooterNav.svelte';
+  import SEO from '$lib/SEO.svelte';
   import { paths } from '$lib/paths';
 </script>
 
-<svelte:head>
-  <title>Spawn - lab</title>
-</svelte:head>
+<SEO
+  title="Spawn — lab"
+  description="Run child isolates from a parent isolate using spawn(code, capabilities), with depth limits to bound recursion."
+  path="/guides/spawn"
+  type="website"
+/>
 
-<div class="max-w-2xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
+<div class="max-w-3xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
   <p class="mb-6">
     <a href="/guides" class="text-(--text-3) no-underline hover:text-(--text)">Guides</a>
     <span class="text-(--text-3)"> / </span>

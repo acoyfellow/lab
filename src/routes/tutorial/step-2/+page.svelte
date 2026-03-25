@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { PageProps } from './$types';
   import AppLink from '$lib/AppLink.svelte';
+  import SEO from '$lib/SEO.svelte';
   import MiniChain from '$lib/tutorial/MiniChain.svelte';
   import TutorialPager from '$lib/tutorial/TutorialPager.svelte';
   import { paths } from '$lib/paths';
@@ -8,9 +9,12 @@
   let { data }: PageProps = $props();
 </script>
 
-<svelte:head>
-  <title>Step 2 · Chain — lab</title>
-</svelte:head>
+<SEO
+  title="Step 2 · Chain — lab"
+  description="Chain multiple isolate steps into one run; each step uses the previous output as input."
+  path="/tutorial/step-2"
+  type="website"
+/>
 
 <h1 class="text-lg font-semibold text-(--text) tracking-tight m-0 mb-1">Chain a program</h1>
 <p class="text-[0.8125rem] text-(--text-3) m-0 mb-8 max-w-[52ch]">

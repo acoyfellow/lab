@@ -47,6 +47,7 @@
     "vite": "^7.3.1"
   },
   "dependencies": {
+    "@cf-wasm/resvg": "^0.3.3",
     "@types/node": "^25.5.0",
     "alchemy": "^0.82.1",
     "better-auth": "1.4.7",

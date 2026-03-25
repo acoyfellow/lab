@@ -4,7 +4,7 @@
   let { children } = $props();
 </script>
 
-<div class="max-w-2xl mx-auto px-5 py-8 pb-16">
+<div class="max-w-3xl mx-auto px-5 py-8 pb-16">
   <TutorialStepNav />
   {@render children()}
 </div>
