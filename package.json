@@ -50,7 +50,7 @@
     "@cf-wasm/resvg": "^0.3.3",
     "@types/node": "^25.5.0",
     "alchemy": "^0.82.1",
-    "better-auth": "1.4.7",
+    "better-auth": "1.5.6",
     "drizzle-orm": "^0.45.1",
     "effect": "4.0.0-beta.40",
     "shiki": "^4.0.2"
