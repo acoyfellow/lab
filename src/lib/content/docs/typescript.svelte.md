@@ -6,6 +6,8 @@
 
 `@acoyfellow/lab` is a typed HTTP client. It does not install Cloudflare tooling or deploy this repo.
 
+**Guest `code` in JSON bodies:** still **JavaScript** in the isolate; only your *caller* is TypeScript.
+
 **Integrator vs operator:** Your app only needs **`baseUrl`** — the HTTP **origin** that serves `POST /run/*`, `GET /t/:id`, and `POST /seed`. Cloudflare tokens and other deploy secrets are for whoever operates the Worker, not for `createLabClient`.
 
 **Prerequisite:** That origin is reachable from your runtime (your [self-hosted deploy](https://github.com/acoyfellow/lab#self-host), local dev, or a public demo). Endpoint details: [HTTP API](/docs/http-api).
@@ -25,7 +27,7 @@ const lab = createLabClient({
 
 const out = await lab.runChain([
   { code: "return [1, 2, 3]", capabilities: [] },
-  { code: "return input.map((n: number) => n * n)", capabilities: [] },
+  { code: "return input.map((n) => n * n)", capabilities: [] },
 ]);
 ```
 

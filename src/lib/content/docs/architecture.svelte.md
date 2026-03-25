@@ -8,7 +8,7 @@ Cloudflare Worker Loaders solve the first part — they create V8 isolates at ru
 
 ## The approach
 
-This project uses Effect for isolate execution. **KV read** is modeled as an Effect `Context.Tag` service on the host; other capabilities (`spawn`, `workersAi`, `r2Read`, …) are flags on `CapabilitySet` that select Loader wrapper shims and/or host **`/invoke/*`** routes. The parent inspects the set before running an isolate and injects the right shims.
+This project uses Effect for isolate execution. **KV read** is modeled as an Effect `Context.Tag` service on the host; other capabilities (`spawn`, `workersAi`, `r2Read`, …) are flags on `CapabilitySet` that select Loader wrapper shims and/or host **`/invoke/*`** routes. The parent inspects the set before running an isolate and injects the right shims. A **bindings / tradeoffs table** for each guest string lives at [Capabilities](/docs/capabilities).
 
 This means:
 

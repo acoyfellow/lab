@@ -4,22 +4,14 @@
   import { paths } from '$lib/paths';
   import { runSandbox, runKv, runChain, runSpawn, runGenerate, seedKv } from '../data.remote';
   import type { ChainStep } from '@acoyfellow/lab';
+  import { SIMPLE_CHAIN_STEPS } from '$lib/guest-code-fixtures';
 
   type Mode = 'sandbox' | 'kv' | 'chain' | 'generate' | 'spawn';
 
   /** Flagship: chain shows per-step trace in `/t/:id`. */
   let mode = $state<Mode>('chain');
   let code = $state('return { hello: "world" }');
-  let chainJson = $state(
-    JSON.stringify(
-      [
-        { code: 'return [1, 2, 3]', capabilities: [] },
-        { code: 'return input.map((n) => n * 2)', capabilities: [] },
-      ] satisfies ChainStep[],
-      null,
-      2,
-    ),
-  );
+  let chainJson = $state(JSON.stringify(SIMPLE_CHAIN_STEPS, null, 2));
   let prompt = $state('Return the sum of 1 through 10 as a number.');
   let depth = $state(2);
   let capKvRead = $state(false);
@@ -145,9 +137,12 @@
       <strong class="text-(--text) font-medium">Start with Chain</strong> (default): two steps, per-step trace on
       <code class="font-(family-name:--mono) text-[0.75rem]">/t/:id</code>. Other modes below. Successful runs return a
       <code class="font-(family-name:--mono) text-[0.75rem]">traceId</code>.
+      Checkboxes add optional <strong class="text-(--text) font-medium">host-invoke</strong> caps (<code class="text-[0.7rem]">workersAi</code>,
+      <code class="text-[0.7rem]">r2Read</code>, …); Generate mode can also grant <code class="text-[0.7rem]">kvRead</code> to emitted code.
+      Chain steps carry their own <code class="text-[0.7rem]">capabilities</code> arrays.
       <AppLink to={paths.docsHttpApi} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>
       &middot;
-      <AppLink to={paths.docsCapabilities} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">Capabilities</AppLink>.
+      <AppLink to={paths.docsCapabilities} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">Capability matrix</AppLink>.
     </p>
   </header>
 

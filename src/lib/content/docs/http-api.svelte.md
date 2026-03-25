@@ -16,6 +16,8 @@ Public Worker endpoints. Default origin in examples: `https://lab.coey.dev`. Cap
 | Generate | LLM writes code, then runs | `POST /run/generate` |
 | Spawn | Child isolates (bounded depth) | `POST /run/spawn` |
 
+**Guest `code` strings:** plain **JavaScript** inside the Worker isolate, not TypeScript — no type annotations (e.g. `(n: number)` will throw `SyntaxError` at runtime).
+
 ## Examples (curl)
 
 Chain:

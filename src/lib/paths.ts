@@ -5,5 +5,9 @@ export const paths = {
 	docsTypescript: '/docs/typescript',
 	docsCapabilities: '/docs/capabilities',
 	docsTraceSchema: '/docs/trace-schema',
-	docsArchitecture: '/docs/architecture'
+	docsArchitecture: '/docs/architecture',
+	tutorial: '/tutorial',
+	tutorialStep1: '/tutorial/step-1',
+	tutorialStep2: '/tutorial/step-2',
+	tutorialStep3: '/tutorial/step-3'
 } as const;

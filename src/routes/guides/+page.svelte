@@ -5,7 +5,9 @@
 <div class="max-w-2xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
   <h1 class="text-lg font-semibold text-(--text) tracking-tight mb-2">Guides</h1>
   <p class="mb-8 max-w-[62ch]">
-    Workflow-focused pages. For endpoint tables and curl, see
+    Workflow-focused pages. For guest capability strings, bindings, and caveats, see
+    <a href="/docs/capabilities" class="underline underline-offset-2 hover:text-(--text)">Capabilities</a>.
+    For endpoint tables and curl, see
     <a href="/docs/http-api" class="underline underline-offset-2 hover:text-(--text)">HTTP API</a>.
   </p>
 

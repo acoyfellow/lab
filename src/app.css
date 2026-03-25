@@ -42,7 +42,7 @@
 
   /*
    * Code display policy:
-   * - Home TypeScript teaser: Shiki SSR (.shiki-code-block) via highlightCode() — one highlighted block.
+   * - Home TypeScript teaser + tutorial steps: Shiki SSR (.shiki-code-block) via highlightCode().
    * - mdsvex /docs *.svelte.md: plain pre/code (.md-doc pre) — no tokenizer in the markdown pipeline (by design).
    */
   /* Shiki SSR (server + Workers): github-light + JS engine */

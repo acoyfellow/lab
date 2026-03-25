@@ -5,6 +5,7 @@
  * Self-hosted: `LAB_URL=https://your-worker.example bun run dogfood:lab`
  */
 import { createLabClient } from '@acoyfellow/lab';
+import { SIMPLE_CHAIN_STEPS } from '../src/lib/guest-code-fixtures';
 
 const baseUrl = process.env.LAB_URL ?? 'http://localhost:1337';
 const lab = createLabClient({ baseUrl });
@@ -16,8 +17,8 @@ if (!sand.ok) {
 }
 
 const chain = await lab.runChain([
-  { code: 'return [1, 2, 3]', capabilities: [] },
-  { code: 'return input.map((n: number) => n * n)', capabilities: [] },
+  SIMPLE_CHAIN_STEPS[0],
+  { code: 'return input.map((n) => n * n)', capabilities: [] },
 ]);
 if (!chain.ok) {
   console.error('runChain failed:', chain);

@@ -21,9 +21,10 @@
     Run from <a href="/compose" class="underline underline-offset-2 hover:text-(--text)">Compose</a> (Spawn mode) or <code class="font-(family-name:--mono) text-[0.75rem]">POST /run/spawn</code>.
   </p>
   <DocFooterNav
-    gridClass="sm:grid-cols-2"
+    gridClass="sm:grid-cols-2 lg:grid-cols-3"
     links={[
       { label: 'HTTP API', to: paths.docsHttpApi, description: 'POST /run/spawn, depth, capabilities.' },
+      { label: 'Capabilities', to: paths.docsCapabilities, description: '`spawn` plus optional host-invoke caps.' },
       { label: 'Architecture', to: paths.docsArchitecture, description: 'Spawn, SELF binding, isolate depth.' },
     ]}
   />

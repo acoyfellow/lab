@@ -25,7 +25,7 @@
     gridClass="sm:grid-cols-2"
     links={[
       { label: 'HTTP API', to: paths.docsHttpApi, description: 'POST /run/chain, curl, request bodies.' },
-      { label: 'Capabilities', to: paths.docsCapabilities, description: 'Per-step capabilities and KV snapshot.' },
+      { label: 'Capabilities', to: paths.docsCapabilities, description: 'Per-step strings; bindings and tradeoffs.' },
     ]}
   />
 </div>

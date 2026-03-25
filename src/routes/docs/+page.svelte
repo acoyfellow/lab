@@ -55,7 +55,7 @@
   <DocFooterNav
     gridClass="sm:grid-cols-2"
     links={[
-      { label: 'Tutorial', to: '/tutorial', description: 'Seed, Compose, trace URL, fork.' },
+      { label: 'Tutorial', to: paths.tutorial, description: 'Three steps with inline runners.' },
       { label: 'Compose', to: '/compose', description: 'Run modes in the browser.' },
     ]}
   />

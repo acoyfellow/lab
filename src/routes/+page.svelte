@@ -27,6 +27,10 @@
     <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
       Call it from anywhere—even a <strong class="text-(--text) font-medium">resource‑limited</strong> machine (thin client, no local sandbox).
     </p>
+    <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
+      Operators attach KV, AI, R2, D1, DOs, optional containers—<strong class="text-(--text) font-medium">guest code only gets the capability strings you allow</strong> per run. What each one means (bindings, tradeoffs):
+      <AppLink to={paths.docsCapabilities} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">Capabilities</AppLink>.
+    </p>
     <div class="flex flex-wrap gap-2 pt-1">
       <a
         href="/compose"
@@ -100,7 +104,7 @@
         class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
       >
         <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Capabilities</div>
-        <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">KV snapshot, spawn, why shims exist.</div>
+        <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Full matrix: bindings, host routes, pros and caveats.</div>
       </AppLink>
       <AppLink
         to={paths.docsTraceSchema}
@@ -111,13 +115,13 @@
           <code class="font-(family-name:--mono) text-[0.7rem]">GET /t/:id</code> — fields, tables, <code class="text-[0.7rem]">traceId</code>.
         </div>
       </AppLink>
-      <a
-        href="/tutorial"
+      <AppLink
+        to={paths.tutorial}
         class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
       >
         <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Tutorial</div>
-        <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Golden path: seed, Compose, trace URL, fork.</div>
-      </a>
+        <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Three steps; inline runners on the lesson pages.</div>
+      </AppLink>
     </div>
   </section>
 </div>

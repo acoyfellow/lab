@@ -19,5 +19,6 @@
     "types/**/*",
     "alchemy.run.ts",
     "worker/**/*"
-  ]
+  ],
+  "exclude": ["src/**/*.test.ts"]
 }

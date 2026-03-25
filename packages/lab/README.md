@@ -52,7 +52,7 @@ Smoke from the monorepo: `LAB_URL` = your origin, then `bun run dogfood:lab` (sa
 
 ## Full docs
 
-Endpoint details, curl examples, and capabilities: [github.com/acoyfellow/lab](https://github.com/acoyfellow/lab).
+Endpoint details and curl: [github.com/acoyfellow/lab](https://github.com/acoyfellow/lab). Capability matrix (bindings, tradeoffs): README **Capabilities** section and **`/docs/capabilities`** on a running deploy.
 
 ## License
 

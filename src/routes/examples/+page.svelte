@@ -16,27 +16,38 @@
     <p class="text-[0.8125rem] text-(--text-2) mt-2 max-w-[56ch] leading-relaxed">
       Outcome-first: run something, land on
       <code class="font-(family-name:--mono) text-[0.75rem]">/t/:id</code>, optional <strong class="text-(--text) font-medium">Fork</strong>.
-      Golden path:
-      <a href="/tutorial" class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">tutorial</a>
+      Start here:
+      <AppLink to={paths.tutorial} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)"
+        >tutorial</AppLink
+      >
       &middot;
       <AppLink to={paths.docsHttpApi} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>.
     </p>
   </header>
 
   <div class="grid gap-4 sm:grid-cols-2">
-    <a
-      href="/tutorial"
+    <AppLink
+      to={paths.tutorial}
       class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
     >
       <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Tutorial</div>
-      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Golden path: seed (optional) → Compose → trace → fork.</div>
-    </a>
+      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Three pages, runners on 1–2, agent handoff on 3.</div>
+    </AppLink>
+    <AppLink
+      to={paths.docsCapabilities}
+      class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
+    >
+      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Capabilities</div>
+      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">
+        Each guest string, binding, <code class="font-(family-name:--mono) text-[0.7rem]">/invoke/*</code> route, pros and caveats.
+      </div>
+    </AppLink>
     <AppLink
       to={paths.docs}
       class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
     >
       <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Docs</div>
-      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">HTTP API, TypeScript client, capabilities, trace schema.</div>
+      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">HTTP API, TypeScript client, architecture, trace schema.</div>
     </AppLink>
     <a
       href="/compose"

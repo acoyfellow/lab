@@ -1,5 +1,5 @@
 /**
- * Used for the home page TypeScript teaser only. mdsvex /docs use plain `<pre>` (see `app.css` `.md-doc pre`).
+ * Home page TypeScript teaser + tutorial step snippets. mdsvex /docs use plain `<pre>` (see `app.css` `.md-doc pre`).
  *
  * Cloudflare Workers: default Oniguruma WASM is awkward; use the JS regex engine instead.
  * @see https://shiki.matsu.io/guide/install#cloudflare-workers (WASM) — we skip WASM via RegExp engine.
