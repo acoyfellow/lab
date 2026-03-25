@@ -1,0 +1,24 @@
+{
+  "name": "@acoyfellow/lab-mcp",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "stdio MCP server for lab: find (catalog/trace) + execute (guest runs)",
+  "scripts": {
+    "start": "bun run src/main.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@acoyfellow/lab": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.28.0",
+    "effect": "4.0.0-beta.40",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

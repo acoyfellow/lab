@@ -1,4 +1,5 @@
 import { Data, Effect } from 'effect';
+import type { LabCatalog } from './catalog.js';
 import type {
   ChainStep,
   RunGeneratePayload,
@@ -36,6 +37,15 @@ function tryRequestJSON<T>(
         cause: e,
       }),
   });
+}
+
+/** GET /lab/catalog — same JSON as `fetchLabCatalog` in `catalog.ts`. */
+export function fetchLabCatalogEffect(
+  options: LabEffectClientOptions
+): Effect.Effect<LabCatalog, HttpError> {
+  const baseUrl = normalizeBaseUrl(options.baseUrl);
+  const fetchImpl = options.fetch ?? globalThis.fetch;
+  return tryRequestJSON<LabCatalog>(baseUrl, fetchImpl, '/lab/catalog', { method: 'GET' });
 }
 
 export type LabEffectClient = {

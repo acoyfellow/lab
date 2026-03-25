@@ -44,7 +44,7 @@ Use **`body`** for guest JavaScript; **`code`** is a legacy alias. Optional **`t
 
 Optional `fetch` in `createLabClient({ baseUrl, fetch })` for tests or custom runtimes.
 
-**Effect:** `import { createLabEffectClient, HttpError } from "@acoyfellow/lab/effect"` (peer dependency `effect`). Same methods, `Effect`-returning.
+**Effect:** `import { createLabEffectClient, fetchLabCatalogEffect, HttpError } from "@acoyfellow/lab/effect"` (peer dependency `effect@4.0.0-beta.40`). Same run/trace methods as `createLabClient`, plus `fetchLabCatalogEffect` for `GET /lab/catalog`—each returns `Effect` (failures → `HttpError`).
 
 ### Errors
 

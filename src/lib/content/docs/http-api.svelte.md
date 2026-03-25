@@ -132,7 +132,7 @@ Persisted trace document. Both paths return the same JSON. On the **Worker** (e.
   gridClass="sm:grid-cols-2"
   links={[
     { label: 'Docs', to: '/docs', description: 'Hub for all on-site reference pages.' },
-    { label: 'Agents', to: '/docs/agent-integration', description: 'Catalog lookup + execute loop.' },
+    { label: 'Agents', to: '/docs/agent-integration', description: 'MCP find + execute, or HTTP catalog + runs.' },
     { label: 'TypeScript client', to: '/docs/typescript', description: 'npm package, createLabClient, methods.' },
   ]}
 />

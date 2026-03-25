@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "lab": {
+      "command": "bun",
+      "args": ["run", "--cwd", "/absolute/path/to/lab/packages/lab-mcp", "start"],
+      "env": {
+        "LAB_URL": "http://localhost:1337"
+      }
+    }
+  }
+}

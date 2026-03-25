@@ -20,7 +20,7 @@ The **isolate Worker** ([`worker/`](worker/)) uses **Effect `4.0.0-beta.40`** (e
 | --- | --- |
 | `bun test` | Unit tests only: canonical **guest bodies** must be valid JS (Loader does not transpile TS). See [`src/lib/guest-code.test.ts`](src/lib/guest-code.test.ts). |
 | `bun run lint` | [oxlint](https://oxc.rs/docs/guide/usage/linter) on JS/TS (`.svelte` is **not** linted here). `--deny-warnings` in CI. |
-| `bun run check` | `svelte-check` + build `@acoyfellow/lab` types. |
+| `bun run check` | `svelte-check` + build `@acoyfellow/lab` + typecheck `@acoyfellow/lab-mcp`. |
 
 **Not in CI:** live **Worker** integration tests (Loader, KV snapshot, `/invoke/*`, `GET /t/:id.json`). PR CI stays `bun test` / `check` / `lint` / `build` only — no guaranteed local Worker port. **Manual smoke:** `bun dev` → **`bun run dogfood:lab`** (default `LAB_URL=http://localhost:1337`; checks `fetchLabCatalog`, `getTrace`, and `getTraceJson`).
 
@@ -32,13 +32,17 @@ CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (PR + main). Deploy w
 2. **HTTP** — `POST /run/…` (and related paths) → optional **`traceId`** → `GET /t/:id` (or `GET /t/:id.json`; same body).
 3. **TypeScript** — `createLabClient({ baseUrl })` against **your** origin (`/run/*`, `/t/:id`, `/seed`). Use **`getTraceJson`** if you want the explicit `.json` path against a Worker-only origin.
 
-### Agent / MCP-style usage (0.0.1)
+### Agent / MCP (0.0.1)
 
-**Lookup:** `GET /lab/catalog` on the Worker (or the app’s proxied `/lab/catalog`) returns JSON: capability ids + `llmHint`s, template ids, and an `execute` map for `/run`, `/run/chain`, etc.
+**Two-tool model:** progressive disclosure — **`find`** (catalog slice or trace JSON) and **`execute`** (sandbox, kv, chain, spawn, generate, seed). Implemented as a stdio MCP server in this monorepo: **`@acoyfellow/lab-mcp`** ([`packages/lab-mcp`](packages/lab-mcp)), **Effect v4 beta** (`effect@4.0.0-beta.40`) + `@acoyfellow/lab/effect`.
 
-**Execute:** same **`POST /run*`** as above; the model fills **`body`** / chain steps, not the human integration code.
+**Run locally:** set **`LAB_URL`** (e.g. `http://localhost:1337` with `bun dev`), then `bun run mcp:lab` (stdio; intended for Cursor / other MCP hosts).
 
-**`@acoyfellow/lab`:** `fetchLabCatalog({ baseUrl })` then `createLabClient`. No stdio MCP binary in this release—wire MCP yourself if you need Cursor tools, or call HTTP from your agent host.
+**Lookup (raw HTTP):** `GET /lab/catalog` on the Worker (or the app’s proxied `/lab/catalog`) — same JSON the MCP `find` tool uses.
+
+**Execute (raw HTTP):** `POST /run*` as in the table below.
+
+**`@acoyfellow/lab`:** `fetchLabCatalog({ baseUrl })` then `createLabClient` for Promise callers; `createLabEffectClient` + **`fetchLabCatalogEffect`** for Effect. See [Cursor MCP example](docs/cursor-mcp-lab.example.json).
 
 On-site doc: **`/docs/agent-integration`** when the app is running.
 

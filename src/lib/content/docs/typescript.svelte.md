@@ -41,7 +41,7 @@ Methods: `runSandbox`, `runKv`, `runChain`, `runSpawn`, `runGenerate`, `seed`, `
 
 **Monorepo:** `bun run build:client` builds `packages/lab` to `packages/lab/dist`. Publishing to npm is a separate maintainer step.
 
-**Effect:** Add peer dependency `effect`, then `import { createLabEffectClient, HttpError } from "@acoyfellow/lab/effect"`. Same API shape as `createLabClient`; each call returns `Effect` (JSON parse / unexpected bodies → `HttpError`).
+**Effect:** Peer `effect@4.0.0-beta.40`, then `import { createLabEffectClient, fetchLabCatalogEffect, HttpError } from "@acoyfellow/lab/effect"`. Same run/trace API as `createLabClient`, plus `fetchLabCatalogEffect` for the catalog; each returns `Effect` (unexpected bodies → `HttpError`).
 
 **Smoke:** `LAB_URL=… bun run dogfood:lab` runs [`scripts/dogfood-lab.ts`](https://github.com/acoyfellow/lab/blob/main/scripts/dogfood-lab.ts) (sandbox + chain + `traceId` + `getTrace` + `getTraceJson`). Local: `bun dev` then default `LAB_URL=http://localhost:1337`.
 
