@@ -17,7 +17,7 @@
   type="website"
 />
 
-<div class="max-w-5xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8">
+<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8">
   <header class="mb-10">
     <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-(--text) mb-3">
       Examples
