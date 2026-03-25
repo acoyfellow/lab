@@ -127,32 +127,20 @@
   <section class="space-y-4" aria-labelledby="examples">
     <div class="flex items-center justify-between">
       <h2 id="examples" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
-        Examples
+        Example
       </h2>
-      <a href="/examples" class="text-[0.8125rem] text-(--accent) hover:underline">View all →</a>
+      <a href="/compose" class="text-[0.8125rem] text-(--accent) hover:underline">Try it →</a>
     </div>
-    <div class="grid gap-4 sm:grid-cols-2">
-      <a 
-        href="/examples" 
-        class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 hover:border-(--accent)/30 transition-colors group"
-      >
-        <div class="flex items-center gap-2 mb-2">
-          <span class="text-xl">✨</span>
-          <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">JSON Healer</h3>
-        </div>
-        <p class="text-[0.8125rem] text-(--text-2)">Fix broken JSON automatically with full audit trail</p>
-      </a>
-      <a 
-        href="/examples" 
-        class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 hover:border-(--accent)/30 transition-colors group"
-      >
-        <div class="flex items-center gap-2 mb-2">
-          <span class="text-xl">🛡️</span>
-          <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Security Demos</h3>
-        </div>
-        <p class="text-[0.8125rem] text-(--text-2)">Credential injection, capability denial, audit trails</p>
-      </a>
-    </div>
+    <a 
+      href="/compose" 
+      class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 hover:border-(--accent)/30 transition-colors group"
+    >
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-xl">✨</span>
+        <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">JSON Healer</h3>
+      </div>
+      <p class="text-[0.8125rem] text-(--text-2)">Fix broken JSON automatically with full audit trail. Select "JSON Healer" preset in Chain mode.</p>
+    </a>
   </section>
 
   <!-- Run Modes -->

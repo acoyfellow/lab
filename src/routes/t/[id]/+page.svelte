@@ -374,8 +374,14 @@
               </div>
             {:else if activeTab === 'input'}
               <div>
-                <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Input</div>
-                <pre class="bg-(--surface-alt) rounded-(--radius) p-3 font-mono text-xs whitespace-pre-wrap overflow-x-auto border border-(--border)">{formatValue(selectedStepData.input)}</pre>
+                <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Input {selectedStepData.step === 0 ? '(chain start)' : ''}</div>
+                {#if selectedStepData.input === null || selectedStepData.input === undefined}
+                  <div class="bg-(--surface-alt) rounded-(--radius) p-3 text-xs text-(--text-3) italic border border-(--border)">
+                    {selectedStepData.step === 0 ? 'Step 1 receives no input from a previous step' : 'null'}
+                  </div>
+                {:else}
+                  <pre class="bg-(--surface-alt) rounded-(--radius) p-3 font-mono text-xs whitespace-pre-wrap overflow-x-auto border border-(--border)">{formatValue(selectedStepData.input)}</pre>
+                {/if}
               </div>
             {:else if activeTab === 'diff' && canShowDiff && previousStepData}
               <TraceDiff 

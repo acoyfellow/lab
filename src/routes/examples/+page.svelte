@@ -3,16 +3,15 @@
   import AppLink from '$lib/AppLink.svelte';
   import SEO from '$lib/SEO.svelte';
   import ExampleCard from '$lib/examples/ExampleCard.svelte';
-  import { jsonHealer, invisibleKey, forbiddenDoor, immutableWitness } from '$lib/examples';
+  import { jsonHealer } from '$lib/examples';
   import { paths } from '$lib/paths';
 
   const exampleId = $derived(env.PUBLIC_EXAMPLE_TRACE_ID ?? '');
-  const showcaseExamples = [jsonHealer, invisibleKey, forbiddenDoor, immutableWitness];
 </script>
 
 <SEO
   title="Examples — lab"
-  description="Real-world examples of Lab in action: JSON healing, security demos, and agent workflows."
+  description="Real-world examples of Lab in action."
   path="/examples"
   type="website"
 />
@@ -23,28 +22,23 @@
       Examples
     </h1>
     <p class="text-[1.0625rem] text-(--text-2) max-w-[60ch]">
-      Real-world demos showing Lab's capabilities. Each example includes working code, 
-      execution traces, and security patterns.
+      Real-world demos showing Lab's capabilities. Each example includes working code and execution traces.
     </p>
   </header>
 
-  <!-- Showcase Examples -->
   <section class="mb-12">
     <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) mb-4">
-      Showcase
+      Runnable Examples
     </h2>
     <div class="grid gap-6 sm:grid-cols-2">
-      {#each showcaseExamples as example}
-        <ExampleCard 
-          data={example} 
-          variant="card" 
-          onRun={() => window.location.href = `/compose?example=${example.id}`}
-        />
-      {/each}
+      <ExampleCard 
+        data={jsonHealer} 
+        variant="card" 
+        onRun={() => window.location.href = '/compose'}
+      />
     </div>
   </section>
 
-  <!-- Getting Started -->
   <section class="mb-12">
     <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) mb-4">
       Getting Started
