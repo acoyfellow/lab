@@ -4,16 +4,28 @@
   import { paths } from '$lib/paths';
 
   type TraceRequest = {
+    template?: string;
+    body?: string;
     prompt?: string;
     code?: string;
     capabilities?: string[];
     depth?: number;
-    steps?: Array<{ name?: string; code: string; capabilities: string[] }>;
+    steps?: Array<{
+      name?: string;
+      template?: string;
+      body?: string;
+      code?: string;
+      capabilities: string[];
+      props?: unknown;
+      input?: unknown;
+    }>;
   };
 
   type TraceRow = {
     step: number;
     name?: string;
+    template?: string;
+    body?: string;
     capabilities: string[];
     input: unknown;
     output: unknown;
@@ -73,7 +85,9 @@
   function forkPayload(): Record<string, unknown> {
     const r = trace.request;
     const base: Record<string, unknown> = { mode: trace.type };
-    if (r.code) base.code = r.code;
+    const guestBody = r.body ?? r.code;
+    if (guestBody) base.body = guestBody;
+    if (r.template) base.template = r.template;
     if (r.prompt) base.prompt = r.prompt;
     if (Array.isArray(r.capabilities)) base.capabilities = r.capabilities;
     if (r.depth !== undefined) base.depth = r.depth;
@@ -92,14 +106,30 @@
 </script>
 
 <svelte:head>
-  <title>trace {trace.id} - lab</title>
+  <title>Run {trace.id} — lab</title>
 </svelte:head>
 
-<div class="max-w-[860px] mx-auto px-5 py-8 pb-12">
+<div class="max-w-2xl mx-auto px-5 py-8 pb-12">
   <header class="flex justify-between items-start gap-4 mb-6 max-sm:flex-col">
     <div>
-      <h1 class="text-lg font-semibold tracking-tight">{trace.type} trace</h1>
-      <div class="text-(--text-3) text-[0.8125rem] mt-0.5">id {trace.id} &middot; {trace.createdAt}</div>
+      <h1 class="text-lg font-semibold tracking-tight text-(--text)">Lab run</h1>
+      <p class="text-(--text-2) text-[0.8125rem] mt-1 mb-0 max-w-[52ch] leading-relaxed">
+        <strong class="text-(--text) font-medium">{trace.type}</strong> —
+        {#if trace.type === 'chain'}
+          several isolates ran in order; scroll to <strong class="text-(--text) font-medium">Step-by-step</strong> to see each
+          one.
+        {:else if trace.type === 'sandbox' || trace.type === 'kv'}
+          one isolate ran your guest code.
+        {:else if trace.type === 'spawn'}
+          a parent isolate called <code class="text-[0.75rem]">spawn</code> (see mode note below).
+        {:else if trace.type === 'generate'}
+          the host generated code, then ran it.
+        {:else}
+          Worker recorded this request and outcome.
+        {/if}
+      </p>
+      <div class="text-(--text-3) text-[0.75rem] mt-2 font-(family-name:--mono)">{trace.id}</div>
+      <div class="text-(--text-3) text-[0.8125rem] mt-0.5">{trace.createdAt}</div>
     </div>
     <div class="flex gap-3 flex-wrap text-[0.8125rem]">
       <a href="/compose" class="text-(--text-2) no-underline bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 hover:text-(--text)">Compose</a>
@@ -114,27 +144,50 @@
   </header>
 
   <section
-    class="mb-6 rounded-(--radius) border border-(--border) bg-(--surface) p-4 text-[0.8125rem] text-(--text-2) leading-relaxed"
+    class="mb-6 rounded-(--radius) border border-(--border) bg-(--surface) p-4 text-[0.8125rem] text-(--text-2) leading-relaxed space-y-3"
   >
-    <p class="m-0">
-      <strong class="text-(--text) font-medium">Mode</strong>
-      <code class="font-(family-name:--mono) text-[0.75rem]">{trace.type}</code>
-      &middot;
-      <strong class="text-(--text) font-medium">Outcome</strong>
-      {#if trace.outcome.ok}
-        <span class="text-(--text)">{outcomeSummary}</span>
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span
+        class="inline-flex items-center px-2.5 py-1 rounded-full text-[0.6875rem] font-semibold uppercase tracking-wide border {trace.outcome.ok
+          ? 'bg-(--cap-on-bg) text-(--cap-on-text) border-(--cap-on-border)'
+          : 'bg-(--cap-off-bg) text-(--cap-off-text) border-(--cap-off-border)'}"
+      >
+        {trace.outcome.ok ? 'Succeeded' : 'Failed'}
+      </span>
+      <span><strong class="text-(--text) font-medium">Mode</strong> <code class="text-[0.75rem]">{trace.type}</code></span>
+    </div>
+    {#if !trace.outcome.ok}
+      <p class="m-0 text-(--cap-off-text) text-[0.8125rem]">{outcomeSummary}</p>
+    {/if}
+    <p class="m-0 text-(--text-3) text-[0.75rem]">
+      <strong class="text-(--text-2) font-medium">How to read this page:</strong> summary (here) &rarr; what you submitted
+      &rarr; final result &rarr;
+      {#if trace.trace?.length}
+        step-by-step isolates.
       {:else}
-        <span class="text-(--cap-off-text)">{outcomeSummary}</span>
+        (no per-step log for this run).
       {/if}
-    </p>
-    <p class="mt-2 mb-0">
-      <strong class="text-(--text) font-medium">Fork</strong>
-      copies this run into Compose (edit and run again).
-      <AppLink to={paths.docsHttpApi} class="text-(--text-3) underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>
+      <AppLink to={paths.tutorialStep1} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)"
+        >Tutorial</AppLink>
       &middot;
-      <AppLink to={paths.docsTraceSchema} class="text-(--text-3) underline underline-offset-2 hover:text-(--text)">Trace schema</AppLink>.
+      <AppLink to={paths.docsTraceSchema} class="underline underline-offset-2 hover:text-(--text)">Schema</AppLink>.
+    </p>
+    <p class="m-0">
+      <strong class="text-(--text) font-medium">Fork</strong> opens Compose with this request so you can edit and re-run.
+      <AppLink to={paths.docsHttpApi} class="text-(--text-3) underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>.
     </p>
   </section>
+
+  {#if trace.type === 'chain'}
+    <section class="bg-(--surface) border border-(--border) rounded-lg p-3.5 mb-3.5 text-[0.8125rem] text-(--text-2) leading-relaxed">
+      <strong class="text-(--text) font-medium">Chain</strong> runs one isolate per step. The return value of step
+      <em>n</em> is passed as <code class="font-(family-name:--mono) text-[0.75rem]">input</code> to step
+      <em>n + 1</em>.
+      <strong class="text-(--text) font-medium">Submitted steps</strong> is exactly what was in your JSON;
+      <strong class="text-(--text) font-medium">Step-by-step</strong> is the recorded input, output, and time for each isolate
+      (when available).
+    </section>
+  {/if}
 
   {#if trace.type === 'kv'}
     <section class="bg-(--surface) border border-(--border) rounded-lg p-3.5 mb-3.5 text-[0.8125rem] text-(--text-2) leading-relaxed">
@@ -155,10 +208,12 @@
     </section>
   {/if}
 
-  {#if trace.request.code}
+  {#if trace.request.body ?? trace.request.code}
     <section class="bg-(--surface) border border-(--border) rounded-lg p-3.5 mt-3.5">
-      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Code</div>
-      <pre class="bg-(--surface-alt) rounded-(--radius) p-3 font-(family-name:--mono) text-xs whitespace-pre-wrap overflow-x-auto">{trace.request.code}</pre>
+      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">
+        Guest body{#if trace.request.template}<span class="font-normal text-(--text-3)"> · template <code class="text-[0.7rem]">{trace.request.template}</code></span>{/if}
+      </div>
+      <pre class="bg-(--surface-alt) rounded-(--radius) p-3 font-(family-name:--mono) text-xs whitespace-pre-wrap overflow-x-auto">{trace.request.body ?? trace.request.code}</pre>
     </section>
   {/if}
 
@@ -175,21 +230,41 @@
 
   {#if trace.request.steps?.length}
     <section class="bg-(--surface) border border-(--border) rounded-lg p-3.5 mt-3.5">
-      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Steps</div>
+      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Submitted steps</div>
+      <p class="text-[0.75rem] text-(--text-3) m-0 mb-3">From your <code class="text-[0.7rem]">POST /run/chain</code> body (before execution).</p>
       <div class="grid gap-3">
         {#each trace.request.steps as step, idx}
           <div class="bg-(--surface-alt) rounded-(--radius) p-3">
             <div class="font-semibold text-[0.8125rem]">{step.name ?? `Step ${idx + 1}`}</div>
-            <div class="flex gap-1.5 flex-wrap mt-1.5">
-              {#if step.capabilities.length > 0}
-                {#each step.capabilities as cap}
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-(--cap-on-bg) text-(--cap-on-text) border border-(--cap-on-border)">{cap}</span>
-                {/each}
-              {:else}
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-(--cap-off-bg) text-(--cap-off-text) border border-(--cap-off-border)">none</span>
-              {/if}
+            <div class="mt-2">
+              <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Capabilities</div>
+              <div class="flex gap-1.5 flex-wrap items-center">
+                {#if step.capabilities.length > 0}
+                  {#each step.capabilities as cap}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-(--cap-on-bg) text-(--cap-on-text) border border-(--cap-on-border)">{cap}</span>
+                  {/each}
+                {:else}
+                  <span class="text-[0.8125rem] text-(--text-2) leading-snug"
+                    >None in your JSON — this step runs with default sandbox only.</span>
+                {/if}
+              </div>
             </div>
-            <pre class="bg-(--surface) rounded-(--radius) p-3 mt-3 font-(family-name:--mono) text-xs whitespace-pre-wrap overflow-x-auto">{step.code}</pre>
+            {#if step.props !== undefined}
+              <div class="mt-2">
+                <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">props</div>
+                <pre class="bg-(--surface) rounded-(--radius) p-3 font-(family-name:--mono) text-xs whitespace-pre-wrap overflow-x-auto">{formatValue(step.props)}</pre>
+              </div>
+            {/if}
+            {#if step.input !== undefined}
+              <div class="mt-2">
+                <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">input (wire)</div>
+                <pre class="bg-(--surface) rounded-(--radius) p-3 font-(family-name:--mono) text-xs whitespace-pre-wrap overflow-x-auto">{formatValue(step.input)}</pre>
+              </div>
+            {/if}
+            {#if step.template}
+              <div class="text-[0.6875rem] text-(--text-3) mt-2 mb-1">Template <code class="text-[0.7rem]">{step.template}</code></div>
+            {/if}
+            <pre class="bg-(--surface) rounded-(--radius) p-3 mt-3 font-(family-name:--mono) text-xs whitespace-pre-wrap overflow-x-auto">{step.body ?? step.code}</pre>
           </div>
         {/each}
       </div>
@@ -204,9 +279,14 @@
   {/if}
 
   <section class="bg-(--surface) border border-(--border) rounded-lg p-3.5 mt-3.5">
-    <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">
-      {trace.outcome.ok ? 'Result' : 'Error'}
+    <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">
+      {trace.outcome.ok ? 'Final result' : 'Error'}
     </div>
+    <p class="text-[0.75rem] text-(--text-3) m-0 mb-3">
+      {trace.outcome.ok
+        ? 'Value returned by the last step (or the only isolate).'
+        : 'The run stopped here; step-by-step may show where it failed.'}
+    </p>
     {#if outcomeCompact}
       <pre class="bg-(--surface-alt) rounded-(--radius) p-3 font-(family-name:--mono) text-xs whitespace-pre-wrap overflow-x-auto">{outcomeText()}</pre>
     {:else}
@@ -223,22 +303,39 @@
 
   {#if trace.trace?.length}
     <section class="bg-(--surface) border border-(--border) rounded-lg p-3.5 mt-3.5">
-      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Execution trace</div>
+      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Step-by-step</div>
+      <p class="text-[0.75rem] text-(--text-3) m-0 mb-3">
+        Each card is one isolate. Compare <strong class="text-(--text-2) font-medium">Input</strong> (from the previous
+        step or <code class="text-[0.7rem]">null</code>) to <strong class="text-(--text-2) font-medium">Output</strong>.
+        <strong class="text-(--text-2) font-medium">Capabilities</strong> on the card are optional extras (e.g.
+        <code class="text-[0.7rem]">kvRead</code>); if none are listed, this step used only the default sandbox — not an
+        error.
+      </p>
       <div class="grid gap-3">
-        {#each trace.trace as entry}
-          <div class="bg-(--surface-alt) rounded-(--radius) p-3">
-            <div class="flex justify-between items-center gap-3 mb-2">
-              <div class="font-semibold text-[0.8125rem]">{entry.name ?? `Step ${entry.step + 1}`}</div>
+        {#each trace.trace as entry, ti}
+          <div class="bg-(--surface-alt) rounded-(--radius) p-3 border border-(--border)">
+            <div class="flex justify-between items-center gap-3 mb-2 flex-wrap">
+              <div class="font-semibold text-[0.8125rem] text-(--text)">
+                Step {ti + 1} of {trace.trace!.length}
+                <span class="font-normal text-(--text-3)">
+                  — {entry.name ?? `isolate ${entry.step + 1}`}</span>
+              </div>
               <div class="text-(--text-3) font-(family-name:--mono) text-xs">{entry.ms} ms</div>
             </div>
-            <div class="flex gap-1.5 flex-wrap mb-2">
-              {#if entry.capabilities.length > 0}
-                {#each entry.capabilities as cap}
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-(--cap-on-bg) text-(--cap-on-text) border border-(--cap-on-border)">{cap}</span>
-                {/each}
-              {:else}
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-(--cap-off-bg) text-(--cap-off-text) border border-(--cap-off-border)">none</span>
-              {/if}
+            <div class="mb-2">
+              <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1.5">
+                Capabilities
+              </div>
+              <div class="flex gap-1.5 flex-wrap items-center">
+                {#if entry.capabilities.length > 0}
+                  {#each entry.capabilities as cap}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-(--cap-on-bg) text-(--cap-on-text) border border-(--cap-on-border)">{cap}</span>
+                  {/each}
+                {:else}
+                  <span class="text-[0.8125rem] text-(--text-2) leading-snug"
+                    >None — default sandbox only (no KV, AI, R2, etc. on this step).</span>
+                {/if}
+              </div>
             </div>
             <div class="grid gap-3 grid-cols-2 mt-3 max-sm:grid-cols-1">
               <div>

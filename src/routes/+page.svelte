@@ -22,7 +22,7 @@
       <code class="font-(family-name:--mono) text-[0.8rem]">/t/:id</code> trace — no install required on a hosted demo.
     </p>
     <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
-      Fan out steps on <strong class="text-(--text) font-medium">Cloudflare Workers</strong> instead of on your laptop. You send a small request; the edge runs <strong class="text-(--text) font-medium">multiple isolates in parallel</strong> when the job allows it, or a <strong class="text-(--text) font-medium">chain</strong> when each step needs the last one’s output.
+      Fan out steps on <strong class="text-(--text) font-medium">Cloudflare Workers</strong> instead of on your laptop. You send a small request; the edge runs <strong class="text-(--text) font-medium">multiple isolates in parallel</strong> when the job allows it, or a <strong class="text-(--text) font-medium">chain</strong> when each step needs the last one’s output. Mental model: <strong class="text-(--text) font-medium">edge = work plane</strong>, your client = <strong class="text-(--text) font-medium">control plane</strong>—elastic sandboxed compute you drive remotely (see <AppLink to={paths.docsArchitecture} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">Architecture</AppLink>).
     </p>
     <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
       Call it from anywhere—even a <strong class="text-(--text) font-medium">resource‑limited</strong> machine (thin client, no local sandbox).

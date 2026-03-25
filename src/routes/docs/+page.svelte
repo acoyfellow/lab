@@ -23,6 +23,13 @@
       <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Run modes, endpoints, curl, request/response shapes.</div>
     </AppLink>
     <AppLink
+      to={paths.docsAgentIntegration}
+      class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
+    >
+      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Agents</div>
+      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed"><code class="font-(family-name:--mono) text-[0.7rem]">GET /lab/catalog</code> lookup, then execute; no stdio MCP in 0.0.1.</div>
+    </AppLink>
+    <AppLink
       to={paths.docsTypescript}
       class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
     >

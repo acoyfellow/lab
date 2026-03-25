@@ -1,6 +1,7 @@
 /** Canonical in-app doc routes (use with AppLink or resolve() from $app/paths). */
 export const paths = {
 	docs: '/docs',
+	docsAgentIntegration: '/docs/agent-integration',
 	docsHttpApi: '/docs/http-api',
 	docsTypescript: '/docs/typescript',
 	docsCapabilities: '/docs/capabilities',

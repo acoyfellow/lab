@@ -23,16 +23,16 @@ Traces are stored in KV under `trace:<id>` and returned by:
 | `request` | object | Inputs (shape varies by `type`) |
 | `outcome` | object | `ok`, optional `result`, `error`, `reason` |
 | `timing` | object? | `totalMs`, optional `generateMs`, `runMs` |
-| `generated` | string? | Normalized code (generate mode) |
+| `generated` | string? | Normalized **body** after LLM (generate mode) |
 | `trace` | array? | Per-step execution trace (chain mode) |
 
 ## `request` by type
 
-- **sandbox:** `{ code?, capabilities? }` (capabilities often `[]`)
-- **kv:** `{ code, capabilities: ["kvRead"] }`
-- **chain:** `{ steps: { name?, code, capabilities[] }[] }`
-- **generate:** `{ prompt, capabilities[] }`
-- **spawn:** `{ code, capabilities[], depth? }`
+- **sandbox:** `{ template?, body, capabilities? }` — default template `guest@v1` when omitted on the wire. Legacy traces: `{ code?, capabilities? }`.
+- **kv:** same fields as sandbox; persisted `capabilities` includes `kvRead`.
+- **chain:** `{ steps: { name?, template?, body, capabilities[], props?, input? }[] }` — each step is one isolate. Legacy steps may use `code` instead of `body`.
+- **generate:** `{ template?, prompt, capabilities[] }`
+- **spawn:** `{ template?, body, capabilities[], depth? }`
 
 ## `trace` entry (chain execution)
 
@@ -42,6 +42,8 @@ Each element:
 |-------|------|
 | `step` | number (0-based) |
 | `name` | string? |
+| `template` | string? (e.g. `guest@v1`) |
+| `body` | string? |
 | `capabilities` | string[] |
 | `input` | unknown |
 | `output` | unknown |

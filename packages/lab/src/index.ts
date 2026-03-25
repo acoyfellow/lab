@@ -1,3 +1,11 @@
+export { fetchLabCatalog, type LabCatalog } from './catalog.js';
+export type {
+  LabCatalogCapability,
+  LabCatalogExecute,
+  LabCatalogExecuteFieldMap,
+  LabCatalogExecuteMode,
+  LabCatalogTemplate,
+} from './catalog.js';
 export {
   createLabClient,
   type LabClient,
@@ -6,6 +14,7 @@ export {
 export type {
   ChainStep,
   RunGeneratePayload,
+  RunGuestPayload,
   RunResult,
   RunSpawnPayload,
   SeedResult,

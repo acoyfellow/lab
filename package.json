@@ -15,7 +15,8 @@
     "build:client": "cd packages/lab && bun run build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
-    "test": "bun test src/lib",
+    "test": "bun test",
+    "lint": "oxlint . --deny-warnings",
     "check": "svelte-kit sync && bun run build:client && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "db:better-auth": "bunx @better-auth/cli generate",
@@ -36,6 +37,7 @@
     "acorn": "^8.16.0",
     "drizzle-kit": "^0.31.10",
     "mdsvex": "^0.12.7",
+    "oxlint": "^1.57.0",
     "remark-gfm": "^4.0.1",
     "svelte": "^5.55.0",
     "svelte-check": "^4.4.5",
@@ -48,7 +50,7 @@
     "alchemy": "^0.82.1",
     "better-auth": "1.4.7",
     "drizzle-orm": "^0.45.1",
-    "effect": "^3.21.0",
+    "effect": "4.0.0-beta.40",
     "shiki": "^4.0.2"
   },
   "type": "module"

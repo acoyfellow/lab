@@ -4,13 +4,23 @@
  * Default `LAB_URL`: `http://localhost:1337` (run `bun dev` first).
  * Self-hosted: `LAB_URL=https://your-worker.example bun run dogfood:lab`
  */
-import { createLabClient } from '@acoyfellow/lab';
+import { createLabClient, fetchLabCatalog } from '@acoyfellow/lab';
 import { SIMPLE_CHAIN_STEPS } from '../src/lib/guest-code-fixtures';
 
 const baseUrl = process.env.LAB_URL ?? 'http://localhost:1337';
 const lab = createLabClient({ baseUrl });
 
-const sand = await lab.runSandbox('return { ok: true, sum: 1 + 2 }');
+const catalog = await fetchLabCatalog({ baseUrl });
+if (catalog.version !== '0.0.1') {
+  console.error('fetchLabCatalog: unexpected version', catalog.version);
+  process.exit(1);
+}
+if (!catalog.capabilities.some((c) => c.id === 'kvRead')) {
+  console.error('fetchLabCatalog: missing kvRead', catalog.capabilities);
+  process.exit(1);
+}
+
+const sand = await lab.runSandbox({ body: 'return { ok: true, sum: 1 + 2 }' });
 if (!sand.ok) {
   console.error('runSandbox failed:', sand);
   process.exit(1);
@@ -18,7 +28,7 @@ if (!sand.ok) {
 
 const chain = await lab.runChain([
   SIMPLE_CHAIN_STEPS[0],
-  { code: 'return input.map((n) => n * n)', capabilities: [] },
+  { body: 'return input.map((n) => n * n)', capabilities: [] },
 ]);
 if (!chain.ok) {
   console.error('runChain failed:', chain);
@@ -35,9 +45,15 @@ if (!('id' in doc) || doc.id !== chain.traceId) {
   process.exit(1);
 }
 
+const docJson = await lab.getTraceJson(chain.traceId);
+if (!('id' in docJson) || docJson.id !== chain.traceId) {
+  console.error('getTraceJson failed or id mismatch', docJson);
+  process.exit(1);
+}
+
 const d1run = await lab.runChain([
   {
-    code: 'return await d1.query("SELECT id, note FROM lab_demo WHERE id = 1")',
+    body: 'return await d1.query("SELECT id, note FROM lab_demo WHERE id = 1")',
     capabilities: ['d1Read'],
   },
 ]);

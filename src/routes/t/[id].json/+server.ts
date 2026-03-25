@@ -7,10 +7,10 @@ export const GET: RequestHandler = async ({ params, platform }) => {
 
   let response: Response;
   if (dev) {
-    response = await fetch(`http://localhost:1337/t/${traceId}`);
+    response = await fetch(`http://localhost:1337/t/${traceId}.json`);
   } else {
     response = await platform!.env!.WORKER.fetch(
-      new Request(`http://worker/t/${traceId}`)
+      new Request(`http://worker/t/${traceId}.json`)
     );
   }
 

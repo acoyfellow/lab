@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { parse } from 'acorn';
 import { allCanonicalGuestBodies } from './guest-code-fixtures';
 
-/** Same wrapping as worker `Loader.wrapCode`: user `code` runs inside an async IIFE. */
+/** Same wrapping as worker `guestBodySyntaxError` / isolate shell: body runs inside an async IIFE. */
 function assertParsesAsGuestJs(code: string) {
 	const wrapped = `(async () => {\n${code}\n})()`;
 	parse(wrapped, { ecmaVersion: 2022, sourceType: 'script' });

@@ -3,6 +3,9 @@ export { LabStubDurableObject } from "./durable-object-stub"
 import { Effect, Exit, Cause } from "effect"
 import { Isolate, IsolateError, makeIsolateLive, type WorkerLoaderBinding } from "./Loader"
 import type { CapabilitySet } from "./Capability"
+import { CAPABILITY_REGISTRY, type LabCapabilityId } from "./capabilities/registry"
+import { buildLabCatalog } from "./catalog"
+import { resolveGuestTemplateId, type GuestTemplateId } from "./guest/templates"
 
 const AI_MODEL = "@cf/meta/llama-3.1-8b-instruct" as const
 
@@ -23,18 +26,87 @@ type RunType = "sandbox" | "kv" | "chain" | "generate" | "spawn"
 type TraceEntry = {
   step: number
   name?: string
+  template?: string
+  body?: string
   capabilities: string[]
   input: unknown
   output: unknown
   ms: number
 }
 
+type ChainStepStored = {
+  name?: string
+  template: string
+  body: string
+  capabilities: string[]
+  props?: unknown
+  input?: unknown
+}
+
 type TraceRequest = {
+  template?: string
+  body?: string
+  /** @deprecated old traces */
   code?: string
   prompt?: string
   capabilities?: string[]
   depth?: number
-  steps?: Array<{ name?: string; code: string; capabilities: string[] }>
+  steps?: ChainStepStored[]
+}
+
+function parseGuestRunPayload(p: {
+  body?: unknown
+  code?: unknown
+  template?: unknown
+}): { body: string; template: GuestTemplateId } | null {
+  const resolved = resolveGuestTemplateId(
+    typeof p.template === "string" && p.template.trim() ? p.template.trim() : undefined,
+  )
+  if (!resolved) return null
+  const raw = p.body !== undefined ? p.body : p.code
+  if (typeof raw !== "string" || !raw.trim()) return null
+  return { body: raw, template: resolved }
+}
+
+type NormalizedChainStep = {
+  name?: string
+  body: string
+  template: GuestTemplateId
+  capabilities: string[]
+  props?: unknown
+  input?: unknown
+}
+
+function normalizeChainSteps(steps: unknown): NormalizedChainStep[] | null {
+  if (!Array.isArray(steps)) return null
+  const out: NormalizedChainStep[] = []
+  for (const item of steps) {
+    if (!item || typeof item !== "object") return null
+    const o = item as Record<string, unknown>
+    const caps = Array.isArray(o.capabilities) ? [...(o.capabilities as string[])] : []
+    const parsed = parseGuestRunPayload({ body: o.body, code: o.code, template: o.template })
+    if (!parsed) return null
+    out.push({
+      name: typeof o.name === "string" ? o.name : undefined,
+      body: parsed.body,
+      template: parsed.template,
+      capabilities: caps,
+      props: o.props,
+      input: o.input,
+    })
+  }
+  return out
+}
+
+function chainStepsForTrace(steps: NormalizedChainStep[]): ChainStepStored[] {
+  return steps.map((s) => ({
+    name: s.name,
+    template: s.template,
+    body: s.body,
+    capabilities: s.capabilities,
+    ...(s.props !== undefined ? { props: s.props } : {}),
+    ...(s.input !== undefined ? { input: s.input } : {}),
+  }))
 }
 
 type TraceOutcome = {
@@ -81,9 +153,9 @@ const defaultExport = {
     }
 
     const kvReadService = {
-      get: (key: string) => Effect.promise(() => env.KV.get(key)),
+      get: (key: string) => Effect.promise((_signal) => env.KV.get(key)),
       list: (prefix?: string) =>
-        Effect.promise(async () => {
+        Effect.promise(async (_signal) => {
           const list = await env.KV.list({ prefix })
           return list.keys.map((k) => k.name)
         }),
@@ -232,8 +304,13 @@ const defaultExport = {
       }
     }
 
-    // --- Trace retrieval (JSON only) ---
-    const traceMatch = url.pathname.match(/^\/t\/([a-z0-9]+)$/i)
+    // --- Agent lookup: machine-readable cap templates + execute map ---
+    if (req.method === "GET" && url.pathname === "/lab/catalog") {
+      return withCors(Response.json(buildLabCatalog()))
+    }
+
+    // --- Trace retrieval (JSON only): /t/:id and /t/:id.json (same document) ---
+    const traceMatch = url.pathname.match(/^\/t\/([a-z0-9]+)(?:\.json)?$/i)
     if (req.method === "GET" && traceMatch) {
       const traceId = traceMatch[1]
       const trace = await getTrace(env, traceId)
@@ -254,17 +331,27 @@ const defaultExport = {
 
     // --- Run code (optional capabilities) ---
     if (req.method === "POST" && url.pathname === "/run") {
-      const { code, capabilities: capList } = (await req.json()) as {
-        code: string
-        capabilities?: string[]
+      const json = (await req.json()) as Record<string, unknown>
+      const parsed = parseGuestRunPayload({
+        body: json.body,
+        code: json.code,
+        template: json.template,
+      })
+      if (!parsed) {
+        return withCors(
+          Response.json(
+            { error: "need body (or legacy code) and optional template (default guest@v1)" },
+            { status: 400 },
+          ),
+        )
       }
-      if (!code) return withCors(Response.json({ error: "no code" }, { status: 400 }))
-      const capNames = capList ?? []
+      const { body, template } = parsed
+      const capNames = Array.isArray(json.capabilities) ? (json.capabilities as string[]) : []
       const runCaps = buildCapabilitySet(capNames, undefined)
 
       const program = Effect.gen(function* () {
         const isolate = yield* Isolate
-        return yield* isolate.run(code, runCaps)
+        return yield* isolate.run(body, runCaps, undefined, template)
       })
 
       const layer = isolateLayer()
@@ -280,7 +367,7 @@ const defaultExport = {
               env,
               {
                 type: "sandbox",
-                request: { code, capabilities: capNames },
+                request: { template, body, capabilities: capNames },
                 outcome: { ok: false, error: failure.error, reason: failure.reason },
                 timing: { totalMs },
               },
@@ -295,7 +382,7 @@ const defaultExport = {
               env,
               {
                 type: "sandbox",
-                request: { code, capabilities: capNames },
+                request: { template, body, capabilities: capNames },
                 outcome: { ok: true, result },
                 timing: { totalMs },
               },
@@ -307,18 +394,28 @@ const defaultExport = {
 
     // --- Run code with KV read capability ---
     if (req.method === "POST" && url.pathname === "/run/kv") {
-      const { code, capabilities: extra } = (await req.json()) as {
-        code: string
-        capabilities?: string[]
+      const json = (await req.json()) as Record<string, unknown>
+      const parsed = parseGuestRunPayload({
+        body: json.body,
+        code: json.code,
+        template: json.template,
+      })
+      if (!parsed) {
+        return withCors(
+          Response.json(
+            { error: "need body (or legacy code) and optional template (default guest@v1)" },
+            { status: 400 },
+          ),
+        )
       }
-      if (!code) return withCors(Response.json({ error: "no code" }, { status: 400 }))
-
-      const capNames = [...new Set(["kvRead", ...(extra ?? [])])]
+      const { body, template } = parsed
+      const extra = Array.isArray(json.capabilities) ? (json.capabilities as string[]) : []
+      const capNames = [...new Set(["kvRead", ...extra])]
       const runCaps = buildCapabilitySet(capNames, undefined)
 
       const program = Effect.gen(function* () {
         const isolate = yield* Isolate
-        return yield* isolate.run(code, runCaps)
+        return yield* isolate.run(body, runCaps, undefined, template)
       })
 
       const layer = isolateLayer()
@@ -334,7 +431,7 @@ const defaultExport = {
               env,
               {
                 type: "kv",
-                request: { code, capabilities: capNames },
+                request: { template, body, capabilities: capNames },
                 outcome: { ok: false, error: failure.error, reason: failure.reason },
                 timing: { totalMs },
               },
@@ -349,7 +446,7 @@ const defaultExport = {
               env,
               {
                 type: "kv",
-                request: { code, capabilities: capNames },
+                request: { template, body, capabilities: capNames },
                 outcome: { ok: true, result },
                 timing: { totalMs },
               },
@@ -361,39 +458,42 @@ const defaultExport = {
 
     // --- Run capability chain ---
     if (req.method === "POST" && url.pathname === "/run/chain") {
-      const body = (await req.json()) as {
-        steps: Array<{ name?: string; code: string; capabilities: string[] }>
-      }
-      if (!body.steps || !Array.isArray(body.steps)) {
+      const payload = (await req.json()) as { steps?: unknown }
+      const normalized = normalizeChainSteps(payload.steps)
+      if (!normalized || normalized.length === 0) {
         return withCors(Response.json({ error: "no steps" }, { status: 400 }))
       }
+      const stepsForTrace = chainStepsForTrace(normalized)
 
       const runChain = Effect.gen(function* () {
         const isolate = yield* Isolate
         const trace: TraceEntry[] = []
-
-        const finalResult = yield* Effect.reduce(
-          body.steps,
-          undefined as unknown,
-          (stepInput, step, i) =>
-            Effect.gen(function* () {
-              const t0 = Date.now()
-              const caps = buildCapabilitySet(step.capabilities, undefined)
-              const output = yield* isolate.run(step.code, caps, stepInput)
-              const ms = Date.now() - t0
-              trace.push({
-                step: i,
-                name: step.name,
-                capabilities: step.capabilities,
-                input: stepInput,
-                output,
-                ms,
-              })
-              return output
-            }),
-        )
-
-        return { result: finalResult, trace }
+        let stepInput: unknown = undefined
+        for (let i = 0; i < normalized.length; i++) {
+          const step = normalized[i]
+          const inputForRun =
+            step.input !== undefined
+              ? step.input
+              : step.props !== undefined
+                ? step.props
+                : stepInput
+          const t0 = Date.now()
+          const caps = buildCapabilitySet(step.capabilities, undefined)
+          const output = yield* isolate.run(step.body, caps, inputForRun, step.template)
+          const ms = Date.now() - t0
+          trace.push({
+            step: i,
+            name: step.name,
+            template: step.template,
+            body: step.body,
+            capabilities: step.capabilities,
+            input: inputForRun,
+            output,
+            ms,
+          })
+          stepInput = output
+        }
+        return { result: stepInput, trace }
       })
 
       const layer = isolateLayer()
@@ -409,7 +509,7 @@ const defaultExport = {
               env,
               {
                 type: "chain",
-                request: { steps: body.steps },
+                request: { steps: stepsForTrace },
                 outcome: { ok: false, error: failure.error, reason: failure.reason },
                 timing: { totalMs },
                 trace: [],
@@ -425,7 +525,7 @@ const defaultExport = {
               env,
               {
                 type: "chain",
-                request: { steps: body.steps },
+                request: { steps: stepsForTrace },
                 outcome: { ok: true, result },
                 timing: { totalMs },
                 trace,
@@ -438,17 +538,22 @@ const defaultExport = {
 
     // --- Internal spawn child route ---
     if (req.method === "POST" && url.pathname === "/spawn/child") {
-      const { code, capabilities, depth } = (await req.json()) as {
-        code: string
-        capabilities: string[]
-        depth: number
+      const json = (await req.json()) as Record<string, unknown>
+      const parsed = parseGuestRunPayload({
+        body: json.body,
+        code: json.code,
+        template: json.template,
+      })
+      if (!parsed) {
+        return withCors(Response.json({ ok: false, error: "invalid spawn child payload" }, { status: 400 }))
       }
-      const caps = capabilities ?? []
-      const childCaps = buildCapabilitySet(caps, depth)
+      const capabilities = Array.isArray(json.capabilities) ? (json.capabilities as string[]) : []
+      const depth = typeof json.depth === "number" ? json.depth : 0
+      const childCaps = buildCapabilitySet(capabilities, depth)
 
       const program = Effect.gen(function* () {
         const isolate = yield* Isolate
-        return yield* isolate.run(code, childCaps)
+        return yield* isolate.run(parsed.body, childCaps, undefined, parsed.template)
       })
 
       const layer = isolateLayer()
@@ -457,23 +562,32 @@ const defaultExport = {
 
     // --- Spawn recursive isolates ---
     if (req.method === "POST" && url.pathname === "/run/spawn") {
-      const { code, capabilities, depth } = (await req.json()) as {
-        code: string
-        capabilities: string[]
-        depth?: number
+      const json = (await req.json()) as Record<string, unknown>
+      const parsed = parseGuestRunPayload({
+        body: json.body,
+        code: json.code,
+        template: json.template,
+      })
+      if (!parsed) {
+        return withCors(
+          Response.json(
+            { error: "need body (or legacy code) and optional template (default guest@v1)" },
+            { status: 400 },
+          ),
+        )
       }
-      if (!code) return withCors(Response.json({ error: "no code" }, { status: 400 }))
-      const caps = capabilities ?? []
+      const { body, template } = parsed
+      const caps = Array.isArray(json.capabilities) ? (json.capabilities as string[]) : []
       if (!caps.includes("spawn")) {
         return withCors(Response.json({ error: "spawn capability required" }, { status: 400 }))
       }
-      const spawnDepth = depth ?? 2
+      const spawnDepth = typeof json.depth === "number" ? json.depth : 2
       const other = caps.filter((cap) => cap !== "spawn")
       const extraCaps = buildCapabilitySet(other, undefined)
 
       const program = Effect.gen(function* () {
         const isolate = yield* Isolate
-        return yield* isolate.spawn(code, extraCaps, spawnDepth)
+        return yield* isolate.spawn(body, extraCaps, spawnDepth, template)
       })
 
       const layer = isolateLayer()
@@ -489,7 +603,7 @@ const defaultExport = {
               env,
               {
                 type: "spawn",
-                request: { code, capabilities: caps, depth: spawnDepth },
+                request: { template, body, capabilities: caps, depth: spawnDepth },
                 outcome: { ok: false, error: failure.error, reason: failure.reason },
                 timing: { totalMs },
               },
@@ -504,7 +618,7 @@ const defaultExport = {
               env,
               {
                 type: "spawn",
-                request: { code, capabilities: caps, depth: spawnDepth },
+                request: { template, body, capabilities: caps, depth: spawnDepth },
                 outcome: { ok: true, result },
                 timing: { totalMs },
               },
@@ -516,41 +630,26 @@ const defaultExport = {
 
     // --- Generate and run code via LLM ---
     if (req.method === "POST" && url.pathname === "/run/generate") {
-      const { prompt, capabilities } = (await req.json()) as {
-        prompt: string
-        capabilities: string[]
-      }
+      const json = (await req.json()) as Record<string, unknown>
+      const prompt = typeof json.prompt === "string" ? json.prompt : ""
       if (!prompt) return withCors(Response.json({ error: "no prompt" }, { status: 400 }))
+      const runTemplate = resolveGuestTemplateId(
+        typeof json.template === "string" && json.template.trim() ? json.template.trim() : undefined,
+      )
+      if (!runTemplate) {
+        return withCors(Response.json({ error: "unknown template" }, { status: 400 }))
+      }
 
-      const caps = capabilities ?? []
-      const hasKvRead = caps.includes("kvRead")
-
-      const apiLines: string[] = []
-      if (hasKvRead) {
-        apiLines.push(
-          "`kv.get(key)` / `kv.list(prefix?)` — async, snapshot KV.",
-        )
-      }
-      if (caps.includes("workersAi")) {
-        apiLines.push("`ai.run(prompt)` — async, returns model text via host Workers AI.")
-      }
-      if (caps.includes("r2Read")) {
-        apiLines.push("`r2.list(prefix?, limit?)` / `r2.getText(key, maxBytes?)` — async R2 reads.")
-      }
-      if (caps.includes("d1Read")) {
-        apiLines.push("`d1.query(sql)` — async, read-only SELECT against engine D1.")
-      }
-      if (caps.includes("durableObjectFetch")) {
-        apiLines.push("`labDo.fetch(name, path)` — async stub Durable Object JSON.")
-      }
-      if (caps.includes("containerHttp")) {
-        apiLines.push("`labContainer.get(path)` — async HTTP GET to bound container (if configured).")
-      }
+      const caps = Array.isArray(json.capabilities) ? (json.capabilities as string[]) : []
+      const capSet = new Set(caps)
+      const apiLines = CAPABILITY_REGISTRY.filter((row) => capSet.has(row.id as LabCapabilityId)).map(
+        (row) => row.llmHint,
+      )
 
       const systemPrompt = [
-        "You are a code generator. You write JavaScript async function bodies.",
-        "The user describes what they want. You return ONLY the code — no markdown, no explanation.",
-        "The code will run inside an async IIFE in a sandboxed V8 isolate.",
+        "You are a code generator. You write JavaScript guest bodies (async statements, not a full module).",
+        "The user describes what they want. You return ONLY the body — no markdown, no explanation.",
+        "The body is inserted into a host shell (`guest@v1`) and runs inside an async IIFE in a sandboxed V8 isolate.",
         "Return the final value with `return`.",
         apiLines.length > 0
           ? "Available APIs:\n" + apiLines.join("\n")
@@ -580,7 +679,7 @@ const defaultExport = {
             env,
             {
               type: "generate",
-              request: { prompt, capabilities: caps },
+              request: { template: runTemplate, prompt, capabilities: caps },
               outcome: { ok: false, error: message },
               timing: { totalMs: Date.now() - t0, generateMs: Date.now() - t0, runMs: 0 },
             },
@@ -601,7 +700,7 @@ const defaultExport = {
             env,
             {
               type: "generate",
-              request: { prompt, capabilities: caps },
+              request: { template: runTemplate, prompt, capabilities: caps },
               outcome: { ok: false, error: "LLM returned empty code" },
               timing: { totalMs: generateMs, generateMs, runMs: 0 },
               generated: raw,
@@ -616,7 +715,7 @@ const defaultExport = {
 
       const program = Effect.gen(function* () {
         const isolate = yield* Isolate
-        return yield* isolate.run(genCode, runCaps)
+        return yield* isolate.run(genCode, runCaps, undefined, runTemplate)
       })
 
       const layer = isolateLayer()
@@ -631,7 +730,7 @@ const defaultExport = {
               env,
               {
                 type: "generate",
-                request: { prompt, capabilities: caps },
+                request: { template: runTemplate, prompt, capabilities: caps },
                 outcome: { ok: false, error: failure.error, reason: failure.reason },
                 timing: { totalMs: generateMs + runMs, generateMs, runMs },
                 generated: genCode,
@@ -654,7 +753,7 @@ const defaultExport = {
               env,
               {
                 type: "generate",
-                request: { prompt, capabilities: caps },
+                request: { template: runTemplate, prompt, capabilities: caps },
                 outcome: { ok: true, result },
                 timing: { totalMs: generateMs + runMs, generateMs, runMs },
                 generated: genCode,
@@ -719,12 +818,13 @@ async function runToResponse(
   const exit = await Effect.runPromiseExit(effect)
   return Exit.match(exit, {
     onFailure: (cause) => {
-      const failure = Cause.failureOption(cause)
-      if (failure._tag === "Some" && failure.value instanceof IsolateError) {
-        return Response.json(
-          { ok: false, reason: failure.value.reason, error: failure.value.message },
-          { status: 500 },
-        )
+      for (const reason of cause.reasons) {
+        if (Cause.isFailReason(reason) && reason.error instanceof IsolateError) {
+          return Response.json(
+            { ok: false, reason: reason.error.reason, error: reason.error.message },
+            { status: 500 },
+          )
+        }
       }
       return Response.json({ ok: false, error: Cause.pretty(cause) }, { status: 500 })
     },
@@ -769,13 +869,14 @@ function makeTraceId(): string {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 10)
 }
 
-function getFailureDetails(cause: Cause.Cause<IsolateError>) {
-  const failure = Cause.failureOption(cause)
-  if (failure._tag === "Some" && failure.value instanceof IsolateError) {
-    return {
-      status: 500,
-      error: failure.value.message,
-      reason: failure.value.reason,
+function getFailureDetails(cause: Cause.Cause<unknown>) {
+  for (const reason of cause.reasons) {
+    if (Cause.isFailReason(reason) && reason.error instanceof IsolateError) {
+      return {
+        status: 500,
+        error: reason.error.message,
+        reason: reason.error.reason,
+      }
     }
   }
   return {

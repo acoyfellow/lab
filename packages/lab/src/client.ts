@@ -1,11 +1,13 @@
 import type {
   ChainStep,
   RunGeneratePayload,
+  RunGuestPayload,
   RunResult,
   RunSpawnPayload,
   SeedResult,
   TraceData,
 } from './types.js';
+import { chainStepsForWire, guestWirePayload, normalizeBaseUrl, requestJSON } from './wire.js';
 
 export type LabClientOptions = {
   /** Origin only, e.g. `https://lab.coey.dev` (no trailing slash). */
@@ -14,42 +16,17 @@ export type LabClientOptions = {
   fetch?: typeof fetch;
 };
 
-function normalizeBaseUrl(baseUrl: string): string {
-  return baseUrl.trim().replace(/\/+$/, '');
-}
-
-/**
- * Parses JSON for every response, including non-2xx — same behavior as the
- * SvelteKit `callWorkerJSON` helper, so error bodies like `{ error: string }`
- * are returned instead of thrown.
- */
-async function requestJSON<T>(
-  baseUrl: string,
-  fetchImpl: typeof fetch,
-  path: string,
-  init?: RequestInit
-): Promise<T> {
-  const url = `${baseUrl}${path}`;
-  const response = await fetchImpl(url, init);
-  const text = await response.text();
-  if (!text) {
-    return {} as T;
-  }
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    throw new Error(`Expected JSON from ${url}${!response.ok ? ` (${response.status})` : ''}`);
-  }
-}
-
 export type LabClient = {
-  runSandbox: (code: string, capabilities?: string[]) => Promise<RunResult>;
-  runKv: (code: string, capabilities?: string[]) => Promise<RunResult>;
+  runSandbox: (payload: RunGuestPayload) => Promise<RunResult>;
+  runKv: (payload: RunGuestPayload) => Promise<RunResult>;
   runChain: (steps: ChainStep[]) => Promise<RunResult>;
   runSpawn: (payload: RunSpawnPayload) => Promise<RunResult>;
   runGenerate: (payload: RunGeneratePayload) => Promise<RunResult>;
   seed: () => Promise<SeedResult>;
+  /** Worker / app: `GET /t/:id` */
   getTrace: (traceId: string) => Promise<TraceData | { error: string }>;
+  /** Same document as `getTrace`; use when calling Worker origin with explicit `.json`. */
+  getTraceJson: (traceId: string) => Promise<TraceData | { error: string }>;
 };
 
 export function createLabClient(options: LabClientOptions): LabClient {
@@ -57,41 +34,54 @@ export function createLabClient(options: LabClientOptions): LabClient {
   const fetchImpl = options.fetch ?? globalThis.fetch;
 
   return {
-    runSandbox(code, capabilities) {
+    runSandbox(payload) {
       return requestJSON<RunResult>(baseUrl, fetchImpl, '/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, capabilities: capabilities ?? [] }),
+        body: JSON.stringify(guestWirePayload(payload)),
       });
     },
-    runKv(code, capabilities) {
+    runKv(payload) {
       return requestJSON<RunResult>(baseUrl, fetchImpl, '/run/kv', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, capabilities: capabilities ?? [] }),
+        body: JSON.stringify(guestWirePayload(payload)),
       });
     },
     runChain(steps) {
       return requestJSON<RunResult>(baseUrl, fetchImpl, '/run/chain', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ steps }),
+        body: JSON.stringify({ steps: chainStepsForWire(steps) }),
       });
     },
     runSpawn(payload) {
-      const { code, capabilities, depth } = payload;
+      const body = payload.body ?? payload.code;
+      if (typeof body !== 'string' || !body.trim()) {
+        throw new Error('RunSpawnPayload requires body (or legacy code)');
+      }
+      const o: Record<string, unknown> = {
+        body,
+        capabilities: payload.capabilities,
+      };
+      if (payload.template !== undefined) o.template = payload.template;
+      if (payload.depth !== undefined) o.depth = payload.depth;
       return requestJSON<RunResult>(baseUrl, fetchImpl, '/run/spawn', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, capabilities, depth }),
+        body: JSON.stringify(o),
       });
     },
     runGenerate(payload) {
-      const { prompt, capabilities } = payload;
+      const o: Record<string, unknown> = {
+        prompt: payload.prompt,
+        capabilities: payload.capabilities ?? [],
+      };
+      if (payload.template !== undefined) o.template = payload.template;
       return requestJSON<RunResult>(baseUrl, fetchImpl, '/run/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, capabilities }),
+        body: JSON.stringify(o),
       });
     },
     seed() {
@@ -101,6 +91,11 @@ export function createLabClient(options: LabClientOptions): LabClient {
     },
     getTrace(traceId) {
       return requestJSON<TraceData | { error: string }>(baseUrl, fetchImpl, `/t/${traceId}`, {
+        method: 'GET',
+      });
+    },
+    getTraceJson(traceId) {
+      return requestJSON<TraceData | { error: string }>(baseUrl, fetchImpl, `/t/${traceId}.json`, {
         method: 'GET',
       });
     },

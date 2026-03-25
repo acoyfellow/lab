@@ -5,11 +5,17 @@
   import { runSandbox, runKv, runChain, runSpawn, runGenerate, seedKv } from '../data.remote';
   import type { ChainStep } from '@acoyfellow/lab';
   import { SIMPLE_CHAIN_STEPS } from '$lib/guest-code-fixtures';
+  import {
+    GUEST_TEMPLATE_DEFAULT,
+    GUEST_TEMPLATE_IDS,
+    type GuestTemplateId,
+  } from '$lib/guest-templates';
 
   type Mode = 'sandbox' | 'kv' | 'chain' | 'generate' | 'spawn';
 
   /** Flagship: chain shows per-step trace in `/t/:id`. */
   let mode = $state<Mode>('chain');
+  let guestTemplate = $state<GuestTemplateId>(GUEST_TEMPLATE_DEFAULT);
   let code = $state('return { hello: "world" }');
   let chainJson = $state(JSON.stringify(SIMPLE_CHAIN_STEPS, null, 2));
   let prompt = $state('Return the sum of 1 through 10 as a number.');
@@ -35,7 +41,14 @@
       if (m === 'sandbox' || m === 'kv' || m === 'chain' || m === 'generate' || m === 'spawn') {
         mode = m;
       }
-      if (typeof f.code === 'string') code = f.code;
+      if (typeof f.body === 'string') code = f.body;
+      else if (typeof f.code === 'string') code = f.code;
+      if (
+        typeof f.template === 'string' &&
+        (GUEST_TEMPLATE_IDS as readonly string[]).includes(f.template)
+      ) {
+        guestTemplate = f.template as GuestTemplateId;
+      }
       if (typeof f.prompt === 'string') prompt = f.prompt;
       if (typeof f.depth === 'number') depth = f.depth;
       if (Array.isArray(f.capabilities)) {
@@ -82,16 +95,24 @@
     try {
       let r;
       if (mode === 'sandbox') {
-        r = await runSandbox({ code, capabilities: guestCaps() });
+        r = await runSandbox({
+          body: code,
+          capabilities: guestCaps(),
+          template: guestTemplate,
+        });
       } else if (mode === 'kv') {
-        r = await runKv({ code, capabilities: guestCaps() });
+        r = await runKv({
+          body: code,
+          capabilities: guestCaps(),
+          template: guestTemplate,
+        });
       } else if (mode === 'chain') {
         let steps: ChainStep[];
         try {
           steps = JSON.parse(chainJson) as ChainStep[];
         } catch {
           throw new Error(
-            'Invalid JSON in Steps. Use an array of { code, capabilities } objects — see the HTTP API docs for examples.',
+            'Invalid JSON in Steps. Use an array of { body, capabilities } objects — see the HTTP API docs for examples.',
           );
         }
         if (!Array.isArray(steps)) throw new Error('Chain JSON must be an array of steps');
@@ -99,12 +120,13 @@
       } else if (mode === 'generate') {
         const capabilities: string[] = [...guestCaps()];
         if (capKvRead) capabilities.push('kvRead');
-        r = await runGenerate({ prompt, capabilities });
+        r = await runGenerate({ prompt, capabilities, template: guestTemplate });
       } else {
         r = await runSpawn({
-          code,
+          body: code,
           capabilities: ['spawn', ...guestCaps()],
           depth,
+          template: guestTemplate,
         });
       }
 
@@ -139,7 +161,7 @@
       <code class="font-(family-name:--mono) text-[0.75rem]">traceId</code>.
       Checkboxes add optional <strong class="text-(--text) font-medium">host-invoke</strong> caps (<code class="text-[0.7rem]">workersAi</code>,
       <code class="text-[0.7rem]">r2Read</code>, …); Generate mode can also grant <code class="text-[0.7rem]">kvRead</code> to emitted code.
-      Chain steps carry their own <code class="text-[0.7rem]">capabilities</code> arrays.
+      Chain steps carry their own <code class="text-[0.7rem]">capabilities</code> (and optional per-step <code class="text-[0.7rem]">template</code>) in JSON.
       <AppLink to={paths.docsHttpApi} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>
       &middot;
       <AppLink to={paths.docsCapabilities} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">Capability matrix</AppLink>.
@@ -172,6 +194,26 @@
         {#if seedMsg}
           <span class="text-[0.8125rem] text-(--text-2)">{seedMsg}</span>
         {/if}
+      </div>
+    {/if}
+
+    {#if mode !== 'chain'}
+      <div>
+        <label for="compose-template" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5"
+          >Guest template</label
+        >
+        <select
+          id="compose-template"
+          bind:value={guestTemplate}
+          class="w-full max-w-xs border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text) font-(family-name:--mono)"
+        >
+          {#each GUEST_TEMPLATE_IDS as tid (tid)}
+            <option value={tid}>{tid}</option>
+          {/each}
+        </select>
+        <p class="text-[0.75rem] text-(--text-3) m-0 mt-1.5 max-w-[56ch]">
+          Chain mode: set <code class="text-[0.7rem]">template</code> on each step in the JSON if needed.
+        </p>
       </div>
     {/if}
 
@@ -217,7 +259,7 @@
         <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-(family-name:--mono) text-[0.7rem]">containerHttp</code></label>
       </fieldset>
       <div>
-        <label for="compose-code" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Code</label>
+        <label for="compose-code" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Guest body</label>
         <textarea
           id="compose-code"
           bind:value={code}

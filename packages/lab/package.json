@@ -18,6 +18,18 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./effect": {
+      "types": "./dist/effect.d.ts",
+      "import": "./dist/effect.js"
+    }
+  },
+  "peerDependencies": {
+    "effect": ">=4.0.0-beta.0 <5"
+  },
+  "peerDependenciesMeta": {
+    "effect": {
+      "optional": true
     }
   },
   "scripts": {
@@ -25,6 +37,7 @@
     "prepublishOnly": "tsc -p tsconfig.json"
   },
   "devDependencies": {
+    "effect": "4.0.0-beta.40",
     "typescript": "^5.9.3"
   }
 }

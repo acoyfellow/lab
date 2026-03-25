@@ -1,6 +1,7 @@
 import type {
   ChainStep,
   RunGeneratePayload,
+  RunGuestPayload,
   RunResult,
   RunSpawnPayload,
   SeedResult,
@@ -41,37 +42,57 @@ async function callWorkerJSON<T>(
   }
 }
 
-export type RunCodePayload = { code: string; capabilities?: string[] };
-
-// Run code (optional guest capabilities; see /docs/capabilities)
-export const runSandbox = query('unchecked', async (payload: RunCodePayload): Promise<RunResult> => {
+// Run guest body (optional guest capabilities; see /docs/capabilities)
+export const runSandbox = query('unchecked', async (payload: RunGuestPayload): Promise<RunResult> => {
   const platform = getRequestEvent().platform;
-  const { code, capabilities = [] } = payload;
+  const body = payload.body ?? payload.code;
+  const capabilities = payload.capabilities ?? [];
   return callWorkerJSON<RunResult>(platform, '/run', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code, capabilities }),
+    body: JSON.stringify({
+      body,
+      template: payload.template,
+      capabilities,
+    }),
   });
 });
 
 // KV read + optional extra capabilities
-export const runKv = query('unchecked', async (payload: RunCodePayload): Promise<RunResult> => {
+export const runKv = query('unchecked', async (payload: RunGuestPayload): Promise<RunResult> => {
   const platform = getRequestEvent().platform;
-  const { code, capabilities = [] } = payload;
+  const body = payload.body ?? payload.code;
+  const capabilities = payload.capabilities ?? [];
   return callWorkerJSON<RunResult>(platform, '/run/kv', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code, capabilities }),
+    body: JSON.stringify({
+      body,
+      template: payload.template,
+      capabilities,
+    }),
   });
 });
 
 // Run a capability chain
 export const runChain = query('unchecked', async (steps: ChainStep[]): Promise<RunResult> => {
   const platform = getRequestEvent().platform;
+  const stepsWire = steps.map((s) => {
+    const b = s.body ?? s.code;
+    const o: Record<string, unknown> = {
+      body: b,
+      capabilities: s.capabilities ?? [],
+    };
+    if (s.name !== undefined) o.name = s.name;
+    if (s.template !== undefined) o.template = s.template;
+    if (s.props !== undefined) o.props = s.props;
+    if (s.input !== undefined) o.input = s.input;
+    return o;
+  });
   return callWorkerJSON<RunResult>(platform, '/run/chain', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ steps }),
+    body: JSON.stringify({ steps: stepsWire }),
   });
 });
 
@@ -80,11 +101,12 @@ export const runSpawn = query(
   'unchecked',
   async (payload: RunSpawnPayload): Promise<RunResult> => {
     const platform = getRequestEvent().platform;
-    const { code, capabilities, depth } = payload;
+    const body = payload.body ?? payload.code;
+    const { capabilities, depth, template } = payload;
     return callWorkerJSON<RunResult>(platform, '/run/spawn', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, capabilities, depth }),
+      body: JSON.stringify({ body, capabilities, depth, template }),
     });
   },
 );
@@ -94,11 +116,11 @@ export const runGenerate = query(
   'unchecked',
   async (payload: RunGeneratePayload): Promise<RunResult> => {
     const platform = getRequestEvent().platform;
-    const { prompt, capabilities } = payload;
+    const { prompt, capabilities, template } = payload;
     return callWorkerJSON<RunResult>(platform, '/run/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, capabilities }),
+      body: JSON.stringify({ prompt, capabilities, template }),
     });
   },
 );

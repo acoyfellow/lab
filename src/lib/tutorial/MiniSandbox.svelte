@@ -12,7 +12,7 @@
     error = null;
     traceId = null;
     try {
-      const r: RunResult = await runSandbox({ code, capabilities: [] });
+      const r: RunResult = await runSandbox({ body: code, capabilities: [] });
       if (r.traceId) traceId = r.traceId;
       if (!r.ok) {
         error = JSON.stringify({ error: r.error, reason: r.reason }, null, 2);

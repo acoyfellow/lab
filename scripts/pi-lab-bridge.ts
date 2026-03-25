@@ -25,12 +25,12 @@ function stepsFromMessageCount(messageCount: number): ChainStep[] {
   return [
     {
       name: 'pi-session-echo',
-      code: `return { piMessageCount: ${messageCount}, via: "pi-lab-bridge" }`,
+      body: `return { piMessageCount: ${messageCount}, via: "pi-lab-bridge" }`,
       capabilities: [],
     },
     {
       name: 'fold',
-      code: `return input.piMessageCount * 2`,
+      body: `return input.piMessageCount * 2`,
       capabilities: [],
     },
   ];

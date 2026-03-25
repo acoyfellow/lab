@@ -14,6 +14,8 @@ export type RunResult = {
 export type TraceStep = {
   step: number;
   name?: string;
+  template?: string;
+  body?: string;
   capabilities: string[];
   input: unknown;
   output: unknown;
@@ -23,20 +25,41 @@ export type TraceStep = {
 /** One step in `POST /run/chain`. */
 export type ChainStep = {
   name?: string;
-  code: string;
+  /** Guest template id (default `guest@v1`). */
+  template?: string;
+  /** JavaScript guest body (inserted into the isolate shell). */
+  body?: string;
+  /** Legacy alias for `body` on the wire. */
+  code?: string;
   capabilities: string[];
+  /** Optional explicit input for this step (overrides chain carry). */
+  props?: unknown;
+  input?: unknown;
+};
+
+export type RunGuestPayload = {
+  body?: string;
+  template?: string;
+  capabilities?: string[];
+  /** Legacy alias for `body`. */
+  code?: string;
 };
 
 export type RunSpawnPayload = {
-  code: string;
+  body?: string;
+  template?: string;
   capabilities: string[];
   /** Omitted uses server default (currently 2). */
   depth?: number;
+  /** Legacy alias for `body`. */
+  code?: string;
 };
 
 export type RunGeneratePayload = {
   prompt: string;
   capabilities: string[];
+  /** Shell for the generated body (default `guest@v1`). */
+  template?: string;
 };
 
 /** `POST /seed` response. */

@@ -6,6 +6,8 @@
 
 Public Worker endpoints. Default origin in examples: `https://lab.coey.dev`. Capabilities: [how they work](/docs/capabilities).
 
+Guest **`body`** strings are plain **JavaScript** (inserted into template `guest@v1`), not TypeScript. **`code`** is accepted as a legacy alias for **`body`**. Optional **`template`**: only `guest@v1` today (default when omitted). The Worker **parses** each body as script (same shaped test as [`src/lib/guest-code.test.ts`](https://github.com/acoyfellow/lab/blob/main/src/lib/guest-code.test.ts)) before load; syntax errors fail the run with a **runtime** isolate error.
+
 ## Run modes
 
 | Mode | When | Endpoint |
@@ -13,50 +15,62 @@ Public Worker endpoints. Default origin in examples: `https://lab.coey.dev`. Cap
 | Chain | Orchestration + per-step `trace` | `POST /run/chain` |
 | Sandbox | Single isolate; optional `capabilities[]` | `POST /run` |
 | KV Read | KV snapshot + optional extra `capabilities[]` | `POST /run/kv` |
-| Generate | LLM writes code, then runs | `POST /run/generate` |
+| Generate | LLM writes **body**, then runs | `POST /run/generate` |
 | Spawn | Child isolates (bounded depth) | `POST /run/spawn` |
 
-**Guest `code` strings:** plain **JavaScript** inside the Worker isolate, not TypeScript — no type annotations (e.g. `(n: number)` will throw `SyntaxError` at runtime).
+## Public HTTP (summary)
+
+| Method | Path | Body (JSON) |
+|--------|------|-------------|
+| POST | `/run` | `{ body, template?, capabilities? }` or `{ code, … }` |
+| POST | `/run/kv` | same as `/run` |
+| POST | `/run/chain` | `{ steps: [{ body, template?, capabilities, name?, props?, input? }] }` |
+| POST | `/run/spawn` | `{ body, template?, capabilities[], depth? }` |
+| POST | `/run/generate` | `{ prompt, capabilities[], template? }` |
+| POST | `/seed` | (empty) |
+| GET | `/t/:id` | — trace document |
+| GET | `/t/:id.json` | — same JSON as `/t/:id` (Worker + app) |
+| GET | `/lab/catalog` | — machine-readable caps, templates, execute map (agents) |
 
 ## Examples (curl)
 
 Chain:
 
 ```
-curl -X POST https://lab.coey.dev/run/chain \
-  -H 'Content-Type: application/json' \
-  -d '{"steps":[{"code":"return [1, 2, 3]","capabilities":[]}, ...]}'
+curl -X POST https://lab.coey.dev/run/chain \\
+  -H 'Content-Type: application/json' \\
+  -d '{"steps":[{"body":"return [1, 2, 3]","capabilities":[]}, ...]}'
 ```
 
 Sandbox:
 
 ```
-curl -X POST https://lab.coey.dev/run \
-  -H 'Content-Type: application/json' \
-  -d '{"code":"return { sum: [1,2,3].reduce((a,b)=>a+b, 0) }"}'
+curl -X POST https://lab.coey.dev/run \\
+  -H 'Content-Type: application/json' \\
+  -d '{"body":"return { sum: [1,2,3].reduce((a,b)=>a+b, 0) }"}'
 ```
 
 Optional guest capabilities:
 
 ```
-curl -X POST https://lab.coey.dev/run \
-  -H 'Content-Type: application/json' \
-  -d '{"code":"return await d1.query(\"SELECT 1 as n\")","capabilities":["d1Read"]}'
+curl -X POST https://lab.coey.dev/run \\
+  -H 'Content-Type: application/json' \\
+  -d '{"body":"return await d1.query(\\\"SELECT 1 as n\\\")","capabilities":["d1Read"]}'
 ```
 
 KV (after `POST /seed`):
 
 ```
-curl -X POST https://lab.coey.dev/run/kv \
-  -H 'Content-Type: application/json' \
-  -d '{"code":"const keys = await kv.list(\"user:\"); return keys;"}'
+curl -X POST https://lab.coey.dev/run/kv \\
+  -H 'Content-Type: application/json' \\
+  -d '{"body":"const keys = await kv.list(\\\"user:\\\"); return keys;"}'
 ```
 
 ## `POST /run`
 
 Sandboxed isolate. Optional guest shims via `capabilities`.
 
-**Body:** `{ code: string, capabilities?: string[] }`
+**Body:** `{ body: string, template?: string, capabilities?: string[] }` — or **`code`** instead of **`body`**.
 
 See [Capabilities](/docs/capabilities) for `kvRead`, `workersAi`, `r2Read`, `d1Read`, `durableObjectFetch`, `containerHttp`.
 
@@ -64,7 +78,7 @@ See [Capabilities](/docs/capabilities) for `kvRead`, `workersAi`, `r2Read`, `d1R
 
 ## `POST /run/kv`
 
-**Body:** `{ code: string, capabilities?: string[] }`
+**Body:** same as `/run`.
 
 Always includes `kvRead`. Merges any extra capability strings from `capabilities`.
 
@@ -72,21 +86,21 @@ In isolate: `kv.get`, `kv.list` against a snapshot loaded before the isolate run
 
 ## `POST /run/chain`
 
-**Body:** `{ steps: Array<{ name?: string, code: string, capabilities: string[] }> }`
+**Body:** `{ steps: Array<{ name?: string, body: string, template?: string, capabilities: string[], props?: unknown, input?: unknown }> }`
 
-Each step receives the previous output as `input`. Optional per-step `name`.
+`code` is accepted per step instead of `body`. Each step receives **`input`** as: `step.input` if set, else `step.props` if set, else the previous step’s output.
 
-**Response:** includes `trace` (per-step I/O, timing). Per-step `capabilities` may include any catalog string.
+**Response:** includes `trace` (per-step I/O, timing).
 
 Persisted runs return `traceId` for [GET /t/:id](/docs/trace-schema).
 
 ## `POST /run/generate`
 
-**Body:** `{ prompt: string, capabilities: string[] }`
+**Body:** `{ prompt: string, capabilities: string[], template?: string }`
 
 **Response:** `generated`, `generateMs`, `runMs`. Model: `@cf/meta/llama-3.1-8b-instruct`.
 
-Include capability strings so the system prompt lists the matching guest APIs (`kvRead`, `workersAi`, etc.).
+Include capability strings so the system prompt lists matching guest APIs.
 
 ## Internal invoke (not for direct integration)
 
@@ -94,19 +108,23 @@ Guest code with host-invoke caps calls `fetch("http://internal/invoke/...")` rou
 
 ## `POST /run/spawn`
 
-**Body:** `{ code: string, capabilities: string[], depth?: number }`
+**Body:** `{ body: string, capabilities: string[], template?: string, depth?: number }`
 
-In isolate: `spawn(code, capabilities)`. Default `depth`: 2; at 0, spawn throws.
+In isolate: `spawn(bodyString, capabilities)`. Default `depth`: 2; at 0, spawn throws.
 
-**Internal:** `POST /spawn/child` — not called directly by clients.
+**Internal:** `POST /spawn/child` — same JSON shape (`body` / legacy `code`, `template`, `capabilities`, `depth`).
 
 ## `POST /seed`
 
 Seeds KV with demo data. No trace id.
 
-## `GET /t/:id`
+## `GET /lab/catalog`
 
-Persisted trace document. Same JSON as `GET /t/:id.json`. Shape: [Trace schema](/docs/trace-schema).
+JSON for **LLM / tool** discovery: `capabilities` (with `llmHint`), `templates`, `execute` (which path for sandbox / chain / …), `trace`, `seed`. Same CORS as other public routes. Site origin can proxy this path to the Worker. Details: [Agents](/docs/agent-integration).
+
+## `GET /t/:id` and `GET /t/:id.json`
+
+Persisted trace document. Both paths return the same JSON. On the **Worker** (e.g. `http://localhost:1337`), `.json` exists for parity with the SvelteKit route [`/t/[id].json`](https://github.com/acoyfellow/lab/blob/main/src/routes/t/%5Bid%5D.json/%2Bserver.ts). Shape: [Trace schema](/docs/trace-schema).
 
 ---
 
@@ -114,6 +132,7 @@ Persisted trace document. Same JSON as `GET /t/:id.json`. Shape: [Trace schema](
   gridClass="sm:grid-cols-2"
   links={[
     { label: 'Docs', to: '/docs', description: 'Hub for all on-site reference pages.' },
+    { label: 'Agents', to: '/docs/agent-integration', description: 'Catalog lookup + execute loop.' },
     { label: 'TypeScript client', to: '/docs/typescript', description: 'npm package, createLabClient, methods.' },
   ]}
 />

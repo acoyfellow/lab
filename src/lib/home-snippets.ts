@@ -5,7 +5,7 @@
 export const CHAIN_STEPS_FOR_CURL = [
 	{
 		name: 'Load',
-		code: `const keys = await kv.list("user:");
+		body: `const keys = await kv.list("user:");
 const rows = [];
 for (const key of keys) {
   const raw = await kv.get(key);
@@ -16,7 +16,7 @@ return rows;`,
 	},
 	{
 		name: 'Pack',
-		code: `return {
+		body: `return {
   n: input.length,
   names: input.map((u) => u.name),
 };`,
@@ -24,7 +24,7 @@ return rows;`,
 	},
 	{
 		name: 'Line',
-		code: `return (
+		body: `return (
   "Roll call: " +
   input.names.join(", ") +
   " (" + input.n + ")"
@@ -48,7 +48,7 @@ export const CHAIN_CURL = `curl -X POST https://lab.coey.dev/run/chain \\
   -d ${bashSingleQuoted(CHAIN_JSON)}`;
 
 const SPAWN_JSON = JSON.stringify({
-	code: 'const a = await spawn("return 10 * 10", []); const b = await spawn("return 20 * 20", []); return { a, b }',
+	body: 'const a = await spawn("return 10 * 10", []); const b = await spawn("return 20 * 20", []); return { a, b }',
 	capabilities: ['spawn'],
 	depth: 2,
 });
@@ -75,7 +75,7 @@ await lab.seed();
 const out = await lab.runChain([
   {
     name: "Load",
-    code: \`const keys = await kv.list("user:");
+    body: \`const keys = await kv.list("user:");
 const rows = [];
 for (const key of keys) {
   const raw = await kv.get(key);
@@ -86,7 +86,7 @@ return rows;\`,
   },
   {
     name: "Pack",
-    code: \`return {
+    body: \`return {
   n: input.length,
   names: input.map((u) => u.name),
 };\`,
@@ -94,7 +94,7 @@ return rows;\`,
   },
   {
     name: "Line",
-    code: \`return (
+    body: \`return (
   "Roll call: " +
   input.names.join(", ") +
   " (" + input.n + ")"
@@ -106,7 +106,7 @@ return rows;\`,
 console.log(out.result);
 
 if (out.traceId) {
-  console.log(\`Trace: https://\${process.env.LAB_URL}\/t/\${out.traceId}\`);
+  console.log(\`Trace: https://\${process.env.LAB_URL}/t/\${out.traceId}\`);
 }`;
 
 /** Illustrative RunResult.trace shape for seeded KV + Load → Pack → Line. */
@@ -119,6 +119,7 @@ export const EXAMPLE_RUN_RESULT_SHAPE = JSON.stringify(
 			{
 				step: 0,
 				name: 'Load',
+				template: 'guest@v1',
 				capabilities: ['kvRead'],
 				input: null,
 				output: [

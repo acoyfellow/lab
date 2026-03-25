@@ -24,7 +24,7 @@
     chainJson = JSON.stringify(
       CHAIN_STEPS_FOR_CURL.map((s) => ({
         name: s.name,
-        code: s.code,
+        body: s.body,
         capabilities: [...s.capabilities],
       })),
       null,
@@ -53,7 +53,7 @@
       try {
         steps = JSON.parse(chainJson) as ChainStep[];
       } catch {
-        throw new Error('Invalid JSON — expect an array of { code, capabilities }.');
+        throw new Error('Invalid JSON — expect an array of { body, capabilities }.');
       }
       if (!Array.isArray(steps)) throw new Error('Body must be an array of steps');
       const r: RunResult = await runChain(steps);

@@ -1,6 +1,11 @@
-import { Context, Effect, Data, Layer } from "effect"
+import { Data, Effect, Layer, ServiceMap } from "effect"
 import type { CapabilitySet } from "./Capability"
-import { denyMessageFor } from "./capabilities/registry"
+import {
+  composeGuestModule,
+  GUEST_TEMPLATE_DEFAULT,
+  type GuestTemplateId,
+} from "./guest/templates"
+import { guestBodySyntaxError } from "./guest/validate"
 
 // --- Errors ---
 
@@ -30,13 +35,23 @@ export interface WorkerLoaderBinding {
 
 // --- Isolate Service ---
 
-export class Isolate extends Context.Tag("@lab/Isolate")<
+export class Isolate extends ServiceMap.Service<
   Isolate,
   {
-    readonly run: (code: string, capabilities?: CapabilitySet, input?: unknown) => Effect.Effect<unknown, IsolateError>
-    readonly spawn: (code: string, capabilities?: CapabilitySet, depth?: number) => Effect.Effect<unknown, IsolateError>
+    readonly run: (
+      body: string,
+      capabilities?: CapabilitySet,
+      input?: unknown,
+      templateId?: GuestTemplateId
+    ) => Effect.Effect<unknown, IsolateError>
+    readonly spawn: (
+      body: string,
+      capabilities?: CapabilitySet,
+      depth?: number,
+      templateId?: GuestTemplateId
+    ) => Effect.Effect<unknown, IsolateError>
   }
->() {}
+>()("@lab/Isolate") {}
 
 function isolateUsesSelfOutbound(caps?: CapabilitySet): boolean {
   if (!caps) return false
@@ -49,206 +64,10 @@ function isolateUsesSelfOutbound(caps?: CapabilitySet): boolean {
   return false
 }
 
-// --- Wrapper code generation ---
-
-const wrapCode = (
-  code: string,
-  caps?: CapabilitySet,
-  kvSnapshot?: Record<string, string | null>,
-  kvKeys?: string[],
-  input?: unknown
-): string => {
-  const kvDeny = denyMessageFor("kvRead")
-  const spawnDeny = denyMessageFor("spawn")
-  const aiDeny = denyMessageFor("workersAi")
-  const r2Deny = denyMessageFor("r2Read")
-  const d1Deny = denyMessageFor("d1Read")
-  const doDeny = denyMessageFor("durableObjectFetch")
-  const contDeny = denyMessageFor("containerHttp")
-
-  const kvShim = caps?.kvRead
-    ? `
-    const __kvData = ${JSON.stringify(kvSnapshot ?? {})};
-    const __kvKeys = ${JSON.stringify(kvKeys ?? [])};
-    const kv = {
-      async get(key) { return __kvData[key] ?? null; },
-      async list(prefix) {
-        if (!prefix) return __kvKeys;
-        return __kvKeys.filter(k => k.startsWith(prefix));
-      }
-    };
-`
-    : `
-    const kv = new Proxy({}, {
-      get() { throw new Error(${JSON.stringify(kvDeny)}); }
-    });
-`
-
-  const inputShim = input !== undefined
-    ? `const input = ${JSON.stringify(input)};`
-    : ``
-
-  const spawnDepth = caps?.spawn?.depth ?? 0
-  const spawnShim = caps?.spawn && spawnDepth > 0
-    ? `
-    const spawn = async (code, caps) => {
-      const res = await fetch("http://internal/spawn/child", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ code, capabilities: caps || [], depth: ${spawnDepth - 1} }),
-      });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || "spawn failed");
-      return data.result;
-    };
-`
-    : `
-    const spawn = () => { throw new Error(${JSON.stringify(spawnDeny)}); };
-`
-
-  const aiShim = caps?.workersAi
-    ? `
-    const ai = {
-      async run(prompt) {
-        const res = await fetch("http://internal/invoke/ai", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ prompt }),
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "invoke ai failed");
-        return data.result;
-      }
-    };
-`
-    : `
-    const ai = new Proxy({}, {
-      get() { throw new Error(${JSON.stringify(aiDeny)}); }
-    });
-`
-
-  const r2Shim = caps?.r2Read
-    ? `
-    const r2 = {
-      async list(prefix, limit) {
-        const res = await fetch("http://internal/invoke/r2", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ action: "list", prefix: prefix ?? null, limit: limit ?? 500 }),
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "invoke r2 failed");
-        return data.result;
-      },
-      async getText(key, maxBytes) {
-        const res = await fetch("http://internal/invoke/r2", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ action: "getText", key, maxBytes: maxBytes ?? 262144 }),
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "invoke r2 failed");
-        return data.result;
-      }
-    };
-`
-    : `
-    const r2 = new Proxy({}, {
-      get() { throw new Error(${JSON.stringify(r2Deny)}); }
-    });
-`
-
-  const d1Shim = caps?.d1Read
-    ? `
-    const d1 = {
-      async query(sql) {
-        const res = await fetch("http://internal/invoke/d1", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ sql }),
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "invoke d1 failed");
-        return data.result;
-      }
-    };
-`
-    : `
-    const d1 = new Proxy({}, {
-      get() { throw new Error(${JSON.stringify(d1Deny)}); }
-    });
-`
-
-  const doShim = caps?.durableObjectFetch
-    ? `
-    const labDo = {
-      async fetch(name, path) {
-        const res = await fetch("http://internal/invoke/do", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ name, path: path ?? "/" }),
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "invoke do failed");
-        return data.result;
-      }
-    };
-`
-    : `
-    const labDo = new Proxy({}, {
-      get() { throw new Error(${JSON.stringify(doDeny)}); }
-    });
-`
-
-  const contShim = caps?.containerHttp
-    ? `
-    const labContainer = {
-      async get(path) {
-        const res = await fetch("http://internal/invoke/container", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ path: path ?? "/" }),
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "invoke container failed");
-        return data.result;
-      }
-    };
-`
-    : `
-    const labContainer = new Proxy({}, {
-      get() { throw new Error(${JSON.stringify(contDeny)}); }
-    });
-`
-
-  return `
-export default {
-  async fetch(req, env) {
-    try {
-      ${inputShim}
-      ${kvShim}
-      ${spawnShim}
-      ${aiShim}
-      ${r2Shim}
-      ${d1Shim}
-      ${doShim}
-      ${contShim}
-      const __result = await (async () => {
-        ${code}
-      })();
-      return Response.json({ ok: true, result: __result ?? null });
-    } catch (e) {
-      return Response.json({ ok: false, error: e.message }, { status: 500 });
-    }
-  }
-};
-`
-}
-
 // --- Named effectful helpers (Effect.fn for call-site tracing) ---
 
 const hash = Effect.fn("hash")(function* (s: string) {
-  const buf = yield* Effect.promise(() =>
+  const buf = yield* Effect.promise((_signal) =>
     crypto.subtle.digest("SHA-256", new TextEncoder().encode(s))
   )
   return [...new Uint8Array(buf)]
@@ -258,9 +77,9 @@ const hash = Effect.fn("hash")(function* (s: string) {
 })
 
 const snapshotKv = Effect.fn("snapshotKv")(function* (kv: KVNamespace) {
-  const list = yield* Effect.promise(() => kv.list())
+  const list = yield* Effect.promise((_signal) => kv.list())
   const keys = list.keys.map((k) => k.name)
-  const entries = yield* Effect.promise(() =>
+  const entries = yield* Effect.promise((_signal) =>
     Promise.all(keys.map(async (key) => [key, await kv.get(key)] as const))
   )
   return {
@@ -269,40 +88,34 @@ const snapshotKv = Effect.fn("snapshotKv")(function* (kv: KVNamespace) {
   }
 })
 
-const parseIsolateResponse = Effect.fn("parseIsolateResponse")(
-  function* (res: Response) {
-    const body = yield* Effect.tryPromise({
-      try: () => res.json() as Promise<Record<string, unknown>>,
-      catch: () => new IsolateError({ reason: "runtime", message: "bad json" }),
-    })
+const parseIsolateResponse = Effect.fn("parseIsolateResponse")(function* (res: Response) {
+  const body = yield* Effect.tryPromise({
+    try: () => res.json() as Promise<Record<string, unknown>>,
+    catch: () => new IsolateError({ reason: "runtime", message: "bad json" }),
+  })
 
-    if (body["ok"] === false) {
-      const errMsg =
-        typeof body["error"] === "string" ? body["error"] : "unknown"
-      if (errMsg.includes("not permitted")) {
-        return yield* new IsolateError({ reason: "sandbox_violation", message: errMsg })
-      }
-      if (errMsg.includes("capability not granted")) {
-        return yield* new IsolateError({ reason: "capability_denied", message: errMsg })
-      }
-      return yield* new IsolateError({ reason: "runtime", message: errMsg })
+  if (body["ok"] === false) {
+    const errMsg = typeof body["error"] === "string" ? body["error"] : "unknown"
+    if (errMsg.includes("not permitted")) {
+      return yield* new IsolateError({ reason: "sandbox_violation", message: errMsg })
     }
-
-    return body["result"]
+    if (errMsg.includes("capability not granted")) {
+      return yield* new IsolateError({ reason: "capability_denied", message: errMsg })
+    }
+    return yield* new IsolateError({ reason: "runtime", message: errMsg })
   }
-)
+
+  return body["result"]
+})
 
 // --- Execute an isolate with full config ---
 
-const execIsolate = (
-  loader: WorkerLoaderBinding,
-  kvNamespace: KVNamespace | undefined,
-  selfFetcher?: Fetcher
-) =>
+const execIsolate = (loader: WorkerLoaderBinding, kvNamespace: KVNamespace | undefined, selfFetcher?: Fetcher) =>
   Effect.fn("execIsolate")(function* (
-    code: string,
+    body: string,
     caps: CapabilitySet | undefined,
-    input: unknown | undefined
+    input: unknown | undefined,
+    templateId: GuestTemplateId = GUEST_TEMPLATE_DEFAULT
   ) {
     const hasKv = !!(caps?.kvRead && kvNamespace)
     const hasSpawn = !!(caps?.spawn && caps.spawn.depth > 0)
@@ -317,13 +130,21 @@ const execIsolate = (
       caps?.containerHttp ? ":ctr" : "",
     ].join("")
     const inputKey = input !== undefined ? `:in:${JSON.stringify(input)}` : ""
-    const id = yield* hash(code + capKey + inputKey)
+    const id = yield* hash(templateId + ":" + body + capKey + inputKey)
 
     const { snapshot, keys } = hasKv
       ? yield* snapshotKv(kvNamespace!)
       : { snapshot: {} as Record<string, string | null>, keys: [] as string[] }
 
-    const wrapped = wrapCode(code, caps, snapshot, keys, input)
+    const syntaxErr = guestBodySyntaxError(body)
+    if (syntaxErr) {
+      return yield* new IsolateError({
+        reason: "runtime",
+        message: `guest body syntax: ${syntaxErr}`,
+      })
+    }
+
+    const wrapped = composeGuestModule(templateId, body, caps, snapshot, keys, input)
 
     const useOutbound = isolateUsesSelfOutbound(caps)
     const globalOutbound = useOutbound && selfFetcher ? selfFetcher : null
@@ -352,28 +173,27 @@ export const makeIsolateLive = (
   selfFetcher?: Fetcher
 ) => {
   const exec = execIsolate(loader, kvNamespace, selfFetcher)
-  return Layer.succeed(
-    Isolate,
-    Isolate.of({
-      run: Effect.fn("Isolate.run")(function* (
-        code: string,
-        caps?: CapabilitySet,
-        input?: unknown
-      ) {
-        return yield* exec(code, caps, input)
-      }),
+  return Layer.succeed(Isolate)({
+    run: Effect.fn("Isolate.run")(function* (
+      body: string,
+      caps?: CapabilitySet,
+      input?: unknown,
+      templateId?: GuestTemplateId
+    ) {
+      return yield* exec(body, caps, input, templateId ?? GUEST_TEMPLATE_DEFAULT)
+    }),
 
-      spawn: Effect.fn("Isolate.spawn")(function* (
-        code: string,
-        caps?: CapabilitySet,
-        depth?: number
-      ) {
-        const spawnCaps: CapabilitySet = {
-          ...caps,
-          spawn: { depth: depth ?? 2 },
-        }
-        return yield* exec(code, spawnCaps, undefined)
-      }),
-    })
-  )
+    spawn: Effect.fn("Isolate.spawn")(function* (
+      body: string,
+      caps?: CapabilitySet,
+      depth?: number,
+      templateId?: GuestTemplateId
+    ) {
+      const spawnCaps: CapabilitySet = {
+        ...caps,
+        spawn: { depth: depth ?? 2 },
+      }
+      return yield* exec(body, spawnCaps, undefined, templateId ?? GUEST_TEMPLATE_DEFAULT)
+    }),
+  })
 }
