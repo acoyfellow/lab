@@ -43,7 +43,7 @@
     </div>
     
     <p class="text-[0.8125rem] text-(--text-3) max-w-[55ch]">
-      This site (lab.coey.dev) is a demo. Deploy to your own Cloudflare account for production use. No vendor lock-in.
+      This site (lab.coey.dev) is a demo. Deploy to your own Cloudflare account for production use.
     </p>
   </section>
 
