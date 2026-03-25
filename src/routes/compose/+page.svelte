@@ -189,34 +189,37 @@
   type="website"
 />
 
-<div class="h-[calc(100vh-4rem)] flex flex-col lg:flex-row gap-4 p-4">
-  <aside class="w-full lg:w-56 flex-shrink-0 space-y-4">
-    <div>
-      <label for="compose-mode" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Mode</label>
-      <select
-        id="compose-mode"
-        bind:value={mode}
-        class="w-full border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text)"
-      >
-        <option value="chain">Chain</option>
-        <option value="sandbox">Sandbox</option>
-        <option value="kv">KV read</option>
-        <option value="generate">Generate</option>
-        <option value="spawn">Spawn</option>
-      </select>
+<div class="max-w-3xl mx-auto px-6 py-8 max-sm:px-4 space-y-6">
+  <header class="space-y-1">
+    <h1 class="text-lg font-semibold tracking-tight">Compose</h1>
+    <p class="text-[0.8125rem] text-(--text-2)">Build and run chainable steps with explicit capabilities.</p>
+  </header>
+
+  <div class="space-y-6">
+    <div class="flex flex-wrap items-end gap-4">
+      <div class="flex-1 min-w-[200px]">
+        <label for="compose-mode" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Mode</label>
+        <select
+          id="compose-mode"
+          bind:value={mode}
+          class="w-full border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text)"
+        >
+          <option value="chain">Chain (multiple steps)</option>
+          <option value="sandbox">Sandbox (single run)</option>
+          <option value="kv">KV read</option>
+          <option value="generate">Generate (AI)</option>
+          <option value="spawn">Spawn (nested)</option>
+        </select>
+      </div>
+
+      <Button onclick={run} disabled={loading} class="min-w-[100px]">
+        {loading ? 'Running…' : 'Run'}
+      </Button>
     </div>
 
-    <Button 
-      onclick={run}
-      disabled={loading}
-      class="w-full"
-    >
-      {loading ? 'Running…' : 'Run'}
-    </Button>
-
     {#if mode === 'kv'}
-      <div class="space-y-2">
-        <Button onclick={seed} variant="outline" class="w-full text-xs">
+      <div class="flex items-center gap-3">
+        <Button onclick={seed} variant="outline" class="text-xs">
           Seed demo KV
         </Button>
         {#if seedMsg}
@@ -225,82 +228,80 @@
       </div>
     {/if}
 
-    <div class="pt-4 border-t border-(--border)">
-      <a href="/examples" class="text-xs text-(--text-2) hover:text-(--text) underline underline-offset-2">
-        Browse examples →
-      </a>
-    </div>
-  </aside>
-
-  <main class="flex-1 min-h-0 flex flex-col">
-    {#if mode === 'chain'}
-      <EditorTabs bind:view={editorView} bind:chainJson disabled={loading} />
-    {:else if mode === 'generate'}
-      <div class="space-y-4 h-full overflow-auto">
-        <div>
-          <label for="gen-prompt" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Prompt</label>
-          <AutoResizeTextarea id="gen-prompt" bind:value={prompt} minRows={4} maxRows={20} />
-        </div>
-        <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2)">
-          <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
-          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-mono text-[0.7rem]">workersAi</code></label>
-          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-mono text-[0.7rem]">r2Read</code></label>
-          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-mono text-[0.7rem]">d1Read</code></label>
-          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-mono text-[0.7rem]">durableObjectFetch</code></label>
-          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-mono text-[0.7rem]">containerHttp</code></label>
-          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capKvRead} /><code class="font-mono text-[0.7rem]">kvRead</code></label>
-        </fieldset>
-      </div>
-    {:else}
-      <div class="space-y-4 h-full overflow-auto">
-        <div>
-          <label for="guest-template" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Template</label>
-          <select
-            id="guest-template"
-            bind:value={guestTemplate}
-            class="w-full border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text) font-mono"
-          >
-            {#each GUEST_TEMPLATE_IDS as tid (tid)}
-              <option value={tid}>{tid}</option>
-            {/each}
-          </select>
-        </div>
-        <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2)">
-          <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
-          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-mono text-[0.7rem]">workersAi</code></label>
-          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-mono text-[0.7rem]">r2Read</code></label>
-          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-mono text-[0.7rem]">d1Read</code></label>
-          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-mono text-[0.7rem]">durableObjectFetch</code></label>
-          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-mono text-[0.7rem]">containerHttp</code></label>
-        </fieldset>
-        <div>
-          <label for="guest-code" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Code</label>
-          <AutoResizeTextarea id="guest-code" bind:value={code} minRows={10} maxRows={30} />
-        </div>
-        {#if mode === 'spawn'}
+    <div class="border-t border-(--border) pt-6">
+      {#if mode === 'chain'}
+        <EditorTabs bind:view={editorView} bind:chainJson disabled={loading} />
+      {:else if mode === 'generate'}
+        <div class="space-y-4">
           <div>
-            <label for="max-depth" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Max depth</label>
-            <input
-              id="max-depth"
-              type="number"
-              bind:value={depth}
-              min="1"
-              max="8"
-              class="w-24 border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem]"
-            />
+            <label for="gen-prompt" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Prompt</label>
+            <AutoResizeTextarea id="gen-prompt" bind:value={prompt} minRows={4} maxRows={20} />
           </div>
-        {/if}
-      </div>
-    {/if}
-  </main>
+          <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2)">
+            <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
+              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-mono text-[0.7rem]">workersAi</code></label>
+              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-mono text-[0.7rem]">r2Read</code></label>
+              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-mono text-[0.7rem]">d1Read</code></label>
+              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-mono text-[0.7rem]">durableObjectFetch</code></label>
+              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-mono text-[0.7rem]">containerHttp</code></label>
+              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capKvRead} /><code class="font-mono text-[0.7rem]">kvRead</code></label>
+            </div>
+          </fieldset>
+        </div>
+      {:else}
+        <div class="space-y-4">
+          <div>
+            <label for="guest-template" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Template</label>
+            <select
+              id="guest-template"
+              bind:value={guestTemplate}
+              class="w-full max-w-xs border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text) font-mono"
+            >
+              {#each GUEST_TEMPLATE_IDS as tid (tid)}
+                <option value={tid}>{tid}</option>
+              {/each}
+            </select>
+          </div>
+          <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2)">
+            <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
+              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-mono text-[0.7rem]">workersAi</code></label>
+              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-mono text-[0.7rem]">r2Read</code></label>
+              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-mono text-[0.7rem]">d1Read</code></label>
+              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-mono text-[0.7rem]">durableObjectFetch</code></label>
+              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-mono text-[0.7rem]">containerHttp</code></label>
+            </div>
+          </fieldset>
+          <div>
+            <label for="guest-code" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Code</label>
+            <AutoResizeTextarea id="guest-code" bind:value={code} minRows={10} maxRows={30} />
+          </div>
+          {#if mode === 'spawn'}
+            <div>
+              <label for="max-depth" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Max depth</label>
+              <input
+                id="max-depth"
+                type="number"
+                bind:value={depth}
+                min="1"
+                max="8"
+                class="w-24 border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem]"
+              />
+            </div>
+          {/if}
+        </div>
+      {/if}
+    </div>
 
-  <aside class="w-full lg:w-88 flex-shrink-0">
-    <ResponsePanel
-      status={loading ? 'loading' : lastError ? 'error' : lastTraceId ? 'success' : 'idle'}
-      traceId={lastTraceId}
-      result={lastResult}
-      steps={lastSteps}
-      error={lastError}
-    />
-  </aside>
+    <div class="border-t border-(--border) pt-6">
+      <ResponsePanel
+        status={loading ? 'loading' : lastError ? 'error' : lastTraceId ? 'success' : 'idle'}
+        traceId={lastTraceId}
+        result={lastResult}
+        steps={lastSteps}
+        error={lastError}
+      />
+    </div>
+  </div>
 </div>
