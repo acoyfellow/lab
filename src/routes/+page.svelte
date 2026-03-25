@@ -23,8 +23,8 @@
     </div>
     
     <h1 id="hero" class="text-[1.65rem] sm:text-[2.25rem] font-semibold tracking-tight leading-[1.15]">
-      Chainable edge compute for agents.<br />
-      <span class="text-(--text-2)">Sandboxed. Provable.</span>
+      Chain JavaScript steps at the edge.<br />
+      <span class="text-(--text-2)">Sandboxed and provable.</span>
     </h1>
     
     <p class="text-[1.0625rem] text-(--text-2) leading-relaxed max-w-[60ch]">
