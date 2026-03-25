@@ -40,8 +40,12 @@
     scroll-margin-top: 1.5rem;
   }
 
+  /*
+   * Code display policy:
+   * - Home TypeScript teaser: Shiki SSR (.shiki-code-block) via highlightCode() — one highlighted block.
+   * - mdsvex /docs *.svelte.md: plain pre/code (.md-doc pre) — no tokenizer in the markdown pipeline (by design).
+   */
   /* Shiki SSR (server + Workers): github-light + JS engine */
-  /* Wrap long lines; avoid horizontal scroll on narrow / mobile screenshots */
   .shiki-code-block pre.shiki {
     margin: 0;
     padding: 1rem;
@@ -56,7 +60,7 @@
     background-color: var(--code-bg) !important;
   }
 
-  /* mdsvex markdown (docs/architecture, etc.) */
+  /* mdsvex markdown — prose + undecorated fenced blocks (see policy above) */
   .md-doc :is(h1, h2, h3) {
     color: var(--text);
     font-weight: 600;

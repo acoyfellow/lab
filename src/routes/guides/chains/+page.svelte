@@ -22,11 +22,10 @@
     Try it in <a href="/compose" class="underline underline-offset-2 hover:text-(--text)">Compose</a> (Chain mode) or call <code class="font-(family-name:--mono) text-[0.75rem]">POST /run/chain</code> from scripts.
   </p>
   <DocFooterNav
-    gridClass="sm:grid-cols-2 lg:grid-cols-3"
+    gridClass="sm:grid-cols-2"
     links={[
       { label: 'HTTP API', to: paths.docsHttpApi, description: 'POST /run/chain, curl, request bodies.' },
       { label: 'Capabilities', to: paths.docsCapabilities, description: 'Per-step capabilities and KV snapshot.' },
-      { label: 'Architecture', to: paths.docsArchitecture, description: 'How chains and traces are wired.' },
     ]}
   />
 </div>

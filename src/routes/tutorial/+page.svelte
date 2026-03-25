@@ -10,10 +10,19 @@
 
 <div class="max-w-2xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
   <h1 class="text-lg font-semibold text-(--text) tracking-tight mb-2">Golden path</h1>
-  <p class="mb-8 max-w-[62ch]">
-    Short on-site walkthrough. Endpoints and curl:
-    <AppLink to={paths.docsHttpApi} class="underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>.
+  <p class="mb-4 max-w-[62ch]">
+    Seed (optional) → Compose → open <code class="font-(family-name:--mono) text-[0.75rem]">/t/:id</code> → fork back into Compose.
   </p>
+
+  <DocFooterNav
+    tone="section"
+    gridClass="sm:grid-cols-2 lg:grid-cols-3"
+    links={[
+      { label: 'Compose', to: '/compose', description: 'Run sandbox, KV, chain, generate, spawn.' },
+      { label: 'HTTP API', to: paths.docsHttpApi, description: 'Endpoints, curl, run modes.' },
+      { label: 'Trace schema', to: paths.docsTraceSchema, description: 'What GET /t/:id returns.' },
+    ]}
+  />
 
   <ol class="list-decimal list-inside space-y-8 m-0 pl-0">
     <li class="pl-1">
@@ -38,7 +47,7 @@
     <li class="pl-1">
       <span class="font-medium text-(--text)">Open the trace</span>
       <p class="mt-2 mb-0 max-w-[62ch]">
-        Visit <code class="font-(family-name:--mono) text-[0.75rem]">/t/&#123;id&#125;</code> for the viewer, or
+        Visit <code class="font-(family-name:--mono) text-[0.75rem]">/t/:id</code> for the viewer, or
         <code class="font-(family-name:--mono) text-[0.75rem]">.json</code> for machine-readable output.         Document shape:
         <AppLink to={paths.docsTraceSchema} class="underline underline-offset-2 hover:text-(--text)">Trace schema</AppLink>.
       </p>
@@ -46,7 +55,7 @@
     <li class="pl-1">
       <span class="font-medium text-(--text)">Fork (optional)</span>
       <p class="mt-2 mb-0 max-w-[62ch]">
-        On a trace page, <strong class="text-(--text) font-medium">Fork</strong> hydrates Compose via session storage — same loop as the habit loop in the repo.
+        On a trace page, <strong class="text-(--text) font-medium">Fork</strong> copies the request into Compose so you can edit and run again.
       </p>
     </li>
   </ol>
@@ -54,8 +63,8 @@
   <DocFooterNav
     gridClass="sm:grid-cols-2"
     links={[
-      { label: 'Chains guide', to: '/guides/chains', description: 'Multi-step pipelines and POST /run/chain.' },
-      { label: 'Docs hub', to: paths.docs, description: 'HTTP API, TypeScript, architecture, traces.' },
+      { label: 'Examples', to: '/examples', description: 'Demos and bookmarkable traces.' },
+      { label: 'Guides', to: '/guides', description: 'Chains, spawn, traces workflows.' },
     ]}
   />
 </div>

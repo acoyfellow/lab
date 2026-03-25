@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { PageProps } from './$types';
   import AppLink from '$lib/AppLink.svelte';
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
   import { paths } from '$lib/paths';
 
   let { data }: PageProps = $props();
@@ -101,7 +100,7 @@
       >
         <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Trace JSON</div>
         <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">
-          <code class="font-(family-name:--mono) text-[0.7rem]">GET /t/&#123;id&#125;</code> — fields, tables, <code class="text-[0.7rem]">traceId</code>.
+          <code class="font-(family-name:--mono) text-[0.7rem]">GET /t/:id</code> — fields, tables, <code class="text-[0.7rem]">traceId</code>.
         </div>
       </AppLink>
       <a
@@ -112,13 +111,5 @@
         <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Golden path: seed, Compose, trace URL, fork.</div>
       </a>
     </div>
-
-    <DocFooterNav
-      gridClass="sm:grid-cols-2"
-      links={[
-        { label: 'All docs', to: paths.docs, description: 'Full reference hub and cross-links.' },
-        { label: 'Examples', to: '/examples', description: 'Runnable flows and trace URLs.' },
-      ]}
-    />
   </section>
 </div>

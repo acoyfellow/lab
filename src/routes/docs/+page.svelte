@@ -48,15 +48,15 @@
       class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
     >
       <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Trace JSON</div>
-      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed"><code class="font-(family-name:--mono) text-[0.7rem]">GET /t/&#123;id&#125;</code> document — fields, tables, POST <code class="text-[0.7rem]">traceId</code>.</div>
+      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed"><code class="font-(family-name:--mono) text-[0.7rem]">GET /t/:id</code> document — fields, tables, POST <code class="text-[0.7rem]">traceId</code>.</div>
     </AppLink>
   </div>
 
   <DocFooterNav
     gridClass="sm:grid-cols-2"
     links={[
-      { label: 'Tutorial', to: '/tutorial', description: 'Golden path: seed, Compose, trace, fork.' },
-      { label: 'Examples', to: '/examples', description: 'Demos and stable trace links.' },
+      { label: 'Tutorial', to: '/tutorial', description: 'Seed, Compose, trace URL, fork.' },
+      { label: 'Compose', to: '/compose', description: 'Run modes in the browser.' },
     ]}
   />
 </div>

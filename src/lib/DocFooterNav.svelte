@@ -8,12 +8,15 @@
     links,
     gridClass = 'sm:grid-cols-2 lg:grid-cols-3',
     compactTop = false,
+    tone = 'footer',
   }: {
     links: (Internal | External)[];
     /** Tailwind grid column classes (no `grid` prefix). */
     gridClass?: string;
     /** When true, less top margin (e.g. global site footer). */
     compactTop?: boolean;
+    /** `section` = in-page CTA row (no top rule). `footer` = end-of-article / global footer spacing. */
+    tone?: 'footer' | 'section';
   } = $props();
 
   function isInternal(item: Internal | External): item is Internal {
@@ -25,9 +28,11 @@
 </script>
 
 <nav
-  class="doc-footer-nav grid gap-3 grid-cols-1 {gridClass} {compactTop
-    ? 'pt-2'
-    : 'pt-8 mt-10 border-t border-(--border)'}"
+  class="doc-footer-nav grid gap-3 grid-cols-1 {gridClass} {tone === 'section'
+    ? 'mb-8'
+    : compactTop
+      ? 'pt-2'
+      : 'pt-8 mt-10 border-t border-(--border)'}"
   aria-label="Related links"
 >
   {#each links as item}
