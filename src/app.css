@@ -148,6 +148,10 @@
     font-weight: 600;
     background: var(--surface-alt);
   }
+
+  table{
+    @apply bg-white;
+  }
 }
 
 

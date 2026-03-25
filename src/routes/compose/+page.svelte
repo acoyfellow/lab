@@ -5,7 +5,7 @@
   import { paths } from '$lib/paths';
   import { runSandbox, runKv, runChain, runSpawn, runGenerate, seedKv } from '../data.remote';
   import type { ChainStep } from '@acoyfellow/lab';
-  import { SIMPLE_CHAIN_STEPS } from '$lib/guest-code-fixtures';
+  import { SIMPLE_CHAIN_STEPS, JSON_HEALER_STEPS } from '$lib/guest-code-fixtures';
   import {
     GUEST_TEMPLATE_DEFAULT,
     GUEST_TEMPLATE_IDS,
@@ -33,6 +33,16 @@
   let lastTraceId = $state<string | null>(null);
 
   onMount(() => {
+    // Check for example presets from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const exampleId = urlParams.get('example');
+    if (exampleId === 'json-healer') {
+      mode = 'chain';
+      chainJson = JSON.stringify(JSON_HEALER_STEPS, null, 2);
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    }
+    
     const raw = sessionStorage.getItem('lab-fork');
     if (!raw) return;
     try {
