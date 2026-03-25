@@ -254,21 +254,6 @@
         Grant <code class="font-(family-name:--mono) text-[0.75rem]">kvRead</code> to generated code
       </label>
     {:else if mode === 'chain'}
-      <div class="mb-3">
-        <label for="compose-preset" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Preset</label>
-        <select
-          id="compose-preset"
-          onchange={(e) => {
-            const val = e.currentTarget.value;
-            if (val === 'simple') chainJson = JSON.stringify(SIMPLE_CHAIN_STEPS, null, 2);
-            else if (val === 'json-healer') chainJson = JSON.stringify(JSON_HEALER_STEPS, null, 2);
-          }}
-          class="w-full max-w-xs border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text)"
-        >
-          <option value="simple">Simple (default)</option>
-          <option value="json-healer">JSON Healer</option>
-        </select>
-      </div>
       <div>
         <label for="compose-chain" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Steps (JSON)</label>
         <textarea
