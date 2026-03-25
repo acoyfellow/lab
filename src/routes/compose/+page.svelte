@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import AppLink from '$lib/AppLink.svelte';
   import SEO from '$lib/SEO.svelte';
-  import { paths } from '$lib/paths';
+  import AutoResizeTextarea from '$lib/AutoResizeTextarea.svelte';
+  import { EditorTabs, ResponsePanel } from '$lib/compose';
+  import { Button } from '$lib/components/ui/button';
   import { runSandbox, runKv, runChain, runSpawn, runGenerate, seedKv } from '../data.remote';
   import type { ChainStep } from '@acoyfellow/lab';
   import { SIMPLE_CHAIN_STEPS, JSON_HEALER_STEPS } from '$lib/guest-code-fixtures';
@@ -14,7 +15,6 @@
 
   type Mode = 'sandbox' | 'kv' | 'chain' | 'generate' | 'spawn';
 
-  /** Flagship: chain shows per-step trace in `/t/:id`. */
   let mode = $state<Mode>('chain');
   let guestTemplate = $state<GuestTemplateId>(GUEST_TEMPLATE_DEFAULT);
   let code = $state('return { hello: "world" }');
@@ -31,9 +31,11 @@
   let seedMsg = $state<string | null>(null);
   let lastError = $state<string | null>(null);
   let lastTraceId = $state<string | null>(null);
+  let lastResult = $state<unknown>(null);
+  let lastSteps = $state<Array<{name: string; status: 'success' | 'error'; ms: number}>>([]);
+  let editorView = $state<'builder' | 'raw'>('raw');
 
   onMount(() => {
-    // Check for example presets from URL
     const urlParams = new URLSearchParams(window.location.search);
     const exampleId = urlParams.get('example');
     if (exampleId === 'json-healer') {
@@ -103,6 +105,8 @@
     loading = true;
     lastError = null;
     lastTraceId = null;
+    lastResult = null;
+    lastSteps = [];
     try {
       let r;
       if (mode === 'sandbox') {
@@ -123,7 +127,7 @@
           steps = JSON.parse(chainJson) as ChainStep[];
         } catch {
           throw new Error(
-            'Invalid JSON in Steps. Use an array of { body, capabilities } objects — see the HTTP API docs for examples.',
+            'Invalid JSON in Steps. Use an array of { body, capabilities } objects.',
           );
         }
         if (!Array.isArray(steps)) throw new Error('Chain JSON must be an array of steps');
@@ -144,12 +148,22 @@
       if (r.traceId) {
         lastTraceId = r.traceId;
       }
-      if (!r.ok) {
+      if (r.ok) {
+        lastResult = r.result;
+      } else {
         lastError = JSON.stringify(
           { error: r.error, reason: r.reason },
           null,
           2,
         );
+      }
+
+      if (r.trace && Array.isArray(r.trace)) {
+        lastSteps = r.trace.map((step, i) => ({
+          name: step.name || `Step ${i + 1}`,
+          status: 'success' as const,
+          ms: step.ms || 0
+        }));
       }
     } catch (e) {
       lastError = e instanceof Error ? e.message : String(e);
@@ -157,7 +171,16 @@
       loading = false;
     }
   }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !loading) {
+      e.preventDefault();
+      run();
+    }
+  }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <SEO
   title="Compose — lab"
@@ -166,163 +189,118 @@
   type="website"
 />
 
-<div class="max-w-3xl mx-auto px-5 py-8 pb-16">
-  <header class="mb-6">
-    <h1 class="text-lg font-semibold tracking-tight">Compose</h1>
-    <p class="text-[0.8125rem] text-(--text-2) mt-1 max-w-[56ch] leading-relaxed">
-      <strong class="text-(--text) font-medium">Start with Chain</strong> (default): two steps, per-step trace on
-      <code class="font-(family-name:--mono) text-[0.75rem]">/t/:id</code>. Other modes below. Successful runs return a
-      <code class="font-(family-name:--mono) text-[0.75rem]">traceId</code>.
-      Checkboxes add optional <strong class="text-(--text) font-medium">host-invoke</strong> caps (<code class="text-[0.7rem]">workersAi</code>,
-      <code class="text-[0.7rem]">r2Read</code>, …); Generate mode can also grant <code class="text-[0.7rem]">kvRead</code> to emitted code.
-      Chain steps carry their own <code class="text-[0.7rem]">capabilities</code> (and optional per-step <code class="text-[0.7rem]">template</code>) in JSON.
-      <AppLink to={paths.docsHttpApi} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>
-      &middot;
-      <AppLink to={paths.docsCapabilities} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">Capability matrix</AppLink>.
-    </p>
-  </header>
-
-  <div class="space-y-4">
+<div class="h-[calc(100vh-4rem)] flex flex-col lg:flex-row gap-4 p-4">
+  <aside class="w-full lg:w-56 flex-shrink-0 space-y-4">
     <div>
       <label for="compose-mode" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Mode</label>
       <select
         id="compose-mode"
         bind:value={mode}
-        class="w-full max-w-xs border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text)"
+        class="w-full border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text)"
       >
-        <option value="chain">Chain (POST /run/chain) — recommended</option>
-        <option value="sandbox">Sandbox (POST /run)</option>
-        <option value="kv">KV read (POST /run/kv)</option>
-        <option value="generate">Generate (POST /run/generate)</option>
-        <option value="spawn">Spawn (POST /run/spawn)</option>
+        <option value="chain">Chain</option>
+        <option value="sandbox">Sandbox</option>
+        <option value="kv">KV read</option>
+        <option value="generate">Generate</option>
+        <option value="spawn">Spawn</option>
       </select>
     </div>
 
+    <Button 
+      onclick={run}
+      disabled={loading}
+      class="w-full"
+    >
+      {loading ? 'Running…' : 'Run'}
+    </Button>
+
     {#if mode === 'kv'}
-      <div class="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onclick={seed}
-          class="text-[0.8125rem] border border-(--border) rounded-(--radius) px-3 py-1.5 bg-(--surface) hover:bg-(--surface-alt) cursor-pointer"
-        >Seed demo KV</button>
+      <div class="space-y-2">
+        <Button onclick={seed} variant="outline" class="w-full text-xs">
+          Seed demo KV
+        </Button>
         {#if seedMsg}
-          <span class="text-[0.8125rem] text-(--text-2)">{seedMsg}</span>
+          <span class="text-[0.75rem] text-(--text-2)">{seedMsg}</span>
         {/if}
       </div>
     {/if}
 
-    {#if mode !== 'chain'}
-      <div>
-        <label for="compose-template" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5"
-          >Guest template</label
-        >
-        <select
-          id="compose-template"
-          bind:value={guestTemplate}
-          class="w-full max-w-xs border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text) font-(family-name:--mono)"
-        >
-          {#each GUEST_TEMPLATE_IDS as tid (tid)}
-            <option value={tid}>{tid}</option>
-          {/each}
-        </select>
-        <p class="text-[0.75rem] text-(--text-3) m-0 mt-1.5 max-w-[56ch]">
-          Chain mode: set <code class="text-[0.7rem]">template</code> on each step in the JSON if needed.
-        </p>
-      </div>
-    {/if}
+    <div class="pt-4 border-t border-(--border)">
+      <a href="/examples" class="text-xs text-(--text-2) hover:text-(--text) underline underline-offset-2">
+        Browse examples →
+      </a>
+    </div>
+  </aside>
 
-    {#if mode === 'generate'}
-      <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2) mb-3">
-        <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Generated code capabilities</legend>
-        <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-(family-name:--mono) text-[0.7rem]">workersAi</code></label>
-        <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-(family-name:--mono) text-[0.7rem]">r2Read</code></label>
-        <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-(family-name:--mono) text-[0.7rem]">d1Read</code></label>
-        <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-(family-name:--mono) text-[0.7rem]">durableObjectFetch</code></label>
-        <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-(family-name:--mono) text-[0.7rem]">containerHttp</code></label>
-      </fieldset>
-      <div>
-        <label for="compose-prompt" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Prompt</label>
-        <textarea
-          id="compose-prompt"
-          bind:value={prompt}
-          rows="4"
-          class="w-full border border-(--border) rounded-(--radius) bg-(--surface) p-3 font-(family-name:--mono) text-xs text-(--text)"
-        ></textarea>
-      </div>
-      <label class="flex items-center gap-2 text-[0.8125rem] text-(--text-2)">
-        <input type="checkbox" bind:checked={capKvRead} />
-        Grant <code class="font-(family-name:--mono) text-[0.75rem]">kvRead</code> to generated code
-      </label>
-    {:else if mode === 'chain'}
-      <div>
-        <label for="compose-chain" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Steps (JSON)</label>
-        <textarea
-          id="compose-chain"
-          bind:value={chainJson}
-          rows="12"
-          class="w-full border border-(--border) rounded-(--radius) bg-(--surface) p-3 font-(family-name:--mono) text-xs text-(--text)"
-        ></textarea>
+  <main class="flex-1 min-h-0 flex flex-col">
+    {#if mode === 'chain'}
+      <EditorTabs bind:view={editorView} bind:chainJson disabled={loading} />
+    {:else if mode === 'generate'}
+      <div class="space-y-4 h-full overflow-auto">
+        <div>
+          <label for="gen-prompt" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Prompt</label>
+          <AutoResizeTextarea id="gen-prompt" bind:value={prompt} minRows={4} maxRows={20} />
+        </div>
+        <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2)">
+          <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
+          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-mono text-[0.7rem]">workersAi</code></label>
+          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-mono text-[0.7rem]">r2Read</code></label>
+          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-mono text-[0.7rem]">d1Read</code></label>
+          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-mono text-[0.7rem]">durableObjectFetch</code></label>
+          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-mono text-[0.7rem]">containerHttp</code></label>
+          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capKvRead} /><code class="font-mono text-[0.7rem]">kvRead</code></label>
+        </fieldset>
       </div>
     {:else}
-      <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2) mb-3">
-        <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Guest capabilities</legend>
-        <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-(family-name:--mono) text-[0.7rem]">workersAi</code></label>
-        <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-(family-name:--mono) text-[0.7rem]">r2Read</code></label>
-        <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-(family-name:--mono) text-[0.7rem]">d1Read</code></label>
-        <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-(family-name:--mono) text-[0.7rem]">durableObjectFetch</code></label>
-        <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-(family-name:--mono) text-[0.7rem]">containerHttp</code></label>
-      </fieldset>
-      <div>
-        <label for="compose-code" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Guest body</label>
-        <textarea
-          id="compose-code"
-          bind:value={code}
-          rows="10"
-          class="w-full border border-(--border) rounded-(--radius) bg-(--surface) p-3 font-(family-name:--mono) text-xs text-(--text)"
-        ></textarea>
-      </div>
-      {#if mode === 'spawn'}
+      <div class="space-y-4 h-full overflow-auto">
         <div>
-          <label for="compose-depth" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Max depth</label>
-          <input
-            id="compose-depth"
-            type="number"
-            bind:value={depth}
-            min="1"
-            max="8"
-            class="w-24 border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem]"
-          />
+          <label for="guest-template" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Template</label>
+          <select
+            id="guest-template"
+            bind:value={guestTemplate}
+            class="w-full border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text) font-mono"
+          >
+            {#each GUEST_TEMPLATE_IDS as tid (tid)}
+              <option value={tid}>{tid}</option>
+            {/each}
+          </select>
         </div>
-      {/if}
-    {/if}
-
-    <button
-      type="button"
-      onclick={run}
-      disabled={loading}
-      class="inline-flex items-center min-h-9 font-medium text-[0.8125rem] px-4 py-2 rounded-(--radius) bg-(--accent) text-white border border-(--accent) cursor-pointer disabled:opacity-50"
-    >{loading ? 'Running…' : 'Run'}</button>
-
-    {#if lastTraceId}
-      <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 text-[0.8125rem]">
-        <div class="text-(--text-3) text-[0.6875rem] font-semibold uppercase tracking-wider mb-2">Trace</div>
-        <a href="/t/{lastTraceId}" class="text-(--text) font-(family-name:--mono) text-xs underline underline-offset-2">/t/{lastTraceId}</a>
-        <p class="mt-2 text-[0.75rem] text-(--text-3) m-0">
-          Chain runs include a per-step breakdown.
-          <AppLink to={paths.docsTraceSchema} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">Trace schema</AppLink>.
-        </p>
+        <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2)">
+          <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
+          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-mono text-[0.7rem]">workersAi</code></label>
+          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-mono text-[0.7rem]">r2Read</code></label>
+          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-mono text-[0.7rem]">d1Read</code></label>
+          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-mono text-[0.7rem]">durableObjectFetch</code></label>
+          <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-mono text-[0.7rem]">containerHttp</code></label>
+        </fieldset>
+        <div>
+          <label for="guest-code" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Code</label>
+          <AutoResizeTextarea id="guest-code" bind:value={code} minRows={10} maxRows={30} />
+        </div>
+        {#if mode === 'spawn'}
+          <div>
+            <label for="max-depth" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Max depth</label>
+            <input
+              id="max-depth"
+              type="number"
+              bind:value={depth}
+              min="1"
+              max="8"
+              class="w-24 border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem]"
+            />
+          </div>
+        {/if}
       </div>
     {/if}
+  </main>
 
-    {#if lastError}
-      <div class="rounded-(--radius) border border-(--cap-off-border) bg-(--cap-off-bg) p-4">
-        <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--cap-off-text) mb-2">Error</div>
-        <pre class="font-(family-name:--mono) text-xs whitespace-pre-wrap text-(--text)">{lastError}</pre>
-        <p class="mt-3 mb-0 text-[0.75rem] text-(--cap-off-text)">
-          <AppLink to={paths.docsHttpApi} class="underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>
-          — request shapes and run modes.
-        </p>
-      </div>
-    {/if}
-  </div>
+  <aside class="w-full lg:w-88 flex-shrink-0">
+    <ResponsePanel
+      status={loading ? 'loading' : lastError ? 'error' : lastTraceId ? 'success' : 'idle'}
+      traceId={lastTraceId}
+      result={lastResult}
+      steps={lastSteps}
+      error={lastError}
+    />
+  </aside>
 </div>
