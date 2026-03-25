@@ -1,10 +1,8 @@
 <script lang="ts">
   import { page } from '$app/state';
   import AppLink from '$lib/AppLink.svelte';
+  import DocFooterNav from '$lib/DocFooterNav.svelte';
   import { paths } from '$lib/paths';
-
-  const GITHUB_README = 'https://github.com/acoyfellow/lab#readme';
-  const GITHUB_REPO = 'https://github.com/acoyfellow/lab';
 
   let { children } = $props();
 
@@ -27,7 +25,7 @@
     class="border-b border-(--border) bg-(--surface) sticky top-0 z-10"
   >
     <div
-      class="max-w-[960px] mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-3"
+      class="max-w-2xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-3"
     >
       <AppLink to="/" class="flex items-center gap-2 shrink-0 no-underline">
         <img src="/logo.svg" alt="lab" class="h-7" />
@@ -40,13 +38,6 @@
         <AppLink to={paths.docs} class={navClass(paths.docs)}>Docs</AppLink>
         <AppLink to="/examples" class={navClass('/examples')}>Examples</AppLink>
         <AppLink to="/compose" class={navClass('/compose')}>Compose</AppLink>
-        <a
-          href={GITHUB_README}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-[0.8125rem] text-(--text-3) no-underline hover:text-(--text)"
-          >GitHub</a
-        >
       </nav>
     </div>
   </header>
@@ -55,40 +46,29 @@
     {@render children()}
   </main>
 
-  <footer
-    class="border-t border-(--border) mt-auto py-8 text-[0.75rem] text-(--text-3) leading-relaxed"
-  >
-    <div class="max-w-[960px] mx-auto px-5 space-y-2">
-      <p class="m-0">
-        <strong class="text-(--text-2) font-medium">Docs</strong> —
-        <AppLink
-          to={paths.docs}
-          class="text-(--text-2) underline underline-offset-2 hover:text-(--text)"
-          >Docs hub</AppLink
-        >
-        &middot;
-        <a
-          href={GITHUB_README}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-(--text-2) underline underline-offset-2 hover:text-(--text)"
-          >README on GitHub</a
-        >
-        &middot;
-        <AppLink
-          to={paths.docsTraceSchema}
-          class="text-(--text-2) underline underline-offset-2 hover:text-(--text)"
-          >Trace schema</AppLink
-        >
-        &middot;
-        <a
-          href={GITHUB_REPO}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-(--text-2) underline underline-offset-2 hover:text-(--text)"
-          >Repo</a
-        >
-      </p>
+  <footer class="border-t border-(--border) mt-auto py-8 bg-(--bg)">
+    <div class="max-w-2xl mx-auto px-5">
+      <DocFooterNav
+        compactTop
+        gridClass="sm:grid-cols-2 lg:grid-cols-3"
+        links={[
+          {
+            label: 'Docs hub',
+            to: paths.docs,
+            description: 'HTTP API, TypeScript, architecture, capabilities, traces.',
+          },
+          {
+            label: 'Compose',
+            to: '/compose',
+            description: 'Run modes in the browser against the Worker.',
+          },
+          {
+            label: 'Trace schema',
+            to: paths.docsTraceSchema,
+            description: 'Shape of GET /t/:id and POST traceId.',
+          },
+        ]}
+      />
     </div>
   </footer>
 </div>

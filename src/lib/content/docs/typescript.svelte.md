@@ -1,3 +1,7 @@
+<script lang="ts">
+  import DocFooterNav from '$lib/DocFooterNav.svelte';
+</script>
+
 # TypeScript client
 
 `@acoyfellow/lab` is a typed HTTP client for a deployed Worker origin. It does not install Cloudflare tooling or deploy this repo. Prerequisite: a running lab Worker (see [HTTP API](/docs/http-api)).
@@ -31,4 +35,14 @@ Methods: `runSandbox`, `runKv`, `runChain`, `runSpawn`, `runGenerate`, `seed`, `
 
 ---
 
-[Docs](/docs) · [Package source (GitHub)](https://github.com/acoyfellow/lab/tree/main/packages/lab)
+<DocFooterNav
+  gridClass="sm:grid-cols-2"
+  links={[
+    { label: 'Docs', to: '/docs', description: 'Hub and related reference.' },
+    {
+      label: 'npm package',
+      href: 'https://www.npmjs.com/package/@acoyfellow/lab',
+      description: 'Published client on the registry.',
+    },
+  ]}
+/>

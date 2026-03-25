@@ -10,7 +10,7 @@
   <title>Examples - lab</title>
 </svelte:head>
 
-<div class="max-w-[720px] mx-auto px-5 py-8 pb-16">
+<div class="max-w-2xl mx-auto px-5 py-8 pb-16">
   <header class="mb-8">
     <h1 class="text-lg font-semibold tracking-tight">Examples</h1>
     <p class="text-[0.8125rem] text-(--text-2) mt-2 max-w-[56ch] leading-relaxed">

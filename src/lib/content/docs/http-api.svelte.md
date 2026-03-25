@@ -1,3 +1,7 @@
+<script lang="ts">
+  import DocFooterNav from '$lib/DocFooterNav.svelte';
+</script>
+
 # HTTP API
 
 Public Worker endpoints. Default origin in examples: `https://lab.coey.dev`. Capabilities: [how they work](/docs/capabilities).
@@ -60,7 +64,7 @@ Each step receives the previous output as `input`. Optional per-step `name`.
 
 **Response:** includes `trace` (per-step I/O, timing). Supported capability: `kvRead`.
 
-Persisted runs return `traceId` for [GET /t/{id}](/docs/trace-schema).
+Persisted runs return `traceId` for [GET /t/:id](/docs/trace-schema).
 
 ## `POST /run/generate`
 
@@ -82,10 +86,16 @@ In isolate: `spawn(code, capabilities)`. Default `depth`: 2; at 0, spawn throws.
 
 Seeds KV with demo data. No trace id.
 
-## `GET /t/{id}`
+## `GET /t/:id`
 
-Persisted trace document. Same JSON as `GET /t/{id}.json`. Shape: [Trace schema](/docs/trace-schema).
+Persisted trace document. Same JSON as `GET /t/:id.json`. Shape: [Trace schema](/docs/trace-schema).
 
 ---
 
-[Docs](/docs) · [TypeScript client](/docs/typescript)
+<DocFooterNav
+  gridClass="sm:grid-cols-2"
+  links={[
+    { label: 'Docs', to: '/docs', description: 'Hub for all on-site reference pages.' },
+    { label: 'TypeScript client', to: '/docs/typescript', description: 'npm package, createLabClient, methods.' },
+  ]}
+/>

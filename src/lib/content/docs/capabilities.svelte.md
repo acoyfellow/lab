@@ -1,3 +1,7 @@
+<script lang="ts">
+  import DocFooterNav from '$lib/DocFooterNav.svelte';
+</script>
+
 # Capabilities
 
 Capabilities control what code can do inside an isolate. They are implemented as shims injected into the isolate wrapper at spawn time.
@@ -10,4 +14,10 @@ Capabilities control what code can do inside an isolate. They are implemented as
 
 **Why snapshot KV?** `KVNamespace` cannot be serialized into Worker Loader env — snapshotting avoids that limit.
 
-[HTTP API](/docs/http-api) · [Architecture](/docs/architecture)
+<DocFooterNav
+  gridClass="sm:grid-cols-2"
+  links={[
+    { label: 'HTTP API', to: '/docs/http-api', description: 'Endpoints, curl, run modes.' },
+    { label: 'Architecture', to: '/docs/architecture', description: 'Worker loaders, Effect, KV, spawn, chains.' },
+  ]}
+/>

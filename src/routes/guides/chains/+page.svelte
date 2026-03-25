@@ -1,8 +1,13 @@
+<script lang="ts">
+  import DocFooterNav from '$lib/DocFooterNav.svelte';
+  import { paths } from '$lib/paths';
+</script>
+
 <svelte:head>
   <title>Chains - lab</title>
 </svelte:head>
 
-<div class="max-w-[720px] mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
+<div class="max-w-2xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
   <p class="mb-6">
     <a href="/guides" class="text-(--text-3) no-underline hover:text-(--text)">Guides</a>
     <span class="text-(--text-3)"> / </span>
@@ -16,22 +21,12 @@
   <p class="max-w-[62ch] mb-6">
     Try it in <a href="/compose" class="underline underline-offset-2 hover:text-(--text)">Compose</a> (Chain mode) or call <code class="font-(family-name:--mono) text-[0.75rem]">POST /run/chain</code> from scripts.
   </p>
-  <p class="max-w-[62ch] mb-8">
-    <strong class="text-(--text) font-medium">Details:</strong>
-    <a
-      href="https://github.com/acoyfellow/lab#how-to-run-a-chain"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="underline underline-offset-2 hover:text-(--text)"
-      >README &mdash; How to run a chain</a
-    >
-    &middot;
-    <a
-      href="https://github.com/acoyfellow/lab#run-modes"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="underline underline-offset-2 hover:text-(--text)"
-      >Run modes</a
-    >.
-  </p>
+  <DocFooterNav
+    gridClass="sm:grid-cols-2 lg:grid-cols-3"
+    links={[
+      { label: 'HTTP API', to: paths.docsHttpApi, description: 'POST /run/chain, curl, request bodies.' },
+      { label: 'Capabilities', to: paths.docsCapabilities, description: 'Per-step capabilities and KV snapshot.' },
+      { label: 'Architecture', to: paths.docsArchitecture, description: 'How chains and traces are wired.' },
+    ]}
+  />
 </div>

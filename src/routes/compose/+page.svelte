@@ -108,7 +108,7 @@
   <title>Compose - lab</title>
 </svelte:head>
 
-<div class="max-w-[720px] mx-auto px-5 py-8 pb-16">
+<div class="max-w-2xl mx-auto px-5 py-8 pb-16">
   <header class="mb-6">
     <h1 class="text-lg font-semibold tracking-tight">Compose</h1>
     <p class="text-[0.8125rem] text-(--text-2) mt-1 max-w-[50ch]">

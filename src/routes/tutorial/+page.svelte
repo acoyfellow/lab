@@ -1,5 +1,6 @@
 <script lang="ts">
   import AppLink from '$lib/AppLink.svelte';
+  import DocFooterNav from '$lib/DocFooterNav.svelte';
   import { paths } from '$lib/paths';
 </script>
 
@@ -7,17 +8,11 @@
   <title>Tutorial - lab</title>
 </svelte:head>
 
-<div class="max-w-[720px] mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
+<div class="max-w-2xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
   <h1 class="text-lg font-semibold text-(--text) tracking-tight mb-2">Golden path</h1>
   <p class="mb-8 max-w-[62ch]">
-    Short on-site walkthrough. Deeper curl and repo narrative:
-    <a
-      href="https://github.com/acoyfellow/lab#readme"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="underline underline-offset-2 hover:text-(--text)"
-      >README</a
-    >.
+    Short on-site walkthrough. Endpoints and curl:
+    <AppLink to={paths.docsHttpApi} class="underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>.
   </p>
 
   <ol class="list-decimal list-inside space-y-8 m-0 pl-0">
@@ -26,7 +21,7 @@
       <p class="mt-2 mb-0 max-w-[62ch]">
         For KV demos, call <code class="font-(family-name:--mono) text-[0.75rem]">POST /seed</code> first. See
         <AppLink to={paths.docsHttpApi} class="underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>
-        (KV example) or the README.
+        (KV example) or the <AppLink to={paths.docs} class="underline underline-offset-2 hover:text-(--text)">docs hub</AppLink>.
       </p>
     </li>
     <li class="pl-1">
@@ -51,14 +46,16 @@
     <li class="pl-1">
       <span class="font-medium text-(--text)">Fork (optional)</span>
       <p class="mt-2 mb-0 max-w-[62ch]">
-        On a trace page, <strong class="text-(--text) font-medium">Fork</strong> hydrates Compose via session storage — same loop as described in the README habit loop.
+        On a trace page, <strong class="text-(--text) font-medium">Fork</strong> hydrates Compose via session storage — same loop as the habit loop in the repo.
       </p>
     </li>
   </ol>
 
-  <p class="mt-12 pt-8 border-t border-(--border)">
-    <a href="/guides/chains" class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">Chains guide</a>
-    &middot;
-    <AppLink to={paths.docs} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">Docs hub</AppLink>
-  </p>
+  <DocFooterNav
+    gridClass="sm:grid-cols-2"
+    links={[
+      { label: 'Chains guide', to: '/guides/chains', description: 'Multi-step pipelines and POST /run/chain.' },
+      { label: 'Docs hub', to: paths.docs, description: 'HTTP API, TypeScript, architecture, traces.' },
+    ]}
+  />
 </div>

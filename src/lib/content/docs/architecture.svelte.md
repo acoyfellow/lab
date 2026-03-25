@@ -70,8 +70,8 @@ Effect is used for:
 - **Tracing** (`Effect.fn`) — all effectful functions are named for observability
 - **Promise interop** (`Effect.tryPromise`, `Effect.promise`) — wrap Cloudflare APIs
 
-**Effect-first rule:** new behavior in the **Worker** (run paths, trace persistence, spawn/KV/generate) should stay in Effect pipelines (`Effect.gen`, `Exit`, `Cause`) like [`worker/index.ts`](https://github.com/acoyfellow/lab/blob/main/worker/index.ts). The Svelte app and HTTP client are thin layers over `fetch` and remote functions.
+**Effect-first rule:** new behavior in the **Worker** (run paths, trace persistence, spawn/KV/generate) should stay in Effect pipelines (`Effect.gen`, `Exit`, `Cause`) like `worker/index.ts`. The Svelte app and HTTP client are thin layers over `fetch` and remote functions.
 
 ## Traces
 
-After each persisted run, the Worker stores a `StoredTrace` JSON blob in KV under `trace:{id}` and returns `traceId` in the HTTP response. `GET /t/{id}` serves that document. See [trace schema](/docs/trace-schema) for fields.
+After each persisted run, the Worker stores a `StoredTrace` JSON blob in KV under `trace:<id>` and returns `traceId` in the HTTP response. `GET /t/:id` serves that document. See [trace schema](/docs/trace-schema) for fields.

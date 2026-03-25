@@ -1,11 +1,15 @@
+<script lang="ts">
+  import DocFooterNav from '$lib/DocFooterNav.svelte';
+</script>
+
 # Trace document schema
 
-JSON returned by `GET /t/{id}` (Worker or app) and `GET /t/{id}.json`. Authoring source: `src/lib/content/docs/trace-schema.svelte.md` in the repo (same content as this page).
+JSON returned by `GET /t/:id` (Worker or app) and `GET /t/:id.json`. Authoring source: `src/lib/content/docs/trace-schema.svelte.md` in the repo (same content as this page).
 
-Traces are stored in KV under `trace:{id}` and returned by:
+Traces are stored in KV under `trace:<id>` and returned by:
 
-- `GET /t/{id}` (JSON body, Worker or app proxy)
-- `GET /t/{id}.json` (SvelteKit, same JSON)
+- `GET /t/:id` (JSON body, Worker or app proxy)
+- `GET /t/:id.json` (SvelteKit, same JSON)
 
 `id` is a short alphanumeric string (10 hex chars from a UUID slice).
 
@@ -51,4 +55,11 @@ Successful run endpoints include `traceId` in the JSON response alongside mode-s
 
 ---
 
-[Examples](/examples) · [Compose](/compose) · [Docs](/docs)
+<DocFooterNav
+  gridClass="sm:grid-cols-2 lg:grid-cols-3"
+  links={[
+    { label: 'Examples', to: '/examples', description: 'Runnable demos and bookmarkable trace URLs.' },
+    { label: 'Compose', to: '/compose', description: 'Run modes in the browser against the Worker.' },
+    { label: 'Docs', to: '/docs', description: 'Hub for HTTP API, architecture, TypeScript, capabilities.' },
+  ]}
+/>
