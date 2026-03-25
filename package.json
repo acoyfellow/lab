@@ -49,7 +49,7 @@
   "dependencies": {
     "@cf-wasm/resvg": "^0.3.3",
     "@types/node": "^25.5.0",
-    "alchemy": "^0.82.1",
+    "alchemy": "^0.90.0",
     "better-auth": "1.4.7",
     "drizzle-orm": "^0.45.1",
     "effect": "4.0.0-beta.40",
