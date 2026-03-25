@@ -1,5 +1,7 @@
 <script lang="ts">
   import CollapsiblePre from '$lib/CollapsiblePre.svelte';
+  import AppLink from '$lib/AppLink.svelte';
+  import { paths } from '$lib/paths';
 
   type TraceRequest = {
     prompt?: string;
@@ -58,6 +60,12 @@
 
   const outcomeCompact = $derived(trace.outcome.ok && outcomeText().length <= 240);
 
+  const outcomeSummary = $derived.by(() => {
+    if (trace.outcome.ok) return 'ok — result below.';
+    const err = trace.outcome.error ?? 'unknown';
+    return err.length > 160 ? `${err.slice(0, 160)}…` : err;
+  });
+
   function copyUrl() {
     navigator.clipboard.writeText(window.location.href);
   }
@@ -104,6 +112,29 @@
       <button type="button" onclick={copyUrl} class="text-(--text-2) bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 cursor-pointer hover:text-(--text) text-[0.8125rem] font-(family-name:--sans)">Copy URL</button>
     </div>
   </header>
+
+  <section
+    class="mb-6 rounded-(--radius) border border-(--border) bg-(--surface) p-4 text-[0.8125rem] text-(--text-2) leading-relaxed"
+  >
+    <p class="m-0">
+      <strong class="text-(--text) font-medium">Mode</strong>
+      <code class="font-(family-name:--mono) text-[0.75rem]">{trace.type}</code>
+      &middot;
+      <strong class="text-(--text) font-medium">Outcome</strong>
+      {#if trace.outcome.ok}
+        <span class="text-(--text)">{outcomeSummary}</span>
+      {:else}
+        <span class="text-(--cap-off-text)">{outcomeSummary}</span>
+      {/if}
+    </p>
+    <p class="mt-2 mb-0">
+      <strong class="text-(--text) font-medium">Fork</strong>
+      copies this run into Compose (edit and run again).
+      <AppLink to={paths.docsHttpApi} class="text-(--text-3) underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>
+      &middot;
+      <AppLink to={paths.docsTraceSchema} class="text-(--text-3) underline underline-offset-2 hover:text-(--text)">Trace schema</AppLink>.
+    </p>
+  </section>
 
   {#if trace.type === 'kv'}
     <section class="bg-(--surface) border border-(--border) rounded-lg p-3.5 mb-3.5 text-[0.8125rem] text-(--text-2) leading-relaxed">

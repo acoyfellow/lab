@@ -14,10 +14,12 @@
   <header class="mb-8">
     <h1 class="text-lg font-semibold tracking-tight">Examples</h1>
     <p class="text-[0.8125rem] text-(--text-2) mt-2 max-w-[56ch] leading-relaxed">
-      Start with the <a href="/tutorial" class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">tutorial</a>, then run in
-      <a href="/compose" class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">Compose</a>
-      and keep the <code class="font-(family-name:--mono) text-[0.75rem]">/t/…</code> URL or call the same HTTP API (see
-      <AppLink to={paths.docs} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">docs</AppLink>).
+      Outcome-first: run something, land on
+      <code class="font-(family-name:--mono) text-[0.75rem]">/t/:id</code>, optional <strong class="text-(--text) font-medium">Fork</strong>.
+      Golden path:
+      <a href="/tutorial" class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">tutorial</a>
+      &middot;
+      <AppLink to={paths.docsHttpApi} class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>.
     </p>
   </header>
 
@@ -40,8 +42,12 @@
       href="/compose"
       class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
     >
-      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Compose</div>
-      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Sandbox, KV, chain JSON, generate, spawn — then open <code class="font-(family-name:--mono) text-[0.7rem]">/t/…</code>.</div>
+      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Chain trace (recommended)</div>
+      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">
+        Compose opens in Chain mode. Run, then open
+        <code class="font-(family-name:--mono) text-[0.7rem]">/t/:id</code>
+        for per-step detail.
+      </div>
     </a>
     <AppLink
       to={paths.docsHttpApi}
@@ -50,19 +56,27 @@
       <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">curl + HTTP API</div>
       <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Run modes, request shapes, curl samples — on-site.</div>
     </AppLink>
-    <a
-      href="/compose"
-      class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
+    <div
+      class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 text-(--text) hover:bg-(--surface-alt)"
     >
-      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Chain preset</div>
-      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Open Compose, choose Chain — default JSON is a two-step pipeline. Seed KV first for kvRead steps.</div>
-    </a>
+      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">KV snapshot read</div>
+      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">
+        <a href="/compose" class="text-(--text) underline underline-offset-2 hover:text-(--text)">Compose</a>
+        → KV mode.
+        <AppLink to={paths.docsHttpApi} class="underline underline-offset-2 hover:text-(--text)">Seed + read</AppLink>,
+        run, then
+        <code class="font-(family-name:--mono) text-[0.7rem]">/t/:id</code>.
+      </div>
+    </div>
     <AppLink
       to={paths.docsTraceSchema}
       class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
     >
       <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Trace JSON</div>
-      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Stable shape for <code class="font-(family-name:--mono) text-[0.7rem]">GET /t/&#123;id&#125;</code> and <code class="font-(family-name:--mono) text-[0.7rem]">.json</code>.</div>
+      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">
+        Stable shape for <code class="font-(family-name:--mono) text-[0.7rem]">GET /t/:id</code> and
+        <code class="font-(family-name:--mono) text-[0.7rem]">/t/:id.json</code>.
+      </div>
     </AppLink>
   </div>
 

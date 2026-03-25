@@ -10,8 +10,13 @@ export class KvRead extends Context.Tag("@lab/KvRead")<
   }
 >() {}
 
-// What you pass to an isolate. Only the capabilities you include get injected.
+/** What you pass to an isolate. Only included keys get injected / host invoke enabled. */
 export type CapabilitySet = {
-  readonly kvRead?: Context.Tag.Service<typeof KvRead>
-  readonly spawn?: { depth: number }
+  kvRead?: Context.Tag.Service<typeof KvRead>
+  spawn?: { depth: number }
+  workersAi?: true
+  r2Read?: true
+  d1Read?: true
+  durableObjectFetch?: true
+  containerHttp?: true
 }

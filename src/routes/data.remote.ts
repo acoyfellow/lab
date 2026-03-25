@@ -41,23 +41,27 @@ async function callWorkerJSON<T>(
   }
 }
 
-// Run code in sandbox (no capabilities)
-export const runSandbox = query('unchecked', async (code: string): Promise<RunResult> => {
+export type RunCodePayload = { code: string; capabilities?: string[] };
+
+// Run code (optional guest capabilities; see /docs/capabilities)
+export const runSandbox = query('unchecked', async (payload: RunCodePayload): Promise<RunResult> => {
   const platform = getRequestEvent().platform;
+  const { code, capabilities = [] } = payload;
   return callWorkerJSON<RunResult>(platform, '/run', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({ code, capabilities }),
   });
 });
 
-// Run code with KV read capability
-export const runKv = query('unchecked', async (code: string): Promise<RunResult> => {
+// KV read + optional extra capabilities
+export const runKv = query('unchecked', async (payload: RunCodePayload): Promise<RunResult> => {
   const platform = getRequestEvent().platform;
+  const { code, capabilities = [] } = payload;
   return callWorkerJSON<RunResult>(platform, '/run/kv', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({ code, capabilities }),
   });
 });
 

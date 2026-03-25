@@ -12,12 +12,12 @@ Requires **Node 18+** (global `fetch`) or any runtime that provides `fetch` (Clo
 
 ## Usage
 
-Set `baseUrl` to your deployed lab origin (see the main repo [README](https://github.com/acoyfellow/lab#readme) for deploy steps).
+`baseUrl` must be the HTTP **origin** that serves **`POST /run/*`**, **`GET /t/:id`**, **`POST /seed`** — almost always **your own** deployed lab (see [Self-host](https://github.com/acoyfellow/lab#self-host) in the main repo). It is **not** a Cloudflare API key. If the Worker is served under the same public hostname as the UI, use that URL; otherwise use the Worker’s public origin.
 
 ```ts
 import { createLabClient } from "@acoyfellow/lab";
 
-const lab = createLabClient({ baseUrl: "https://lab.coey.dev" });
+const lab = createLabClient({ baseUrl: "https://your-lab-origin.example" });
 
 const r = await lab.runSandbox('return { hello: "world" }');
 ```
@@ -26,8 +26,8 @@ const r = await lab.runSandbox('return { hello: "world" }');
 
 | Method | HTTP |
 |--------|------|
-| `runSandbox(code)` | `POST /run` |
-| `runKv(code)` | `POST /run/kv` |
+| `runSandbox(code, capabilities?)` | `POST /run` |
+| `runKv(code, capabilities?)` | `POST /run/kv` |
 | `runChain(steps)` | `POST /run/chain` |
 | `runSpawn({ code, capabilities, depth? })` | `POST /run/spawn` |
 | `runGenerate({ prompt, capabilities })` | `POST /run/generate` |
@@ -48,7 +48,7 @@ From the [lab](https://github.com/acoyfellow/lab) repo, with `bun dev` running, 
 createLabClient({ baseUrl: process.env.LAB_URL ?? "http://localhost:1337" });
 ```
 
-Or run `bun run dogfood:lab` at the repo root (see main README).
+Smoke from the monorepo: `LAB_URL` = your origin, then `bun run dogfood:lab` (sandbox + chain, checks `traceId` and `getTrace`; see main README **Smoke / dogfood**).
 
 ## Full docs
 

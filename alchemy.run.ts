@@ -8,6 +8,8 @@ import {
   WorkerLoader,
   Ai,
   Self,
+  R2Bucket,
+  DurableObjectNamespace,
 } from "alchemy/cloudflare";
 
 import { CloudflareStateStore, FileSystemStateStore } from "alchemy/state";
@@ -36,6 +38,19 @@ const DB = await D1Database(`${projectName}-db`, {
   adopt: true,
 });
 
+// Engine D1 for guest read demos (isolate worker only)
+const ENGINE_D1 = await D1Database(`${projectName}-engine-d1`, {
+  name: `${projectName}-engine-d1`,
+  migrationsDir: "worker/d1-migrations",
+  adopt: true,
+});
+
+const R2 = await R2Bucket(`${projectName}-r2`);
+
+const LAB_DO = DurableObjectNamespace("lab-stub-do", {
+  className: "LabStubDurableObject",
+});
+
 // Worker Loader for V8 isolate creation
 const LOADER = WorkerLoader();
 
@@ -54,6 +69,9 @@ export const WORKER = await Worker(`${projectName}-worker`, {
     KV,
     AI,
     SELF: Self,
+    R2,
+    ENGINE_D1,
+    LAB_DO,
   },
   url: false,
   // Same port as SvelteKit dev proxy (`data.remote.ts`) and `@acoyfellow/lab` local dogfood (`LAB_URL`).

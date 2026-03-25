@@ -18,7 +18,7 @@
     tone="section"
     gridClass="sm:grid-cols-2 lg:grid-cols-3"
     links={[
-      { label: 'Compose', to: '/compose', description: 'Run sandbox, KV, chain, generate, spawn.' },
+      { label: 'Compose', to: '/compose', description: 'Chain first; KV, sandbox, generate, spawn.' },
       { label: 'HTTP API', to: paths.docsHttpApi, description: 'Endpoints, curl, run modes.' },
       { label: 'Trace schema', to: paths.docsTraceSchema, description: 'What GET /t/:id returns.' },
     ]}
@@ -36,7 +36,10 @@
     <li class="pl-1">
       <span class="font-medium text-(--text)">Run in Compose</span>
       <p class="mt-2 mb-0 max-w-[62ch]">
-        Open <a href="/compose" class="underline underline-offset-2 hover:text-(--text)">Compose</a>, pick a mode (sandbox, KV, chain, generate, spawn), run. Successful persisted runs return a
+        Open <a href="/compose" class="underline underline-offset-2 hover:text-(--text)">Compose</a>.
+        <strong class="text-(--text) font-medium">Chain</strong> is the default (two steps, per-step trace in
+        <code class="font-(family-name:--mono) text-[0.75rem]">/t/:id</code>); switch mode for KV, sandbox,
+        generate, or spawn. Successful runs return a
         <code class="font-(family-name:--mono) text-[0.75rem]">traceId</code>.
       </p>
       <p class="mt-2 mb-0">

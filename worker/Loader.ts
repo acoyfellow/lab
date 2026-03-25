@@ -1,5 +1,6 @@
 import { Context, Effect, Data, Layer } from "effect"
 import type { CapabilitySet } from "./Capability"
+import { denyMessageFor } from "./capabilities/registry"
 
 // --- Errors ---
 
@@ -8,7 +9,7 @@ export class IsolateError extends Data.TaggedError("IsolateError")<{
   readonly message: string
 }> {}
 
-// --- Raw binding type (what Cloudflare gives us) ---
+// --- Raw binding type (what Cloudflare gives you) ---
 
 export interface WorkerLoaderBinding {
   get(
@@ -37,6 +38,17 @@ export class Isolate extends Context.Tag("@lab/Isolate")<
   }
 >() {}
 
+function isolateUsesSelfOutbound(caps?: CapabilitySet): boolean {
+  if (!caps) return false
+  if (caps.spawn && caps.spawn.depth > 0) return true
+  if (caps.workersAi) return true
+  if (caps.r2Read) return true
+  if (caps.d1Read) return true
+  if (caps.durableObjectFetch) return true
+  if (caps.containerHttp) return true
+  return false
+}
+
 // --- Wrapper code generation ---
 
 const wrapCode = (
@@ -46,6 +58,14 @@ const wrapCode = (
   kvKeys?: string[],
   input?: unknown
 ): string => {
+  const kvDeny = denyMessageFor("kvRead")
+  const spawnDeny = denyMessageFor("spawn")
+  const aiDeny = denyMessageFor("workersAi")
+  const r2Deny = denyMessageFor("r2Read")
+  const d1Deny = denyMessageFor("d1Read")
+  const doDeny = denyMessageFor("durableObjectFetch")
+  const contDeny = denyMessageFor("containerHttp")
+
   const kvShim = caps?.kvRead
     ? `
     const __kvData = ${JSON.stringify(kvSnapshot ?? {})};
@@ -60,7 +80,7 @@ const wrapCode = (
 `
     : `
     const kv = new Proxy({}, {
-      get() { throw new Error("KvRead capability not granted"); }
+      get() { throw new Error(${JSON.stringify(kvDeny)}); }
     });
 `
 
@@ -83,7 +103,122 @@ const wrapCode = (
     };
 `
     : `
-    const spawn = () => { throw new Error("Spawn capability not granted"); };
+    const spawn = () => { throw new Error(${JSON.stringify(spawnDeny)}); };
+`
+
+  const aiShim = caps?.workersAi
+    ? `
+    const ai = {
+      async run(prompt) {
+        const res = await fetch("http://internal/invoke/ai", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "invoke ai failed");
+        return data.result;
+      }
+    };
+`
+    : `
+    const ai = new Proxy({}, {
+      get() { throw new Error(${JSON.stringify(aiDeny)}); }
+    });
+`
+
+  const r2Shim = caps?.r2Read
+    ? `
+    const r2 = {
+      async list(prefix, limit) {
+        const res = await fetch("http://internal/invoke/r2", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "list", prefix: prefix ?? null, limit: limit ?? 500 }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "invoke r2 failed");
+        return data.result;
+      },
+      async getText(key, maxBytes) {
+        const res = await fetch("http://internal/invoke/r2", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "getText", key, maxBytes: maxBytes ?? 262144 }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "invoke r2 failed");
+        return data.result;
+      }
+    };
+`
+    : `
+    const r2 = new Proxy({}, {
+      get() { throw new Error(${JSON.stringify(r2Deny)}); }
+    });
+`
+
+  const d1Shim = caps?.d1Read
+    ? `
+    const d1 = {
+      async query(sql) {
+        const res = await fetch("http://internal/invoke/d1", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ sql }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "invoke d1 failed");
+        return data.result;
+      }
+    };
+`
+    : `
+    const d1 = new Proxy({}, {
+      get() { throw new Error(${JSON.stringify(d1Deny)}); }
+    });
+`
+
+  const doShim = caps?.durableObjectFetch
+    ? `
+    const labDo = {
+      async fetch(name, path) {
+        const res = await fetch("http://internal/invoke/do", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ name, path: path ?? "/" }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "invoke do failed");
+        return data.result;
+      }
+    };
+`
+    : `
+    const labDo = new Proxy({}, {
+      get() { throw new Error(${JSON.stringify(doDeny)}); }
+    });
+`
+
+  const contShim = caps?.containerHttp
+    ? `
+    const labContainer = {
+      async get(path) {
+        const res = await fetch("http://internal/invoke/container", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ path: path ?? "/" }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "invoke container failed");
+        return data.result;
+      }
+    };
+`
+    : `
+    const labContainer = new Proxy({}, {
+      get() { throw new Error(${JSON.stringify(contDeny)}); }
+    });
 `
 
   return `
@@ -93,6 +228,11 @@ export default {
       ${inputShim}
       ${kvShim}
       ${spawnShim}
+      ${aiShim}
+      ${r2Shim}
+      ${d1Shim}
+      ${doShim}
+      ${contShim}
       const __result = await (async () => {
         ${code}
       })();
@@ -167,7 +307,15 @@ const execIsolate = (
     const hasKv = !!(caps?.kvRead && kvNamespace)
     const hasSpawn = !!(caps?.spawn && caps.spawn.depth > 0)
     const spawnDepth = hasSpawn ? caps!.spawn!.depth : 0
-    const capKey = [hasKv ? ":kv" : "", hasSpawn ? `:spawn:${spawnDepth}` : ""].join("")
+    const capKey = [
+      hasKv ? ":kv" : "",
+      hasSpawn ? `:spawn:${spawnDepth}` : "",
+      caps?.workersAi ? ":ai" : "",
+      caps?.r2Read ? ":r2" : "",
+      caps?.d1Read ? ":d1" : "",
+      caps?.durableObjectFetch ? ":do" : "",
+      caps?.containerHttp ? ":ctr" : "",
+    ].join("")
     const inputKey = input !== undefined ? `:in:${JSON.stringify(input)}` : ""
     const id = yield* hash(code + capKey + inputKey)
 
@@ -177,9 +325,8 @@ const execIsolate = (
 
     const wrapped = wrapCode(code, caps, snapshot, keys, input)
 
-    // For spawn: use SELF service binding as globalOutbound
-    // Child's fetch calls route back to our worker at /spawn/child
-    const globalOutbound = hasSpawn && selfFetcher ? selfFetcher : null
+    const useOutbound = isolateUsesSelfOutbound(caps)
+    const globalOutbound = useOutbound && selfFetcher ? selfFetcher : null
 
     const worker = loader.get(id, async () => ({
       compatibilityDate: "2025-06-01",

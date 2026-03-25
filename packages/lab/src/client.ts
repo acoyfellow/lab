@@ -43,8 +43,8 @@ async function requestJSON<T>(
 }
 
 export type LabClient = {
-  runSandbox: (code: string) => Promise<RunResult>;
-  runKv: (code: string) => Promise<RunResult>;
+  runSandbox: (code: string, capabilities?: string[]) => Promise<RunResult>;
+  runKv: (code: string, capabilities?: string[]) => Promise<RunResult>;
   runChain: (steps: ChainStep[]) => Promise<RunResult>;
   runSpawn: (payload: RunSpawnPayload) => Promise<RunResult>;
   runGenerate: (payload: RunGeneratePayload) => Promise<RunResult>;
@@ -57,18 +57,18 @@ export function createLabClient(options: LabClientOptions): LabClient {
   const fetchImpl = options.fetch ?? globalThis.fetch;
 
   return {
-    runSandbox(code) {
+    runSandbox(code, capabilities) {
       return requestJSON<RunResult>(baseUrl, fetchImpl, '/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, capabilities: capabilities ?? [] }),
       });
     },
-    runKv(code) {
+    runKv(code, capabilities) {
       return requestJSON<RunResult>(baseUrl, fetchImpl, '/run/kv', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, capabilities: capabilities ?? [] }),
       });
     },
     runChain(steps) {

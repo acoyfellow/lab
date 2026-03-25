@@ -16,6 +16,12 @@
       Parallelize work on the edge
     </h1>
     <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
+      <strong class="text-(--text) font-medium">Start in the browser:</strong>
+      <a href="/compose" class="text-(--text-2) underline underline-offset-2 hover:text-(--text)">Compose</a>
+      runs isolates and lands you on a shareable
+      <code class="font-(family-name:--mono) text-[0.8rem]">/t/:id</code> trace — no install required on a hosted demo.
+    </p>
+    <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
       Fan out steps on <strong class="text-(--text) font-medium">Cloudflare Workers</strong> instead of on your laptop. You send a small request; the edge runs <strong class="text-(--text) font-medium">multiple isolates in parallel</strong> when the job allows it, or a <strong class="text-(--text) font-medium">chain</strong> when each step needs the last one’s output.
     </p>
     <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
@@ -46,7 +52,9 @@
       TypeScript client
     </h2>
     <p class="text-[0.8125rem] text-(--text-2) leading-relaxed m-0">
-      <code class="font-(family-name:--mono) text-[0.75rem]">npm install @acoyfellow/lab</code>. Set <code class="font-(family-name:--mono) text-[0.75rem]">baseUrl</code> to the hosted worker or your deploy. Use from scripts, CI, or anything that can call HTTP.
+      <code class="font-(family-name:--mono) text-[0.75rem]">npm install @acoyfellow/lab</code>.
+      <code class="font-(family-name:--mono) text-[0.75rem]">baseUrl</code> = the HTTP origin that serves your lab Worker’s
+      <code class="text-[0.75rem]">/run/*</code> and <code class="text-[0.75rem]">/t/:id</code> (your deploy, not a vendor-only host). Use from scripts, CI, or anything that can call HTTP.
     </p>
     <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
       {@html data.codeHtml.client}

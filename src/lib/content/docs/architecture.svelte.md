@@ -8,9 +8,7 @@ Cloudflare Worker Loaders solve the first part — they create V8 isolates at ru
 
 ## The approach
 
-This project uses Effect's type system as the permission model.
-
-Each capability (KV read, spawn, etc.) is an Effect `Context.Tag`. A `CapabilitySet` is a plain object where each key is an optional capability. The parent worker inspects the capability set before creating the isolate and injects the right shims.
+This project uses Effect for isolate execution. **KV read** is modeled as an Effect `Context.Tag` service on the host; other capabilities (`spawn`, `workersAi`, `r2Read`, …) are flags on `CapabilitySet` that select Loader wrapper shims and/or host **`/invoke/*`** routes. The parent inspects the set before running an isolate and injects the right shims.
 
 This means:
 
@@ -23,6 +21,10 @@ This means:
 Cloudflare's `KVNamespace` object cannot be passed into a Worker Loader's `env` — the runtime throws a serialization error. The workaround: the parent reads all KV data into memory before creating the isolate, serializes it as JSON, and injects it into the isolate's wrapper code. The isolate gets `kv.get()` and `kv.list()` functions backed by that in-memory snapshot.
 
 This has tradeoffs. The snapshot is a point-in-time copy. If KV changes between snapshot and execution, the isolate sees stale data. For the use cases this project targets (short-lived compute tasks), that's acceptable.
+
+## How host invoke works (`/invoke/*`)
+
+Some capabilities (`workersAi`, `r2Read`, `d1Read`, `durableObjectFetch`, `containerHttp`) cannot inject raw bindings into the Loader child. Those shims use the same **`SELF` `globalOutbound`** as spawn: the isolate calls `fetch("http://internal/invoke/…")`, the parent Worker handles `POST /invoke/*` with the real `AI`, `R2`, `ENGINE_D1`, `LAB_DO`, or `LAB_CONTAINER` bindings, and returns JSON the shim unwraps. Denied or unconfigured bindings surface as isolate errors or **503** on the host route.
 
 ## How spawn works
 
