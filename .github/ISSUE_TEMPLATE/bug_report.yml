@@ -1,0 +1,37 @@
+name: Bug report
+description: Something isn’t working
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Include expected vs actual.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Repro steps
+      description: Minimal steps or a small snippet.
+      placeholder: |
+        1. Go to /compose
+        2. Run Chain mode with ...
+        3. Open /t/:id
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      placeholder: |
+        - local vs deploy:
+        - bun version:
+        - OS:
+        - browser:
+    validations:
+      required: false
+

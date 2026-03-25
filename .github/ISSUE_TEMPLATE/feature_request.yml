@@ -1,0 +1,29 @@
+name: Feature request
+description: Propose an idea
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What’s the pain / user story?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should change?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope / risks
+      description: Security/capability boundary impact? API changes?
+    validations:
+      required: false
+
