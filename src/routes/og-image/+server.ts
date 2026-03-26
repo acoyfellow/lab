@@ -33,14 +33,14 @@ function generateOGImageSVG(title: string, description: string): string {
   const titleText = titleLines
     .map(
       (line, i) =>
-        `<text x="60" y="${280 + i * 70}" font-size="58" font-weight="700" fill="#FFFFFF">${escapeXml(line)}</text>`
+        `<text x="60" y="${280 + i * 70}" font-family="system-ui, -apple-system, sans-serif" font-size="58" font-weight="700" fill="#FFFFFF">${escapeXml(line)}</text>`
     )
     .join('\n');
 
   const descText = descLines
     .map(
       (line, i) =>
-        `<text x="60" y="${280 + titleLines.length * 70 + 30 + i * 32}" font-size="24" fill="rgba(255,255,255,0.8)">${escapeXml(line)}</text>`
+        `<text x="60" y="${280 + titleLines.length * 70 + 30 + i * 32}" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="rgba(255,255,255,0.8)">${escapeXml(line)}</text>`
     )
     .join('\n');
 
@@ -59,12 +59,12 @@ function generateOGImageSVG(title: string, description: string): string {
     <path d="${iconLab}" fill="#FFFFFF"/>
   </g>
   
-  <g transform="translate(60, 60) scale(0.5)">
+  <g transform="translate(60, 56) scale(0.5)">
     <path d="${iconBolt}" fill="#FFFFFF"/>
     <path d="${iconLab}" fill="#FFFFFF"/>
   </g>
   
-  <g transform="translate(140, 48) scale(0.35)" fill="#FFFFFF">
+  <g transform="translate(140, 68) scale(0.35)" fill="#FFFFFF">
     <path d="${wordmarkL}"/>
     <path d="${wordmarkA}"/>
     <path d="${wordmarkB}"/>
