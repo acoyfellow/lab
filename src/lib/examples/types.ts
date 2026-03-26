@@ -26,6 +26,10 @@ export type ExampleData = {
 	icon?: string;
 	steps: ExampleStep[];
 	tags: string[];
+	complexity?: 'simple' | 'workflow' | 'agentic';
+	startHere?: boolean;
+	featured?: boolean;
+	traceValue?: string;
 };
 
 export type ExampleProps = {

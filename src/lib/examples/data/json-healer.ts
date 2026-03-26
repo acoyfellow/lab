@@ -9,6 +9,10 @@ export const jsonHealer: ExampleData = {
 	result: 'Robust data ingestion that never crashes on bad input',
 	icon: 'wand',
 	tags: ['json', 'validation', 'healing', 'data'],
+	complexity: 'workflow',
+	startHere: true,
+	featured: true,
+	traceValue: 'Trace shows the failed parse, the repair step, and the final validated output in one shareable receipt.',
 	steps: [
 		{
 			name: 'Load Broken JSON',

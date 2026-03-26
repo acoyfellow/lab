@@ -63,18 +63,21 @@
   {:else if status === 'error'}
     <Card class="border-red-500/40 bg-white shadow-sm shadow-red-500/20">
       <CardHeader class="pb-2">
-        <CardTitle class="text-red-400 text-sm font-semibold">Failed</CardTitle>
+        <CardTitle class="text-red-400 text-sm font-semibold">Run failed</CardTitle>
       </CardHeader>
       <CardContent class="space-y-3">
         <pre class="text-xs font-mono whitespace-pre-wrap text-(--text) m-0">{error}</pre>
         {#if traceId}
+          <p class="text-[0.75rem] text-(--text-2) m-0">
+            The trace still captured the failure. Open it to inspect the step that broke or share it for debugging.
+          </p>
           <div class="flex flex-wrap gap-2 pt-1">
             <a
               href="/t/{traceId}"
               class="inline-flex items-center gap-1.5 rounded-(--radius) bg-(--accent) px-3 py-2 text-xs font-medium text-white no-underline hover:opacity-90"
             >
               <ExternalLink class="w-3.5 h-3.5" />
-              Open trace
+              Open failure trace
             </a>
             <button
               type="button"
@@ -82,7 +85,7 @@
               class="inline-flex items-center gap-1.5 rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2 text-xs text-(--text) hover:bg-(--surface-alt)"
             >
               <Link2 class="w-3.5 h-3.5" />
-              Copy URL
+              Copy trace URL
             </button>
           </div>
           <p class="text-[0.65rem] font-mono text-(--text-3) m-0 break-all">{traceUrl()}</p>
@@ -99,7 +102,7 @@
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <CardTitle class="text-sm text-emerald-500 flex items-center gap-2 m-0">
             <Check class="w-4 h-4 shrink-0" />
-            Success
+            Trace ready
           </CardTitle>
           {#if traceId}
             <div class="flex flex-wrap gap-2">
@@ -116,12 +119,15 @@
                 class="inline-flex items-center gap-1.5 rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2 text-xs text-(--text) hover:bg-(--surface-alt)"
               >
                 <Link2 class="w-3.5 h-3.5" />
-                Copy URL
+                Copy trace URL
               </button>
             </div>
           {/if}
         </div>
         {#if traceId}
+          <p class="text-[0.75rem] text-(--text-2) m-0">
+            Share this URL with another agent or a reviewer. It contains the full receipt for the run.
+          </p>
           <p class="text-[0.65rem] font-mono text-(--text-3) m-0 break-all leading-snug">{traceUrl()}</p>
         {/if}
         {#if steps.length > 0}

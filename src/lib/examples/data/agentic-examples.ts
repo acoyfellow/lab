@@ -80,6 +80,10 @@ export const proofOfCorrectness: ExampleData = {
 	result: 'The trace IS the deliverable. Not "I think this works" — here is the execution receipt.',
 	icon: 'check-circle',
 	tags: ['agent', 'testing', 'proof', 'trust', 'correctness'],
+	complexity: 'workflow',
+	startHere: true,
+	featured: true,
+	traceValue: 'Trace records every case, every assertion, and the final verdict so the proof is inspectable and shareable.',
 	steps: [
 		{ name: 'Specify', description: '10 edge cases with expected outputs', code: '{ input: "$1,234.56", expected: 1234.56 }', input: {}, output: { totalCases: 10 }, capabilities: [], ms: 1 },
 		{ name: 'Execute', description: 'Run parseAmount() against every case', code: 'parseAmount("$1,234.56") → 1234.56', input: { cases: '...' }, output: { executed: 10 }, capabilities: [], ms: 3 },
@@ -172,6 +176,9 @@ export const canaryRun: ExampleData = {
 	result: 'Side-by-side comparison. 2 cases changed, both improvements. Approve with confidence.',
 	icon: 'git-compare',
 	tags: ['canary', 'diff', 'refactor', 'safety', 'agent'],
+	complexity: 'workflow',
+	featured: true,
+	traceValue: 'Trace turns a risky refactor into a review artifact: same inputs, old output, new output, exact diff.',
 	steps: [
 		{ name: 'Test Data', description: '6 emails including edge cases', code: '{ cases: [{ email: "alice@example.com" }, ...] }', input: {}, output: { cases: 6 }, capabilities: [], ms: 1 },
 		{ name: 'Old Logic (v1)', description: 'email.toLowerCase()', code: '"  BOB@EXAMPLE.COM  " → "  bob@example.com  "', input: { cases: '...' }, output: { version: 'v1' }, capabilities: [], ms: 1 },
@@ -245,6 +252,9 @@ export const zeroBleed: ExampleData = {
 	result: 'Zero bleed. Every isolate is a clean room. This is the security model.',
 	icon: 'shield',
 	tags: ['security', 'isolation', 'zero-trust', 'v8', 'agent'],
+	complexity: 'workflow',
+	featured: true,
+	traceValue: 'Trace proves the security model step by step: poison first, inspect second, confirm nothing leaked.',
 	steps: [
 		{ name: 'Poison', description: 'Globals, prototypes, fake process.env', code: 'globalThis.__leaked = "POISONED"', input: {}, output: { poisoned: true, targets: 4 }, capabilities: [], ms: 2 },
 		{ name: 'Clean Room', description: 'Fresh isolate checks every vector', code: 'typeof globalThis.__leaked → "undefined"', input: {}, output: { clean: true, leaked: 0 }, capabilities: [], ms: 1 },
@@ -516,6 +526,10 @@ export const traceHandoff: ExampleData = {
 	result: '3 agents, 3 isolates, 1 trace URL. The trace IS the coordination layer.',
 	icon: 'arrow-right-left',
 	tags: ['handoff', 'multi-agent', 'coordination', 'trace', 'relay'],
+	complexity: 'agentic',
+	startHere: true,
+	featured: true,
+	traceValue: 'Trace becomes the protocol: one URL preserves the research, synthesis, and final draft for the next agent.',
 	steps: [
 		{ name: 'Agent A: Research', description: 'Gather and structure findings', code: '{ sources: 3, summary: "All consistent" }', input: {}, output: { sources: 3, handoff: 'Ready for Agent B' }, capabilities: [], ms: 2 },
 		{ name: 'Agent B: Synthesize', description: 'Filter and conclude', code: '{ conclusion: "3/3 high-confidence" }', input: { sources: '...' }, output: { recommendation: 'Proceed' }, capabilities: [], ms: 1 },
@@ -602,6 +616,10 @@ export const iterativeRepair: ExampleData = {
 	result: 'Attempt 1 failed (unquoted keys). Diagnosed. Attempt 2 succeeded. The trace shows the full reasoning chain.',
 	icon: 'refresh-cw',
 	tags: ['self-healing', 'repair', 'iterative', 'diagnosis', 'agent'],
+	complexity: 'agentic',
+	startHere: true,
+	featured: true,
+	traceValue: 'Trace captures the failure, diagnosis, repair strategy, and retry so the whole debugging loop is auditable.',
 	steps: [
 		{ name: 'Attempt 1', description: 'Naive JSON.parse', code: 'JSON.parse(raw) → throws', input: {}, output: { ok: false, error: 'Unexpected token' }, capabilities: [], ms: 1 },
 		{ name: 'Diagnose', description: 'Read error + raw data', code: '{ diagnosis: ["unquoted_keys"] }', input: { error: '...' }, output: { strategy: 'Quote all keys' }, capabilities: [], ms: 1 },
@@ -767,6 +785,8 @@ export const selfImprovingLoop: ExampleData = {
 	result: 'Levenshtein beats Trigram 100% vs 63%. Winner feeds into the next generation. Trace records the full experiment.',
 	icon: 'repeat',
 	tags: ['agent', 'self-improving', 'evolution', 'evaluation', 'meta'],
+	complexity: 'agentic',
+	traceValue: 'Trace is the lab notebook for one generation: same harness, two candidates, measured winner.',
 	steps: [
 		{ name: 'Test Cases', description: '8 string pairs with minimum similarity thresholds', code: '{ a: "kitten", b: "sitting", minScore: 0.5 }', input: {}, output: { cases: 8 }, capabilities: [], ms: 1 },
 		{ name: 'Candidate A', description: 'Trigram overlap — fast, approximate', code: 'trigramSimilarity("kitten", "sitting")', input: { cases: '...' }, output: { fitness: 63, passed: '5/8' }, capabilities: [], ms: 2 },

@@ -4,6 +4,24 @@
   import MiniSandbox from '$lib/tutorial/MiniSandbox.svelte';
   import { Button } from '$lib/components/ui/button';
 
+  const featuredExamples = [
+    {
+      title: 'Trace Handoff',
+      badge: 'URL',
+      description: 'Agent A produces a trace URL. Agent B reads it and continues the work. The trace becomes the handoff protocol.'
+    },
+    {
+      title: 'Proof of Correctness',
+      badge: '10/10',
+      description: 'Agent writes a function, specifies edge cases, runs them all in isolated steps, and returns the trace as the execution receipt.'
+    },
+    {
+      title: 'Canary Run',
+      badge: 'Diff',
+      description: 'Old logic and new logic run on the same inputs. The trace shows exactly what changed before you ship.'
+    }
+  ];
+
   let { data }: PageProps = $props();
 </script>
 
@@ -99,35 +117,17 @@
   <section class="space-y-4">
     <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">What agents build with this</h2>
     <div class="space-y-3">
-      <a href="/examples" class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
-        <div class="flex items-start gap-3">
-          <span class="flex-shrink-0 mt-0.5 w-8 h-8 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center text-[0.6875rem] font-bold">G1</span>
-          <div>
-            <div class="font-semibold text-(--text) group-hover:text-(--accent) text-[0.875rem]">Self-Improving Loop</div>
-            <p class="text-[0.8125rem] text-(--text-2) m-0 mt-0.5">Two candidate implementations compete on the same test cases. Trigram vs Levenshtein, 8 fuzzy string matches. Winner selected by fitness. The trace is the lab notebook — one generation of an evolutionary agent loop.</p>
+      {#each featuredExamples as example}
+        <a href="/examples" class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
+          <div class="flex items-start gap-3">
+            <span class="flex-shrink-0 mt-0.5 min-w-8 h-8 rounded-full bg-(--surface-alt) text-(--text-2) flex items-center justify-center text-[0.6875rem] font-bold px-2">{example.badge}</span>
+            <div>
+              <div class="font-semibold text-(--text) group-hover:text-(--accent) text-[0.875rem]">{example.title}</div>
+              <p class="text-[0.8125rem] text-(--text-2) m-0 mt-0.5">{example.description}</p>
+            </div>
           </div>
-        </div>
-      </a>
-      <a href="/examples" class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
-        <div class="flex items-start gap-3">
-          <span class="flex-shrink-0 mt-0.5 w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-[0.75rem] font-bold">10/10</span>
-          <div>
-            <div class="font-semibold text-(--text) group-hover:text-(--accent) text-[0.875rem]">Proof of Correctness</div>
-            <p class="text-[0.8125rem] text-(--text-2) m-0 mt-0.5">Agent writes a function, specifies 10 edge cases, runs them all in isolated steps. The trace shows 10/10 passing. Not "this should work" — here's the execution receipt.</p>
-          </div>
-        </div>
-      </a>
-      <a href="/examples" class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
-        <div class="flex items-start gap-3">
-          <span class="flex-shrink-0 mt-0.5 w-8 h-8 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-[0.75rem]">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </span>
-          <div>
-            <div class="font-semibold text-(--text) group-hover:text-(--accent) text-[0.875rem]">Zero Bleed</div>
-            <p class="text-[0.8125rem] text-(--text-2) m-0 mt-0.5">Step 1 poisons every global and prototype. Step 2 is a fresh V8 — nothing leaks. The trace proves the isolation model. This is how agents run untrusted code safely.</p>
-          </div>
-        </div>
-      </a>
+        </a>
+      {/each}
     </div>
     <a href="/examples" class="inline-block text-[0.8125rem] text-(--accent) hover:underline mt-1">See all examples →</a>
   </section>
