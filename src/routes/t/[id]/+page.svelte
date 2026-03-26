@@ -286,18 +286,22 @@
 
   <!-- Detail Panel (Slide-out) -->
   {#if showDetailPanel && selectedStepData}
-    <div class="fixed inset-0 z-50" onclick={() => showDetailPanel = false}>
+    <div class="fixed inset-0 z-50">
       <!-- Backdrop -->
-      <div
-        class="absolute inset-0 bg-black/50"
+      <button
+        type="button"
+        class="absolute inset-0 bg-black/50 w-full h-full cursor-default"
         transition:fade={{ duration: 120 }}
-      ></div>
-      
+        onclick={() => showDetailPanel = false}
+        aria-label="Close panel"
+      ></button>
+
       <!-- Panel -->
-      <div 
+      <div
         class="absolute right-0 top-0 bottom-0 w-full max-w-3xl bg-(--surface) border-l border-(--border) shadow-2xl overflow-y-auto"
-        onclick={(e) => e.stopPropagation()}
         transition:fly={{ x: 28, duration: 160, easing: cubicOut }}
+        role="dialog"
+        aria-modal="true"
       >
         <div class="p-5">
           <!-- Panel Header -->
