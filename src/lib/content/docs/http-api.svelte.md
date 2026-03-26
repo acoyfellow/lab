@@ -4,7 +4,7 @@
 
 # HTTP API
 
-Public Worker endpoints. Default origin in examples: `https://lab.coey.dev`. Capabilities: [how they work](/docs/capabilities). **Limits** ([bounds](/docs/limits)), **failures** ([traces on errors](/docs/failures)), and **security** ([model](/docs/security)) are documented separately.
+Public Worker endpoints (examples default to `https://lab.coey.dev`). Related: [Capabilities](/docs/capabilities) · [Limits](/docs/limits) · [Failures](/docs/failures) · [Security](/docs/security).
 
 Guest **`body`** strings are plain **JavaScript** (inserted into template `guest@v1`), not TypeScript. **`code`** is accepted as a legacy alias for **`body`**. Optional **`template`**: only `guest@v1` today (default when omitted). The Worker **parses** each body as script (same shaped test as [`src/lib/guest-code.test.ts`](https://github.com/acoyfellow/lab/blob/main/src/lib/guest-code.test.ts)) before load; syntax errors fail the run with a **runtime** isolate error.
 

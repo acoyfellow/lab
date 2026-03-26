@@ -1,8 +1,14 @@
 <script lang="ts">
   import AppLink from '$lib/AppLink.svelte';
   import SEO from '$lib/SEO.svelte';
+  import { docsHubByGroup } from '$lib/docs-hub';
   import { paths } from '$lib/paths';
   import { GraduationCap, Play, Zap } from '@lucide/svelte';
+
+  const hubSections = [
+    { id: 'guides' as const, heading: 'Guides', cards: docsHubByGroup('guides') },
+    { id: 'reference' as const, heading: 'Reference', cards: docsHubByGroup('reference') }
+  ];
   
   const navSections = [
     {
@@ -36,76 +42,7 @@
       ]
     }
   ];
-  
-  const mainCards = [
-    {
-      to: '/docs/self-host',
-      title: 'Self-Hosting',
-      description: 'Deploy to Cloudflare. Infrastructure setup, configuration, deployment.',
-      tags: ['Production', 'Cloudflare']
-    },
-    {
-      to: paths.docsHttpApi,
-      title: 'HTTP API',
-      description: 'Run modes, endpoints, curl, request/response shapes.',
-      tags: ['REST', 'JSON']
-    },
-    {
-      to: paths.docsAgentIntegration,
-      title: 'Agents',
-      description: 'MCP find + execute, or GET /lab/catalog + HTTP runs.',
-      tags: ['MCP', 'AI']
-    },
-    {
-      to: paths.docsTypescript,
-      title: 'TypeScript Client',
-      description: '@acoyfellow/lab — install, createLabClient, methods.',
-      tags: ['npm', 'TypeScript']
-    },
-    {
-      to: paths.docsWhenToUse,
-      title: 'When to use Lab',
-      description: 'Good fit vs poor fit; relationship to plain Workers.',
-      tags: ['Product']
-    },
-    {
-      to: paths.docsArchitecture,
-      title: 'Architecture',
-      description: 'Worker loaders, Effect, KV snapshot, spawn, chains.',
-      tags: ['Cloudflare', 'Effect']
-    },
-    {
-      to: paths.docsCapabilities,
-      title: 'Capabilities',
-      description: 'KV snapshot, spawn, why shims exist.',
-      tags: ['Security']
-    },
-    {
-      to: paths.docsTraceSchema,
-      title: 'Trace JSON',
-      description: 'GET /t/:id document — fields, tables, POST traceId.',
-      tags: ['Schema']
-    },
-    {
-      to: paths.docsLimits,
-      title: 'Limits',
-      description: 'Repo-enforced caps, chains, R2 invoke, platform limits.',
-      tags: ['Reference']
-    },
-    {
-      to: paths.docsSecurity,
-      title: 'Security model',
-      description: 'Untrusted guest code, capabilities, operators.',
-      tags: ['Reference']
-    },
-    {
-      to: paths.docsFailures,
-      title: 'Failures & traces',
-      description: 'Chain errors, empty trace on failure, isolate reasons.',
-      tags: ['Reference']
-    }
-  ];
-  
+
   const tocItems = [
     { id: 'overview', label: 'Overview' },
     { id: 'quick-start', label: 'Quick Start' },
@@ -202,55 +139,31 @@
           </div>
         </section>
 
-        <!-- Guides Section -->
-        <section id="guides" class="space-y-4">
-          <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
-            Guides
-          </h2>
-          <div class="grid gap-4 sm:grid-cols-2">
-            {#each mainCards.slice(0, 5) as card}
-              <AppLink
-                to={card.to}
-                class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:bg-(--surface-alt) no-underline group"
-              >
-                <div class="flex items-center justify-between mb-2">
-                  <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">{card.title}</h3>
-                  <div class="flex gap-1">
-                    {#each card.tags as tag}
-                      <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3)">{tag}</span>
-                    {/each}
+        {#each hubSections as block}
+          <section id={block.id} class="space-y-4">
+            <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+              {block.heading}
+            </h2>
+            <div class="grid gap-4 sm:grid-cols-2">
+              {#each block.cards as card}
+                <AppLink
+                  to={card.to}
+                  class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:bg-(--surface-alt) no-underline group"
+                >
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">{card.title}</h3>
+                    <div class="flex gap-1">
+                      {#each card.tags as tag}
+                        <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3)">{tag}</span>
+                      {/each}
+                    </div>
                   </div>
-                </div>
-                <p class="text-[0.8125rem] text-(--text-2)">{card.description}</p>
-              </AppLink>
-            {/each}
-          </div>
-        </section>
-
-        <!-- Reference Section -->
-        <section id="reference" class="space-y-4">
-          <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
-            Reference
-          </h2>
-          <div class="grid gap-4 sm:grid-cols-2">
-            {#each mainCards.slice(5) as card}
-              <AppLink
-                to={card.to}
-                class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:bg-(--surface-alt) no-underline group"
-              >
-                <div class="flex items-center justify-between mb-2">
-                  <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">{card.title}</h3>
-                  <div class="flex gap-1">
-                    {#each card.tags as tag}
-                      <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3)">{tag}</span>
-                    {/each}
-                  </div>
-                </div>
-                <p class="text-[0.8125rem] text-(--text-2)">{card.description}</p>
-              </AppLink>
-            {/each}
-          </div>
-        </section>
+                  <p class="text-[0.8125rem] text-(--text-2)">{card.description}</p>
+                </AppLink>
+              {/each}
+            </div>
+          </section>
+        {/each}
       </div>
     </main>
 
