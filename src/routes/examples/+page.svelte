@@ -59,7 +59,7 @@
     selfImprovingLoop
   ];
 
-  const startHereExamples = allExamples.filter((example) => example.startHere);
+  const startHereExamples = allExamples.filter((example) => example.startHere).slice(0, 3);
   const featuredExamples = allExamples.filter((example) => example.featured);
 
   const exampleSections: { label: string; examples: ExampleData[] }[] = [
