@@ -70,7 +70,7 @@ const rawPayload = JSON.stringify({
 // Schema validation
 const schema = {
   required: ['event', 'id', 'data'],
-  event: { type: 'string', pattern: /^[a-z]+\.[a-z]+$/ },
+  event: { type: 'string', pattern: /^[a-z]+[.][a-z]+$/ },
   id: { type: 'string', pattern: /^evt_/ },
   data: {
     required: ['amount', 'currency'],

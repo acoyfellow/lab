@@ -15,7 +15,7 @@
     placeholder
   }: Props = $props();
   
-  let textarea: HTMLTextAreaElement;
+  let textarea: HTMLTextAreaElement | undefined = $state(undefined);
   
   function autoResize() {
     if (!textarea) return;
