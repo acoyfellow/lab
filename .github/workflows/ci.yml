@@ -15,3 +15,9 @@ jobs:
       - run: bun test
       - run: bun run lint
       - run: bun run check
+      - name: Verify lab-mcp dist is fresh
+        run: |
+          cp -r packages/lab-mcp/dist dist-backup
+          cd packages/lab-mcp && bun run build
+          cd ../..
+          diff -r dist-backup packages/lab-mcp/dist || (echo "dist/ is stale. Run 'cd packages/lab-mcp && bun run build' and commit changes." && exit 1)
