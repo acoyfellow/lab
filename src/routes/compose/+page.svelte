@@ -238,6 +238,10 @@
     guestTemplate = GUEST_TEMPLATE_DEFAULT;
     depth = 2;
   }
+
+  function modeClasses(m: Mode) {
+    return mode === m ? 'border-(--accent)/35 bg-(--accent)/5' : 'border-(--border) bg-white';
+  }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -265,11 +269,7 @@
       <button
         type="button"
         onclick={presetChain}
-        class="text-left rounded-(--radius) border border-(--accent)/35 bg-(--accent)/5 px-3 py-3 transition-colors hover:bg-(--accent)/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
-        class:border-(--accent)/35={mode === 'chain'}
-        class:bg-(--accent)/5={mode === 'chain'}
-        class:border-(--border)={mode !== 'chain'}
-        class:bg-white={mode !== 'chain'}
+        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:bg-(--accent)/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent) {modeClasses('chain')}"
       >
         <div class="text-sm font-semibold text-(--text)">Chain</div>
         <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Multi-step pipeline (recommended)</div>
@@ -277,11 +277,7 @@
       <button
         type="button"
         onclick={presetSandbox}
-        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
-        class:border-(--accent)/35={mode === 'sandbox'}
-        class:bg-(--accent)/5={mode === 'sandbox'}
-        class:border-(--border)={mode !== 'sandbox'}
-        class:bg-white={mode !== 'sandbox'}
+        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent) {modeClasses('sandbox')}"
       >
         <div class="text-sm font-semibold text-(--text)">Sandbox</div>
         <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Single isolate, one run</div>
@@ -289,11 +285,7 @@
       <button
         type="button"
         onclick={presetKv}
-        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
-        class:border-(--accent)/35={mode === 'kv'}
-        class:bg-(--accent)/5={mode === 'kv'}
-        class:border-(--border)={mode !== 'kv'}
-        class:bg-white={mode !== 'kv'}
+        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent) {modeClasses('kv')}"
       >
         <div class="text-sm font-semibold text-(--text)">KV read</div>
         <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Snapshot + guest kv API</div>
@@ -301,11 +293,7 @@
       <button
         type="button"
         onclick={presetGenerate}
-        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
-        class:border-(--accent)/35={mode === 'generate'}
-        class:bg-(--accent)/5={mode === 'generate'}
-        class:border-(--border)={mode !== 'generate'}
-        class:bg-white={mode !== 'generate'}
+        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent) {modeClasses('generate')}"
       >
         <div class="text-sm font-semibold text-(--text)">Generate</div>
         <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Workers AI with caps</div>
@@ -313,11 +301,7 @@
       <button
         type="button"
         onclick={presetSpawn}
-        class="text-left rounded-(--radius) border px-3 py-3 sm:col-span-2 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
-        class:border-(--accent)/35={mode === 'spawn'}
-        class:bg-(--accent)/5={mode === 'spawn'}
-        class:border-(--border)={mode !== 'spawn'}
-        class:bg-white={mode !== 'spawn'}
+        class="text-left rounded-(--radius) border px-3 py-3 sm:col-span-2 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent) {modeClasses('spawn')}"
       >
         <div class="text-sm font-semibold text-(--text)">Spawn</div>
         <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Nested isolates with spawn capability</div>
