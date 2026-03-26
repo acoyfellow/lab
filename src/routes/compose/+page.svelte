@@ -34,7 +34,6 @@
   let lastResult = $state<unknown>(null);
   let lastSteps = $state<Array<{name: string; status: 'success' | 'error'; ms: number}>>([]);
   let editorView = $state<'builder' | 'raw'>('builder');
-  /** Bumps to remount ChainBuilder when chainJson is replaced (fork, examples, presets). */
   let chainResetKey = $state(0);
 
   onMount(() => {
@@ -152,45 +151,48 @@
       } else if (mode === 'chain') {
         let steps: ChainStep[];
         try {
-          steps = JSON.parse(chainJson) as ChainStep[];
-        } catch {
-          throw new Error(
-            'Invalid JSON in Steps. Use an array of { body, capabilities } objects.',
-          );
+          steps = JSON.parse(chainJson);
+          if (!Array.isArray(steps) || steps.length === 0) throw new Error('Invalid chain');
+        } catch (e) {
+          lastError = 'Invalid chain JSON: ' + (e instanceof Error ? e.message : String(e));
+          loading = false;
+          return;
         }
-        if (!Array.isArray(steps)) throw new Error('Chain JSON must be an array of steps');
         r = await runChain(steps);
       } else if (mode === 'generate') {
-        const capabilities: string[] = [...guestCaps()];
-        if (capKvRead) capabilities.push('kvRead');
-        r = await runGenerate({ prompt, capabilities, template: guestTemplate });
-      } else {
+        r = await runGenerate({
+          prompt,
+          capabilities: guestCaps(),
+          template: guestTemplate,
+        });
+      } else if (mode === 'spawn') {
+        const caps = [...guestCaps(), 'spawn'];
         r = await runSpawn({
           body: code,
-          capabilities: ['spawn', ...guestCaps()],
+          capabilities: caps,
           depth,
           template: guestTemplate,
         });
-      }
-
-      if (r.traceId) {
-        lastTraceId = r.traceId;
-      }
-      if (r.ok) {
-        lastResult = r.result;
       } else {
-        lastError = JSON.stringify(
-          { error: r.error, reason: r.reason },
-          null,
-          2,
-        );
+        lastError = 'Unknown mode';
+        loading = false;
+        return;
       }
 
-      if (r.trace && Array.isArray(r.trace)) {
-        lastSteps = r.trace.map((step, i) => ({
-          name: step.name || `Step ${i + 1}`,
-          status: 'success' as const,
-          ms: step.ms || 0
+      if (!r.ok) {
+        lastError = JSON.stringify(r.error ?? r.reason ?? 'Unknown error', null, 2);
+        lastTraceId = r.traceId ?? null;
+        loading = false;
+        return;
+      }
+
+      lastTraceId = r.traceId ?? null;
+      lastResult = r.result ?? null;
+      if (mode === 'chain' && r.trace && Array.isArray(r.trace)) {
+        lastSteps = r.trace.map((t: any) => ({
+          name: t.name || `Step ${t.step + 1}`,
+          status: t.error ? 'error' : 'success',
+          ms: t.ms || 0,
         }));
       }
     } catch (e) {
@@ -242,12 +244,12 @@
 
 <SEO
   title="Compose — lab"
-  description="Chain isolated steps with explicit capabilities at the edge. Every run returns a shareable trace."
+  description="Chain isolated steps with explicit capabilities — every run yields a shareable trace."
   path="/compose"
   type="website"
 />
 
-<div class="max-w-6xl mx-auto px-6 py-8 max-sm:px-4 space-y-6">
+<div class="max-w-2xl mx-auto px-6 py-8 max-sm:px-4 space-y-6">
   <header class="space-y-1">
     <h1 class="text-lg font-semibold tracking-tight">Compose</h1>
     <p class="text-[0.8125rem] text-(--text-2)">
@@ -255,159 +257,170 @@
     </p>
   </header>
 
-  <div
-    class="grid grid-cols-1 gap-6 lg:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,22rem)] lg:items-start"
-  >
-    <div class="space-y-6 min-w-0">
-    <section aria-label="Start from a preset">
-      <h2 class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) m-0 mb-3">
-        Start from
-      </h2>
-      <div class="grid gap-2 sm:grid-cols-2">
-        <button
-          type="button"
-          onclick={presetChain}
-          class="text-left rounded-(--radius) border border-(--accent)/35 bg-(--accent)/5 px-3 py-3 transition-colors hover:bg-(--accent)/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
-        >
-          <div class="text-sm font-semibold text-(--text)">Chain</div>
-          <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Multi-step pipeline (recommended)</div>
-        </button>
-        <button
-          type="button"
-          onclick={presetSandbox}
-          class="text-left rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
-        >
-          <div class="text-sm font-semibold text-(--text)">Sandbox</div>
-          <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Single isolate, one run</div>
-        </button>
-        <button
-          type="button"
-          onclick={presetKv}
-          class="text-left rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
-        >
-          <div class="text-sm font-semibold text-(--text)">KV read</div>
-          <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Snapshot + guest kv API</div>
-        </button>
-        <button
-          type="button"
-          onclick={presetGenerate}
-          class="text-left rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
-        >
-          <div class="text-sm font-semibold text-(--text)">Generate</div>
-          <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Workers AI with caps</div>
-        </button>
-        <button
-          type="button"
-          onclick={presetSpawn}
-          class="text-left rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-3 sm:col-span-2 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
-        >
-          <div class="text-sm font-semibold text-(--text)">Spawn</div>
-          <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Nested isolates with spawn capability</div>
-        </button>
+  <section aria-label="Start from a preset">
+    <h2 class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) m-0 mb-3">
+      Start from
+    </h2>
+    <div class="grid gap-2 sm:grid-cols-2">
+      <button
+        type="button"
+        onclick={presetChain}
+        class="text-left rounded-(--radius) border border-(--accent)/35 bg-(--accent)/5 px-3 py-3 transition-colors hover:bg-(--accent)/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
+        class:border-(--accent)/35={mode === 'chain'}
+        class:bg-(--accent)/5={mode === 'chain'}
+        class:border-(--border)={mode !== 'chain'}
+        class:bg-white={mode !== 'chain'}
+      >
+        <div class="text-sm font-semibold text-(--text)">Chain</div>
+        <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Multi-step pipeline (recommended)</div>
+      </button>
+      <button
+        type="button"
+        onclick={presetSandbox}
+        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
+        class:border-(--accent)/35={mode === 'sandbox'}
+        class:bg-(--accent)/5={mode === 'sandbox'}
+        class:border-(--border)={mode !== 'sandbox'}
+        class:bg-white={mode !== 'sandbox'}
+      >
+        <div class="text-sm font-semibold text-(--text)">Sandbox</div>
+        <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Single isolate, one run</div>
+      </button>
+      <button
+        type="button"
+        onclick={presetKv}
+        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
+        class:border-(--accent)/35={mode === 'kv'}
+        class:bg-(--accent)/5={mode === 'kv'}
+        class:border-(--border)={mode !== 'kv'}
+        class:bg-white={mode !== 'kv'}
+      >
+        <div class="text-sm font-semibold text-(--text)">KV read</div>
+        <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Snapshot + guest kv API</div>
+      </button>
+      <button
+        type="button"
+        onclick={presetGenerate}
+        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
+        class:border-(--accent)/35={mode === 'generate'}
+        class:bg-(--accent)/5={mode === 'generate'}
+        class:border-(--border)={mode !== 'generate'}
+        class:bg-white={mode !== 'generate'}
+      >
+        <div class="text-sm font-semibold text-(--text)">Generate</div>
+        <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Workers AI with caps</div>
+      </button>
+      <button
+        type="button"
+        onclick={presetSpawn}
+        class="text-left rounded-(--radius) border px-3 py-3 sm:col-span-2 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
+        class:border-(--accent)/35={mode === 'spawn'}
+        class:bg-(--accent)/5={mode === 'spawn'}
+        class:border-(--border)={mode !== 'spawn'}
+        class:bg-white={mode !== 'spawn'}
+      >
+        <div class="text-sm font-semibold text-(--text)">Spawn</div>
+        <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Nested isolates with spawn capability</div>
+      </button>
+    </div>
+  </section>
+
+  <div class="space-y-4">
+    {#if mode === 'chain'}
+      <EditorTabs
+        bind:view={editorView}
+        bind:chainJson
+        chainResetKey={chainResetKey}
+        disabled={loading}
+      />
+    {:else if mode === 'generate'}
+      <div class="space-y-4">
+        <div>
+          <label for="gen-prompt" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Prompt</label>
+          <Textarea id="gen-prompt" bind:value={prompt} class="min-h-[100px] font-mono text-xs bg-white" />
+        </div>
+        <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2) bg-white">
+          <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
+            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-mono text-[0.7rem]">workersAi</code></label>
+            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-mono text-[0.7rem]">r2Read</code></label>
+            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-mono text-[0.7rem]">d1Read</code></label>
+            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-mono text-[0.7rem]">durableObjectFetch</code></label>
+            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-mono text-[0.7rem]">containerHttp</code></label>
+            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capKvRead} /><code class="font-mono text-[0.7rem]">kvRead</code></label>
+          </div>
+        </fieldset>
       </div>
-    </section>
-
-    <div class="border-b border-(--border) pb-6">
-      {#if mode === 'chain'}
-        <EditorTabs
-          bind:view={editorView}
-          bind:chainJson
-          chainResetKey={chainResetKey}
-          disabled={loading}
-        />
-      {:else if mode === 'generate'}
-        <div class="space-y-4">
-          <div>
-            <label for="gen-prompt" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Prompt</label>
-            <Textarea id="gen-prompt" bind:value={prompt} class="min-h-[100px] font-mono text-xs" />
-          </div>
-          <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2)">
-            <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
-              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-mono text-[0.7rem]">workersAi</code></label>
-              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-mono text-[0.7rem]">r2Read</code></label>
-              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-mono text-[0.7rem]">d1Read</code></label>
-              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-mono text-[0.7rem]">durableObjectFetch</code></label>
-              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-mono text-[0.7rem]">containerHttp</code></label>
-              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capKvRead} /><code class="font-mono text-[0.7rem]">kvRead</code></label>
-            </div>
-          </fieldset>
+    {:else}
+      <div class="space-y-4">
+        <div>
+          <label for="guest-template" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Template</label>
+          <select
+            id="guest-template"
+            bind:value={guestTemplate}
+            class="w-full max-w-xs border border-(--border) rounded-(--radius) bg-white px-3 py-2 text-[0.8125rem] text-(--text) font-mono"
+          >
+            {#each GUEST_TEMPLATE_IDS as tid (tid)}
+              <option value={tid}>{tid}</option>
+            {/each}
+          </select>
         </div>
-      {:else}
-        <div class="space-y-4">
-          <div>
-            <label for="guest-template" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Template</label>
-            <select
-              id="guest-template"
-              bind:value={guestTemplate}
-              class="w-full max-w-xs border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text) font-mono"
-            >
-              {#each GUEST_TEMPLATE_IDS as tid (tid)}
-                <option value={tid}>{tid}</option>
-              {/each}
-            </select>
+        <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2) bg-white">
+          <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
+            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-mono text-[0.7rem]">workersAi</code></label>
+            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-mono text-[0.7rem]">r2Read</code></label>
+            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-mono text-[0.7rem]">d1Read</code></label>
+            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-mono text-[0.7rem]">durableObjectFetch</code></label>
+            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-mono text-[0.7rem]">containerHttp</code></label>
           </div>
-          <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2)">
-            <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
-              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-mono text-[0.7rem]">workersAi</code></label>
-              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-mono text-[0.7rem]">r2Read</code></label>
-              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-mono text-[0.7rem]">d1Read</code></label>
-              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-mono text-[0.7rem]">durableObjectFetch</code></label>
-              <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-mono text-[0.7rem]">containerHttp</code></label>
-            </div>
-          </fieldset>
-          <div>
-            <label for="guest-code" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Code</label>
-            <Textarea id="guest-code" bind:value={code} class="min-h-[200px] font-mono text-xs" />
-          </div>
-          {#if mode === 'spawn'}
-            <div>
-              <label for="max-depth" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Max depth</label>
-              <input
-                id="max-depth"
-                type="number"
-                bind:value={depth}
-                min="1"
-                max="8"
-                class="w-24 border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem]"
-              />
-            </div>
-          {/if}
+        </fieldset>
+        <div>
+          <label for="guest-code" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Code</label>
+          <Textarea id="guest-code" bind:value={code} class="min-h-[200px] font-mono text-xs bg-white" />
         </div>
-      {/if}
-    </div>
-
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <p class="text-[0.75rem] text-(--text-3) m-0">
-        Current: <strong class="text-(--text) font-medium">{mode}</strong>
-        <span class="text-(--text-3)"> — use Start from above to switch</span>
-      </p>
-      <Button onclick={run} disabled={loading} class="min-w-[120px]">
-        {loading ? 'Running…' : 'Run'}
-      </Button>
-    </div>
-
-    {#if mode === 'kv'}
-      <div class="flex items-center gap-3">
-        <Button onclick={seed} variant="outline" class="text-xs">
-          Seed demo KV
-        </Button>
-        {#if seedMsg}
-          <span class="text-[0.75rem] text-(--text-2)">{seedMsg}</span>
+        {#if mode === 'spawn'}
+          <div>
+            <label for="max-depth" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Max depth</label>
+            <input
+              id="max-depth"
+              type="number"
+              bind:value={depth}
+              min="1"
+              max="8"
+              class="w-24 border border-(--border) rounded-(--radius) bg-white px-3 py-2 text-[0.8125rem]"
+            />
+          </div>
         {/if}
       </div>
     {/if}
-    </div>
-
-    <aside class="lg:sticky lg:top-22 shrink-0">
-      <ResponsePanel
-        status={loading ? 'loading' : lastError ? 'error' : lastTraceId ? 'success' : 'idle'}
-        traceId={lastTraceId}
-        result={lastResult}
-        steps={lastSteps}
-        error={lastError}
-      />
-    </aside>
   </div>
+
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <p class="text-[0.75rem] text-(--text-3) m-0">
+      Current: <strong class="text-(--text) font-medium">{mode}</strong>
+    </p>
+    <Button onclick={run} disabled={loading} class="min-w-[120px]">
+      {loading ? 'Running…' : 'Run'}
+    </Button>
+  </div>
+
+  {#if mode === 'kv'}
+    <div class="flex items-center gap-3">
+      <Button onclick={seed} variant="outline" class="text-xs">
+        Seed demo KV
+      </Button>
+      {#if seedMsg}
+        <span class="text-[0.75rem] text-(--text-2)">{seedMsg}</span>
+      {/if}
+    </div>
+  {/if}
+
+  <ResponsePanel
+    status={loading ? 'loading' : lastError ? 'error' : lastTraceId ? 'success' : 'idle'}
+    traceId={lastTraceId}
+    result={lastResult}
+    steps={lastSteps}
+    error={lastError}
+  />
 </div>
