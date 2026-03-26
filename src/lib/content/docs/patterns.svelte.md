@@ -50,6 +50,52 @@ const out = await lab.runChain([
 
 ---
 
+## Self-Improving Loop
+
+**The HyperAgents pattern.** Generate candidate implementations, evaluate them against the same test cases, select the winner by fitness. One chain = one generation. An outer loop feeds the winner back as the parent.
+
+**How it works:**
+
+1. Define test cases with expected thresholds
+2. Run Candidate A (e.g. trigram overlap) against all cases
+3. Run Candidate B (e.g. Levenshtein distance) against the same cases
+4. Compare fitness scores, select the winner
+
+**The trace is the lab notebook.** Every candidate's score on every test case. The selection rationale. The fitness delta. Open the trace and you see the full experiment — which approach won, why, and by how much.
+
+```js
+const out = await lab.runChain([
+  { name: "Test Cases", body: `return {
+    task: 'fuzzy string match',
+    cases: [
+      { a: 'kitten', b: 'sitting', minScore: 0.5 },
+      { a: 'hello',  b: 'hello',   minScore: 1.0 },
+      { a: 'abc',    b: 'xyz',     minScore: 0.0 },
+    ]
+  }`, capabilities: [] },
+  { name: "Candidate A", body: `// trigram overlap
+  // ... evaluate against input.cases
+  return { candidate: 'A', fitness: 63, passed: 5, total: 8 };
+  `, capabilities: [] },
+  { name: "Candidate B", body: `// Levenshtein distance
+  // ... evaluate against same cases
+  return { candidate: 'B', fitness: 100, passed: 8, total: 8 };
+  `, capabilities: [] },
+  { name: "Select Winner", body: `return {
+    winner: input.fitness > input.candidateA.fitness ? 'B' : 'A',
+    next: 'Feed winner as parent to next generation.',
+  }`, capabilities: [] },
+]);
+// Trace = the lab notebook for this generation.
+// Outer loop: mutate the winner, run another chain, repeat.
+```
+
+**When to use:** Evolutionary code generation. Prompt optimization. Any scenario where an agent produces multiple variants and needs to pick the best one with proof.
+
+[Run this pattern →](/examples)
+
+---
+
 ## Self-Healing Loop
 
 An agent doesn't give up on first failure. It reads the error, diagnoses the problem, applies a fix, and retries — all within the trace.

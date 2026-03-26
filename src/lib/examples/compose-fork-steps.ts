@@ -6,6 +6,7 @@ import {
 	ITERATIVE_REPAIR_STEPS,
 	PREFLIGHT_CHECK_STEPS,
 	PROOF_OF_CORRECTNESS_STEPS,
+	SELF_IMPROVING_LOOP_STEPS,
 	TRACE_HANDOFF_STEPS,
 	ZERO_BLEED_STEPS
 } from './data/agentic-examples';
@@ -52,7 +53,8 @@ const COMPOSE_FORK_STEPS_INTERNAL = {
 	'preflight-check': PREFLIGHT_CHECK_STEPS,
 	'cold-boot-sprint': COLD_BOOT_SPRINT_STEPS,
 	'trace-handoff': TRACE_HANDOFF_STEPS,
-	'iterative-repair': ITERATIVE_REPAIR_STEPS
+	'iterative-repair': ITERATIVE_REPAIR_STEPS,
+	'self-improving-loop': SELF_IMPROVING_LOOP_STEPS
 } as const;
 
 export type RunnableExampleId = keyof typeof COMPOSE_FORK_STEPS_INTERNAL;

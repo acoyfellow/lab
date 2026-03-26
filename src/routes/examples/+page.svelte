@@ -24,7 +24,8 @@
     preflightCheck,
     coldBootSprint,
     traceHandoff,
-    iterativeRepair
+    iterativeRepair,
+    selfImprovingLoop
   } from '$lib/examples';
   import { COMPOSE_FORK_STEPS, type RunnableExampleId } from '$lib/examples/compose-fork-steps';
   import type { ExampleData } from '$lib/examples/types';
@@ -60,6 +61,7 @@
     {
       label: 'Agentic',
       examples: [
+        selfImprovingLoop,
         traceHandoff,
         iterativeRepair,
         proofOfCorrectness,

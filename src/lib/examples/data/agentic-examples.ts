@@ -611,6 +611,185 @@ export const iterativeRepair: ExampleData = {
 };
 
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 9. SELF-IMPROVING LOOP — generate variants, evaluate, select winner
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Self-Improving Loop (one generation)
+ *
+ * The HyperAgents pattern: generate variants → evaluate → select winner.
+ * This chain runs one cycle. An outer loop would call Lab repeatedly,
+ * feeding the winner back as the parent for the next generation.
+ *
+ * Task: implement a fuzzy string matcher.
+ * Two candidates take different approaches.
+ * Same test cases. Same scoring. Best score wins.
+ * The trace is the lab notebook for this experiment.
+ */
+export const SELF_IMPROVING_LOOP_STEPS: ChainStep[] = [
+	{
+		name: 'Test Cases',
+		body: `// The evaluation harness — same for every candidate.
+// An agent or meta-agent would generate these from the task spec.
+return {
+  task: 'fuzzy string match — return similarity 0..1',
+  cases: [
+    { a: 'kitten',    b: 'sitting',   minScore: 0.5  },
+    { a: 'saturday',  b: 'sunday',    minScore: 0.4  },
+    { a: 'hello',     b: 'hello',     minScore: 1.0  },
+    { a: 'abc',       b: 'xyz',       minScore: 0.0  },
+    { a: '',          b: 'something', minScore: 0.0  },
+    { a: 'foo',       b: 'foo',       minScore: 1.0  },
+    { a: 'bar',       b: 'baz',       minScore: 0.3  },
+    { a: 'abcdef',    b: 'azced',     minScore: 0.3  },
+  ],
+};`,
+		capabilities: [],
+	},
+	{
+		name: 'Candidate A — Trigram',
+		body: `// Approach: trigram overlap (fast, approximate)
+function trigramSimilarity(a, b) {
+  if (a === b) return 1;
+  if (!a || !b) return 0;
+  const trigrams = s => {
+    const t = new Set();
+    const padded = '  ' + s + ' ';
+    for (let i = 0; i < padded.length - 2; i++) t.add(padded.slice(i, i + 3));
+    return t;
+  };
+  const tA = trigrams(a.toLowerCase());
+  const tB = trigrams(b.toLowerCase());
+  let intersection = 0;
+  for (const t of tA) if (tB.has(t)) intersection++;
+  return intersection / Math.max(tA.size, tB.size);
+}
+const results = input.cases.map(tc => {
+  const score = trigramSimilarity(tc.a, tc.b);
+  return {
+    a: tc.a, b: tc.b,
+    score: Math.round(score * 1000) / 1000,
+    meetsMin: score >= tc.minScore,
+  };
+});
+const passed = results.filter(r => r.meetsMin).length;
+return {
+  candidate: 'A',
+  method: 'trigram overlap',
+  results,
+  passed,
+  total: results.length,
+  fitness: Math.round((passed / results.length) * 100),
+};`,
+		capabilities: [],
+	},
+	{
+		name: 'Candidate B — Levenshtein',
+		body: `// Approach: normalized Levenshtein distance (exact, slower)
+function levenshtein(a, b) {
+  if (a === b) return 1;
+  if (!a || !b) return 0;
+  const la = a.toLowerCase(), lb = b.toLowerCase();
+  const m = la.length, n = lb.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = la[i - 1] === lb[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i-1][j] + 1, dp[i][j-1] + 1, dp[i-1][j-1] + cost);
+    }
+  }
+  return 1 - dp[m][n] / Math.max(m, n);
+}
+// Reconstruct test cases from candidate A's output
+const cases = input.results.map(r => ({
+  a: r.a, b: r.b, minScore: r.meetsMin ? 0 : r.score + 0.1,
+}));
+// Re-derive from original — we need the original minScores
+// Chain limitation: we only see step N-1. Pass through what we need.
+const origCases = [
+  { a: 'kitten', b: 'sitting', minScore: 0.5 },
+  { a: 'saturday', b: 'sunday', minScore: 0.4 },
+  { a: 'hello', b: 'hello', minScore: 1.0 },
+  { a: 'abc', b: 'xyz', minScore: 0.0 },
+  { a: '', b: 'something', minScore: 0.0 },
+  { a: 'foo', b: 'foo', minScore: 1.0 },
+  { a: 'bar', b: 'baz', minScore: 0.3 },
+  { a: 'abcdef', b: 'azced', minScore: 0.3 },
+];
+const results = origCases.map(tc => {
+  const score = levenshtein(tc.a, tc.b);
+  return {
+    a: tc.a, b: tc.b,
+    score: Math.round(score * 1000) / 1000,
+    meetsMin: score >= tc.minScore,
+  };
+});
+const passed = results.filter(r => r.meetsMin).length;
+return {
+  candidateA: {
+    method: input.method,
+    fitness: input.fitness,
+    passed: input.passed,
+    total: input.total,
+  },
+  candidate: 'B',
+  method: 'normalized Levenshtein',
+  results,
+  passed,
+  total: results.length,
+  fitness: Math.round((passed / results.length) * 100),
+};`,
+		capabilities: [],
+	},
+	{
+		name: 'Select Winner',
+		body: `const a = input.candidateA;
+const b = { method: input.method, fitness: input.fitness, passed: input.passed, total: input.total };
+const winner = a.fitness >= b.fitness ? 'A' : 'B';
+const winnerData = winner === 'A' ? a : b;
+const loserData = winner === 'A' ? b : a;
+return {
+  generation: 1,
+  winner,
+  selected: {
+    method: winnerData.method,
+    fitness: winnerData.fitness,
+    score: winnerData.passed + '/' + winnerData.total,
+  },
+  defeated: {
+    method: loserData.method,
+    fitness: loserData.fitness,
+    score: loserData.passed + '/' + loserData.total,
+  },
+  delta: Math.abs(a.fitness - b.fitness) + '% fitness difference',
+  next: 'Feed the winner as parent to the next generation. Mutate and repeat.',
+  note: 'This is one cycle. An outer loop calls Lab repeatedly — each generation is a chain, each chain is a trace.',
+};`,
+		capabilities: [],
+	},
+];
+
+export const selfImprovingLoop: ExampleData = {
+	id: 'self-improving-loop',
+	title: 'Self-Improving Loop',
+	description: 'Two candidate implementations, same test cases, winner selected by fitness. One generation of an evolutionary agent loop.',
+	problem: 'Self-improving agents need to generate code, evaluate it safely, and pick the best variant. That requires isolated execution with verifiable results.',
+	solution: 'Each generation is a Lab chain: define test cases → run candidate A → run candidate B → select winner. The trace is the lab notebook.',
+	result: 'Levenshtein beats Trigram 100% vs 63%. Winner feeds into the next generation. Trace records the full experiment.',
+	icon: 'repeat',
+	tags: ['agent', 'self-improving', 'evolution', 'evaluation', 'meta'],
+	steps: [
+		{ name: 'Test Cases', description: '8 string pairs with minimum similarity thresholds', code: '{ a: "kitten", b: "sitting", minScore: 0.5 }', input: {}, output: { cases: 8 }, capabilities: [], ms: 1 },
+		{ name: 'Candidate A', description: 'Trigram overlap — fast, approximate', code: 'trigramSimilarity("kitten", "sitting")', input: { cases: '...' }, output: { fitness: 63, passed: '5/8' }, capabilities: [], ms: 2 },
+		{ name: 'Candidate B', description: 'Normalized Levenshtein — exact, slower', code: 'levenshtein("kitten", "sitting")', input: { cases: '...' }, output: { fitness: 100, passed: '8/8' }, capabilities: [], ms: 3 },
+		{ name: 'Select Winner', description: 'Best fitness wins, feed to next generation', code: '{ winner: "B", method: "Levenshtein" }', input: { a: '...', b: '...' }, output: { winner: 'B', delta: '37%' }, capabilities: [], ms: 1 },
+	],
+};
+
+
 export const coldBootSprint: ExampleData = {
 	id: 'cold-boot-sprint',
 	title: 'Cold Boot Sprint',

@@ -101,19 +101,19 @@
     <div class="space-y-3">
       <a href="/examples" class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
         <div class="flex items-start gap-3">
-          <span class="flex-shrink-0 mt-0.5 w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-[0.75rem] font-bold">10/10</span>
+          <span class="flex-shrink-0 mt-0.5 w-8 h-8 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center text-[0.6875rem] font-bold">G1</span>
           <div>
-            <div class="font-semibold text-(--text) group-hover:text-(--accent) text-[0.875rem]">Proof of Correctness</div>
-            <p class="text-[0.8125rem] text-(--text-2) m-0 mt-0.5">Agent writes a function, specifies 10 edge cases, runs them all in isolated steps. The trace shows 10/10 passing. Not "this should work" — here's the execution receipt.</p>
+            <div class="font-semibold text-(--text) group-hover:text-(--accent) text-[0.875rem]">Self-Improving Loop</div>
+            <p class="text-[0.8125rem] text-(--text-2) m-0 mt-0.5">Two candidate implementations compete on the same test cases. Trigram vs Levenshtein, 8 fuzzy string matches. Winner selected by fitness. The trace is the lab notebook — one generation of an evolutionary agent loop.</p>
           </div>
         </div>
       </a>
       <a href="/examples" class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
         <div class="flex items-start gap-3">
-          <span class="flex-shrink-0 mt-0.5 w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center text-[0.6875rem] font-bold">v1/v2</span>
+          <span class="flex-shrink-0 mt-0.5 w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-[0.75rem] font-bold">10/10</span>
           <div>
-            <div class="font-semibold text-(--text) group-hover:text-(--accent) text-[0.875rem]">Canary Run</div>
-            <p class="text-[0.8125rem] text-(--text-2) m-0 mt-0.5">Old logic and new logic run against the same inputs in separate isolates. The trace diffs the outputs. Review the trace to decide if the change is safe to ship.</p>
+            <div class="font-semibold text-(--text) group-hover:text-(--accent) text-[0.875rem]">Proof of Correctness</div>
+            <p class="text-[0.8125rem] text-(--text-2) m-0 mt-0.5">Agent writes a function, specifies 10 edge cases, runs them all in isolated steps. The trace shows 10/10 passing. Not "this should work" — here's the execution receipt.</p>
           </div>
         </div>
       </a>
