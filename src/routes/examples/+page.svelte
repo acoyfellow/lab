@@ -4,6 +4,7 @@
   import SEO from '$lib/SEO.svelte';
   import ExampleCard from '$lib/examples/ExampleCard.svelte';
   import { jsonHealer } from '$lib/examples';
+  import { apiRetry, webhookValidator, dataTransformer, multiSourceAggregator } from '$lib/examples/data/new-examples';
   import { paths } from '$lib/paths';
 
   const exampleId = $derived(env.PUBLIC_EXAMPLE_TRACE_ID ?? '');
@@ -35,6 +36,26 @@
         data={jsonHealer} 
         variant="card" 
         onRun={() => window.location.href = '/compose?example=json-healer'}
+      />
+      <ExampleCard 
+        data={apiRetry} 
+        variant="card" 
+        onRun={() => window.location.href = '/compose?example=api-retry'}
+      />
+      <ExampleCard 
+        data={webhookValidator} 
+        variant="card" 
+        onRun={() => window.location.href = '/compose?example=webhook-validator'}
+      />
+      <ExampleCard 
+        data={dataTransformer} 
+        variant="card" 
+        onRun={() => window.location.href = '/compose?example=data-transformer'}
+      />
+      <ExampleCard 
+        data={multiSourceAggregator} 
+        variant="card" 
+        onRun={() => window.location.href = '/compose?example=multi-source-aggregator'}
       />
     </div>
   </section>

@@ -6,7 +6,7 @@
   import { Button } from '$lib/components/ui/button';
   import { runSandbox, runKv, runChain, runSpawn, runGenerate, seedKv } from '../data.remote';
   import type { ChainStep } from '@acoyfellow/lab';
-  import { SIMPLE_CHAIN_STEPS, JSON_HEALER_STEPS } from '$lib/guest-code-fixtures';
+  import { SIMPLE_CHAIN_STEPS, JSON_HEALER_STEPS, API_RETRY_STEPS, WEBHOOK_VALIDATOR_STEPS, DATA_TRANSFORMER_STEPS, MULTI_SOURCE_AGGREGATOR_STEPS } from '$lib/guest-code-fixtures';
   import {
     GUEST_TEMPLATE_DEFAULT,
     GUEST_TEMPLATE_IDS,
@@ -41,6 +41,26 @@
     if (exampleId === 'json-healer') {
       mode = 'chain';
       chainJson = JSON.stringify(JSON_HEALER_STEPS, null, 2);
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    } else if (exampleId === 'api-retry') {
+      mode = 'chain';
+      chainJson = JSON.stringify(API_RETRY_STEPS, null, 2);
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    } else if (exampleId === 'webhook-validator') {
+      mode = 'chain';
+      chainJson = JSON.stringify(WEBHOOK_VALIDATOR_STEPS, null, 2);
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    } else if (exampleId === 'data-transformer') {
+      mode = 'chain';
+      chainJson = JSON.stringify(DATA_TRANSFORMER_STEPS, null, 2);
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    } else if (exampleId === 'multi-source-aggregator') {
+      mode = 'chain';
+      chainJson = JSON.stringify(MULTI_SOURCE_AGGREGATOR_STEPS, null, 2);
       window.history.replaceState({}, '', window.location.pathname);
       return;
     }
