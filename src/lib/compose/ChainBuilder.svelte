@@ -1,9 +1,7 @@
 <script lang="ts">
-  import { Card, CardContent, CardHeader } from '$lib/components/ui/card';
   import { Button } from '$lib/components/ui/button';
   import { Textarea } from '$lib/components/ui/textarea';
   import type { ChainStep } from '@acoyfellow/lab';
-  import { GUEST_TEMPLATE_IDS } from '$lib/guest-templates';
 
   let {
     chainJson = $bindable(''),
@@ -35,19 +33,11 @@
   const initial = parseSteps(chainJson);
   let steps = $state<ChainStep[]>(initial.steps);
   let parseError = $state<string | null>(initial.error);
-
-  /** Step index -> code editor expanded */
-  let codeOpen = $state<Record<number, boolean>>({});
+  let showAdvanced = $state<Record<number, boolean>>({});
 
   function syncToParent() {
     parseError = null;
     chainJson = JSON.stringify(steps, null, 2);
-  }
-
-  function previewBody(step: ChainStep): string {
-    const b = step.body ?? step.code ?? '';
-    const line = b.split('\n')[0]?.trim() ?? '';
-    return line.length > 72 ? `${line.slice(0, 72)}…` : line || '(empty)';
   }
 
   function addStep() {
@@ -64,12 +54,12 @@
   function removeStep(index: number) {
     steps = steps.filter((_, i) => i !== index);
     const next: Record<number, boolean> = {};
-    for (const [k, v] of Object.entries(codeOpen)) {
+    for (const [k, v] of Object.entries(showAdvanced)) {
       const i = Number(k);
       if (i < index) next[i] = v;
       else if (i > index) next[i - 1] = v;
     }
-    codeOpen = next;
+    showAdvanced = next;
     syncToParent();
   }
 
@@ -81,48 +71,27 @@
     newSteps[index] = newSteps[newIndex];
     newSteps[newIndex] = temp;
     steps = newSteps;
-    const a = codeOpen[index];
-    const b = codeOpen[newIndex];
-    codeOpen = { ...codeOpen, [index]: b ?? false, [newIndex]: a ?? false };
     syncToParent();
   }
 
-  function updateStepName(index: number, name: string) {
+  function updateStep(index: number, updates: Partial<ChainStep>) {
     const newSteps = [...steps];
-    newSteps[index] = { ...newSteps[index], name };
-    steps = newSteps;
-    syncToParent();
-  }
-
-  function updateStepBody(index: number, body: string) {
-    const newSteps = [...steps];
-    newSteps[index] = { ...newSteps[index], body };
-    steps = newSteps;
-    syncToParent();
-  }
-
-  function updateStepTemplate(index: number, template: string) {
-    const newSteps = [...steps];
-    newSteps[index] = { ...newSteps[index], template };
+    newSteps[index] = { ...newSteps[index], ...updates };
     steps = newSteps;
     syncToParent();
   }
 
   function toggleCapability(index: number, capId: string) {
-    const newSteps = [...steps];
-    const step = newSteps[index];
+    const step = steps[index];
     const caps = step.capabilities || [];
-    if (caps.includes(capId)) {
-      step.capabilities = caps.filter(c => c !== capId);
-    } else {
-      step.capabilities = [...caps, capId];
-    }
-    steps = newSteps;
-    syncToParent();
+    const newCaps = caps.includes(capId) 
+      ? caps.filter(c => c !== capId)
+      : [...caps, capId];
+    updateStep(index, { capabilities: newCaps });
   }
 
-  function toggleCodeOpen(index: number) {
-    codeOpen = { ...codeOpen, [index]: !codeOpen[index] };
+  function toggleAdvanced(index: number) {
+    showAdvanced = { ...showAdvanced, [index]: !showAdvanced[index] };
   }
 </script>
 
@@ -133,118 +102,92 @@
     </div>
   {/if}
 
-  <div class="flex-1 space-y-2 pr-0 sm:pr-1">
+  <div class="flex-1 space-y-3 pr-0 sm:pr-1">
     {#each steps as step, index (index)}
-      <div
-        class="rounded-(--radius) border border-(--border) bg-(--surface) border-l-[3px] border-l-(--accent)/60 overflow-hidden"
-      >
-        <div class="flex items-start gap-2 px-3 py-2 border-b border-(--border)/80 bg-(--surface-alt)/40">
-          <span class="text-[0.65rem] text-(--text-3) font-mono tabular-nums pt-1.5 shrink-0">{index + 1}</span>
-          <div class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-2">
-            <input
-              type="text"
-              value={step.name || ''}
-              oninput={(e) => updateStepName(index, e.currentTarget.value)}
-              placeholder="Step name"
-              {disabled}
-              class="w-full sm:max-w-56 bg-transparent border border-transparent rounded px-1 py-0.5 text-sm font-medium text-(--text) placeholder:text-(--text-3) focus:outline-none focus:border-(--border)"
-            />
-            <select
-              value={step.template || 'guest@v1'}
-              onchange={(e) => updateStepTemplate(index, e.currentTarget.value)}
-              {disabled}
-              class="w-full sm:w-auto max-w-full border border-(--border) rounded bg-(--surface) px-2 py-1 text-[0.7rem] text-(--text) font-mono"
-            >
-              {#each GUEST_TEMPLATE_IDS as tid}
-                <option value={tid}>{tid}</option>
-              {/each}
-            </select>
-          </div>
-          <div class="flex items-center gap-0.5 shrink-0">
+      <div class="rounded-(--radius) border border-(--border) bg-(--surface) overflow-hidden">
+        <div class="flex items-center gap-2 px-3 py-2 border-b border-(--border)">
+          <span class="text-xs text-(--text-3) font-mono w-5">{index + 1}</span>
+          <input
+            type="text"
+            value={step.name || ''}
+            oninput={(e) => updateStep(index, { name: e.currentTarget.value })}
+            placeholder="Step name"
+            {disabled}
+            class="flex-1 bg-transparent border-none px-0 py-0 text-sm font-medium text-(--text) placeholder:text-(--text-3) focus:outline-none focus:ring-0"
+          />
+          <div class="flex items-center gap-0.5">
             <button
               type="button"
               onclick={() => moveStep(index, -1)}
               disabled={disabled || index === 0}
-              class="p-1.5 rounded text-(--text-3) hover:text-(--text) hover:bg-(--surface-alt) disabled:opacity-25 disabled:pointer-events-none"
-              title="Move up"
+              class="p-1 rounded text-(--text-3) hover:text-(--text) hover:bg-(--surface-alt) disabled:opacity-25"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
             </button>
             <button
               type="button"
               onclick={() => moveStep(index, 1)}
               disabled={disabled || index === steps.length - 1}
-              class="p-1.5 rounded text-(--text-3) hover:text-(--text) hover:bg-(--surface-alt) disabled:opacity-25 disabled:pointer-events-none"
-              title="Move down"
+              class="p-1 rounded text-(--text-3) hover:text-(--text) hover:bg-(--surface-alt) disabled:opacity-25"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <button
               type="button"
               onclick={() => removeStep(index)}
               {disabled}
-              class="p-1.5 rounded text-(--text-3) hover:text-red-400 hover:bg-red-500/10 disabled:opacity-25"
-              title="Remove"
+              class="p-1 rounded text-(--text-3) hover:text-red-400 hover:bg-red-500/10"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
           </div>
         </div>
 
-        <div class="px-3 py-2 space-y-2">
-          {#if codeOpen[index]}
-            <div>
-              <label class="text-[0.65rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1" for="step-body-{index}">Code</label>
-              <Textarea
-                id="step-body-{index}"
-                value={step.body || step.code || ''}
-                oninput={(e) => updateStepBody(index, e.currentTarget.value)}
-                {disabled}
-                class="min-h-[100px] font-mono text-xs"
-              />
-            </div>
-          {:else}
-            <button
-              type="button"
-              onclick={() => toggleCodeOpen(index)}
-              class="w-full text-left rounded border border-dashed border-(--border) bg-(--surface-alt)/50 px-2 py-2 text-xs font-mono text-(--text-2) hover:border-(--accent)/40 hover:bg-(--surface-alt)"
-            >
-              <span class="text-(--text-3) text-[0.65rem] uppercase tracking-wide">Code</span>
-              <span class="block truncate text-(--text) mt-0.5">{previewBody(step)}</span>
-              <span class="text-[0.65rem] text-(--accent) mt-1 inline-block">Expand</span>
-            </button>
-          {/if}
-
-          {#if codeOpen[index]}
-            <button
-              type="button"
-              onclick={() => toggleCodeOpen(index)}
-              class="text-[0.65rem] text-(--text-3) hover:text-(--text)"
-            >
-              Collapse
-            </button>
-          {/if}
-
-          <fieldset class="border-0 p-0 m-0">
-            <legend class="text-[0.65rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1.5">Capabilities</legend>
-            <div class="flex flex-wrap gap-x-2 gap-y-1">
-              {#each CAPABILITIES as cap}
-                <label
-                  class="inline-flex items-center gap-1 text-[0.65rem] text-(--text-2) cursor-pointer rounded px-1.5 py-0.5 hover:bg-(--surface-alt)"
-                >
-                  <input
-                    type="checkbox"
-                    checked={(step.capabilities || []).includes(cap.id)}
-                    onchange={() => toggleCapability(index, cap.id)}
-                    {disabled}
-                    class="accent-(--accent) scale-90"
-                  />
-                  <code class="font-mono">{cap.label}</code>
-                </label>
-              {/each}
-            </div>
-          </fieldset>
+        <div class="p-3">
+          <Textarea
+            value={step.body || step.code || ''}
+            oninput={(e) => updateStep(index, { body: e.currentTarget.value })}
+            {disabled}
+            class="min-h-[80px] font-mono text-xs"
+            placeholder="return input"
+          />
         </div>
+
+        <!-- Advanced: Capabilities -->
+        {#if showAdvanced[index]}
+          <div class="px-3 pb-3 border-t border-(--border)">
+            <div class="pt-2">
+              <span class="text-[0.65rem] font-semibold uppercase tracking-wider text-(--text-3)">Capabilities</span>
+              <div class="flex flex-wrap gap-2 mt-1.5">
+                {#each CAPABILITIES as cap}
+                  <label class="inline-flex items-center gap-1 text-[0.65rem] text-(--text-2) cursor-pointer rounded px-2 py-1 bg-(--surface-alt) hover:bg-(--border)">
+                    <input
+                      type="checkbox"
+                      checked={(step.capabilities || []).includes(cap.id)}
+                      onchange={() => toggleCapability(index, cap.id)}
+                      {disabled}
+                      class="accent-(--accent)"
+                    />
+                    <code class="font-mono">{cap.label}</code>
+                  </label>
+                {/each}
+              </div>
+            </div>
+          </div>
+        {/if}
+        <button
+          type="button"
+          onclick={() => toggleAdvanced(index)}
+          class="w-full px-3 pb-2 text-left text-[0.65rem] text-(--text-3) hover:text-(--text)"
+        >
+          {#if showAdvanced[index]}
+            Hide ▲
+          {:else if (step.capabilities || []).length > 0}
+            {step.capabilities.length} capability{step.capabilities.length > 1 ? 'ies' : 'y'} enabled ▼
+          {:else}
+            Advanced ▼
+          {/if}
+        </button>
       </div>
     {/each}
 
@@ -258,7 +201,7 @@
 
   <div class="pt-3 mt-2 border-t border-(--border)">
     <Button onclick={addStep} {disabled} variant="outline" class="w-full text-sm">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1.5"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-1.5"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
       Add step
     </Button>
   </div>
