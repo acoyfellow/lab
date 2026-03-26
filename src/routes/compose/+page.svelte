@@ -15,18 +15,27 @@
 
   type Mode = 'sandbox' | 'kv' | 'chain' | 'generate' | 'spawn';
 
+  const GUEST_CAP_BASE = [
+    'workersAi',
+    'r2Read',
+    'd1Read',
+    'durableObjectFetch',
+    'containerHttp',
+  ] as const;
+  const GUEST_CAP_IDS = [...GUEST_CAP_BASE, 'kvRead'] as const;
+  type GuestCapId = (typeof GUEST_CAP_IDS)[number];
+
+  function defaultGuestCapFlags(): Record<GuestCapId, boolean> {
+    return Object.fromEntries(GUEST_CAP_IDS.map((id) => [id, false])) as Record<GuestCapId, boolean>;
+  }
+
   let mode = $state<Mode>('chain');
   let guestTemplate = $state<GuestTemplateId>(GUEST_TEMPLATE_DEFAULT);
   let code = $state('return { hello: "world" }');
   let chainJson = $state(JSON.stringify(SIMPLE_CHAIN_STEPS, null, 2));
   let prompt = $state('Return the sum of 1 through 10 as a number.');
   let depth = $state(2);
-  let capKvRead = $state(false);
-  let capWorkersAi = $state(false);
-  let capR2Read = $state(false);
-  let capD1Read = $state(false);
-  let capDurableObjectFetch = $state(false);
-  let capContainerHttp = $state(false);
+  let guestCapFlags = $state(defaultGuestCapFlags());
   let loading = $state(false);
   let seedMsg = $state<string | null>(null);
   let lastError = $state<string | null>(null);
@@ -92,12 +101,9 @@
       if (typeof f.depth === 'number') depth = f.depth;
       if (Array.isArray(f.capabilities)) {
         const c = f.capabilities as string[];
-        capKvRead = c.includes('kvRead');
-        capWorkersAi = c.includes('workersAi');
-        capR2Read = c.includes('r2Read');
-        capD1Read = c.includes('d1Read');
-        capDurableObjectFetch = c.includes('durableObjectFetch');
-        capContainerHttp = c.includes('containerHttp');
+        guestCapFlags = Object.fromEntries(
+          GUEST_CAP_IDS.map((id) => [id, c.includes(id)]),
+        ) as Record<GuestCapId, boolean>;
       }
       if (Array.isArray(f.steps)) {
         chainJson = JSON.stringify(f.steps, null, 2);
@@ -109,13 +115,7 @@
   });
 
   function guestCaps(): string[] {
-    const c: string[] = [];
-    if (capWorkersAi) c.push('workersAi');
-    if (capR2Read) c.push('r2Read');
-    if (capD1Read) c.push('d1Read');
-    if (capDurableObjectFetch) c.push('durableObjectFetch');
-    if (capContainerHttp) c.push('containerHttp');
-    return c;
+    return GUEST_CAP_IDS.filter((id) => guestCapFlags[id]);
   }
 
   async function seed() {
@@ -326,12 +326,12 @@
         <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2) bg-white">
           <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
-            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-mono text-[0.7rem]">workersAi</code></label>
-            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-mono text-[0.7rem]">r2Read</code></label>
-            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-mono text-[0.7rem]">d1Read</code></label>
-            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-mono text-[0.7rem]">durableObjectFetch</code></label>
-            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-mono text-[0.7rem]">containerHttp</code></label>
-            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capKvRead} /><code class="font-mono text-[0.7rem]">kvRead</code></label>
+            {#each GUEST_CAP_IDS as id (id)}
+              <label class="flex items-center gap-2">
+                <input type="checkbox" bind:checked={guestCapFlags[id]} />
+                <code class="font-mono text-[0.7rem]">{id}</code>
+              </label>
+            {/each}
           </div>
         </fieldset>
       </div>
@@ -352,11 +352,12 @@
         <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2) bg-white">
           <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
-            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capWorkersAi} /><code class="font-mono text-[0.7rem]">workersAi</code></label>
-            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capR2Read} /><code class="font-mono text-[0.7rem]">r2Read</code></label>
-            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capD1Read} /><code class="font-mono text-[0.7rem]">d1Read</code></label>
-            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capDurableObjectFetch} /><code class="font-mono text-[0.7rem]">durableObjectFetch</code></label>
-            <label class="flex items-center gap-2"><input type="checkbox" bind:checked={capContainerHttp} /><code class="font-mono text-[0.7rem]">containerHttp</code></label>
+            {#each GUEST_CAP_BASE as id (id)}
+              <label class="flex items-center gap-2">
+                <input type="checkbox" bind:checked={guestCapFlags[id]} />
+                <code class="font-mono text-[0.7rem]">{id}</code>
+              </label>
+            {/each}
           </div>
         </fieldset>
         <div>

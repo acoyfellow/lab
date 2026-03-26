@@ -2,7 +2,8 @@
   import type { PageProps } from './$types';
   import SEO from '$lib/SEO.svelte';
   import MiniSandbox from '$lib/tutorial/MiniSandbox.svelte';
-  
+  import { Button } from '$lib/components/ui/button';
+
   let { data }: PageProps = $props();
 </script>
 
@@ -13,14 +14,14 @@
   type="website"
 />
 
-<div>
+<div class="">
   <!-- Full-width hero band (option 2): bg image + gradient scrim, copy overlaid left -->
   <section
-    class="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden border-b border-(--border) min-h-[min(42vh,400px)]"
+    class="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden border-b border-(--border) min-h-[min(42vh,400px)] "
   >
     <div
       aria-hidden="true"
-      class="absolute inset-0 bg-[url('/cubes.jpg')] bg-cover bg-position-[62%_center] sm:bg-center"
+      class="absolute inset-0 bg-[url('/bg.jpg')] bg-cover bg-position-[62%_center] sm:bg-center"
     ></div>
     <div
       aria-hidden="true"
@@ -39,7 +40,7 @@
           class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-(--surface)/90 backdrop-blur-sm border border-(--border) text-[0.75rem] text-(--text-2) shadow-sm"
         >
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          Open source · Self-hosted on Cloudflare
+          Experimental · Open source · Self-hosted on Cloudflare
         </div>
 
         <h1 class="text-[1.65rem] sm:text-[2.25rem] font-semibold tracking-tight leading-[1.15] text-(--text) drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
@@ -52,13 +53,13 @@
           Each run yields a durable <strong class="text-(--text)">trace</strong> you can open and share.
         </p>
         <p class="text-[0.9375rem] m-0">
-          <a href="/compose" class="text-(--accent) font-medium no-underline hover:underline">Open Compose</a>
+          <Button href="/compose" variant="default">Open Compose</Button>
           <span class="text-(--text-3)"> — build and run chains</span>
         </p>
       </div>
     </header>
   </section>
-
+  
   <div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-10">
   <section class="space-y-3">
     <div class="flex items-center justify-between">

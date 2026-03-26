@@ -382,3 +382,6 @@ button{
 a, button, input, select, textarea, label{
   @apply hit-area-1.5;
 }
+textarea{
+  @apply bg-white;
+}

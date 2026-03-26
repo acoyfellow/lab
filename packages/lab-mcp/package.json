@@ -1,15 +1,35 @@
 {
   "name": "@acoyfellow/lab-mcp",
   "version": "0.0.1",
-  "private": true,
+  "description": "MCP server for lab: find (catalog/trace) + execute (guest runs) via stdio",
+  "license": "MIT",
   "type": "module",
-  "description": "stdio MCP server for lab: find (catalog/trace) + execute (guest runs)",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "main": "./dist/main.js",
+  "types": "./dist/main.d.ts",
+  "bin": {
+    "lab-mcp": "./dist/main.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/main.d.ts",
+      "import": "./dist/main.js"
+    }
+  },
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "tsc -p tsconfig.json",
     "start": "bun run src/main.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@acoyfellow/lab": "workspace:*",
+    "@acoyfellow/lab": "0.0.1",
     "@modelcontextprotocol/sdk": "1.28.0",
     "effect": "4.0.0-beta.40",
     "zod": "^4.0.0"
@@ -17,8 +37,5 @@
   "devDependencies": {
     "@types/node": "^25.5.0",
     "typescript": "^5.9.3"
-  },
-  "engines": {
-    "node": ">=18"
   }
 }

@@ -43,6 +43,7 @@
     >
       <AppLink to="/" class="flex items-center gap-2 shrink-0 no-underline">
         <Logo />
+        <code class="text-[0.6rem] text-(--text-3) tracking-tight">v.0.0.1</code>
       </AppLink>
       <nav
         class="flex flex-wrap items-center gap-x-4 gap-y-1 justify-end text-[0.8125rem]"
