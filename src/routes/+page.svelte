@@ -54,6 +54,51 @@
   </section>
 
   <section class="space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">See It In Action</h2>
+      <a href="/compose?example=api-retry" class="text-[0.8125rem] text-(--accent) hover:underline">Run this example →</a>
+    </div>
+    <p class="text-[0.9375rem] text-(--text-2)">
+      A 3-step chain that handles flaky APIs with retry logic and circuit breaker pattern.
+    </p>
+    
+    <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-5 space-y-4">
+      <div class="flex items-center gap-4">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs text-(--text-3) font-mono">Step 1</span>
+          </div>
+          <div class="font-medium text-sm">Attempt API Call</div>
+          <p class="text-[0.8125rem] text-(--text-2)">Try fetch with 5s timeout</p>
+        </div>
+        <div class="text-(--text-3)">→</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs text-(--text-3) font-mono">Step 2</span>
+          </div>
+          <div class="font-medium text-sm">Retry with Backoff</div>
+          <p class="text-[0.8125rem] text-(--text-2)">Wait 1s, 2s, 4s between retries</p>
+        </div>
+        <div class="text-(--text-3)">→</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs text-(--text-3) font-mono">Step 3</span>
+          </div>
+          <div class="font-medium text-sm">Circuit Breaker</div>
+          <p class="text-[0.8125rem] text-(--text-2)">Fail fast if unhealthy</p>
+        </div>
+      </div>
+      
+      <div class="pt-4 border-t border-(--border)">
+        <div class="flex items-center justify-between text-[0.8125rem]">
+          <span class="text-(--text-2)">One traceId tracks all 3 steps</span>
+          <a href="/examples" class="text-(--accent) hover:underline">Browse more examples →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="space-y-4">
     <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">3. Learn More</h2>
     <div class="grid gap-3 sm:grid-cols-2">
       <a href="/tutorial" class="flex items-center gap-3 p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
