@@ -40,7 +40,7 @@
           class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-(--surface)/90 backdrop-blur-sm border border-(--border) text-[0.75rem] text-(--text-2) shadow-sm"
         >
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          Experimental · Open source · Self-hosted on Cloudflare
+          Experimental toolkit for Cloudflare Workers
         </div>
 
         <h1 class="text-[1.65rem] sm:text-[2.25rem] font-semibold tracking-tight leading-[1.15] text-(--text) drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
