@@ -5,7 +5,6 @@
   import { apiRetry, webhookValidator, dataTransformer, multiSourceAggregator } from '$lib/examples/data/new-examples';
   import * as Table from '$lib/components/ui/table';
   import { Button } from '$lib/components/ui/button';
-  import AppLink from '$lib/AppLink.svelte';
 
   const examples = [
     jsonHealer,
@@ -53,22 +52,30 @@
               <Table.Cell class="font-medium">
                 <div class="space-y-1">
                   <div class="text-(--text)">{ex.title}</div>
-                  <div class="text-[0.8125rem] text-(--text-2) sm:hidden">{ex.description}</div>
+                  <div class="sm:hidden space-y-1">
+                    <div class="text-[0.8125rem] text-(--text-2)">{ex.description}</div>
+                    <div class="flex flex-wrap gap-1">
+                      {#each ex.tags.slice(0, 4) as tag (tag)}
+                        <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">{tag}</span>
+                      {/each}
+                    </div>
+                  </div>
                 </div>
               </Table.Cell>
               <Table.Cell class="hidden sm:table-cell text-(--text-2)">
-                {ex.description}
+                <div class="space-y-1">
+                  <div>{ex.description}</div>
+                  <div class="flex flex-wrap gap-1">
+                    {#each ex.tags.slice(0, 5) as tag (tag)}
+                      <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">{tag}</span>
+                    {/each}
+                  </div>
+                </div>
               </Table.Cell>
               <Table.Cell class="text-end">
-                <div class="inline-flex items-center gap-2">
-                  <Button size="sm" onclick={() => goto(`/compose?example=${ex.id}`)}>Run</Button>
-                  <AppLink
-                    to={`/compose?example=${ex.id}`}
-                    class="text-[0.75rem] text-(--accent) hover:underline"
-                  >
-                    Open →
-                  </AppLink>
-                </div>
+                <Button size="sm" onclick={() => goto(`/compose?example=${ex.id}`)}>
+                  →
+                </Button>
               </Table.Cell>
             </Table.Row>
           {/each}

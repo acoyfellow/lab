@@ -376,7 +376,9 @@
 		pointer-events: inherit;
 	}
 }
-
+button{
+  @apply cursor-pointer;
+}
 a, button, input, select, textarea, label{
   @apply hit-area-1.5;
 }

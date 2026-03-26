@@ -67,7 +67,7 @@
     {
       to: paths.docsCapabilities,
       title: 'Capabilities',
-      description: 'KV snapshot, spawn, why shims exist.',</content>
+      description: 'KV snapshot, spawn, why shims exist.',
       tags: ['Security']
     },
     {
