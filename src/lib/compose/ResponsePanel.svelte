@@ -2,7 +2,7 @@
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import AppLink from '$lib/AppLink.svelte';
   import { paths } from '$lib/paths';
-  import { Check, Circle, X } from '@lucide/svelte';
+  import { Check, Circle, X, Link2, ExternalLink } from '@lucide/svelte';
 
   type StepStatus = 'pending' | 'success' | 'error';
 
@@ -20,73 +20,137 @@
     error = null as string | null
   } = $props();
 
+  const totalMs = $derived(
+    steps.length ? steps.reduce((a, s) => a + s.ms, 0) : null
+  );
+
   function statusColor(s: StepStatus): string {
     switch (s) {
-      case 'success': return 'text-green-500';
-      case 'error': return 'text-red-500';
-      default: return 'text-(--text-3)';
+      case 'success':
+        return 'text-green-500';
+      case 'error':
+        return 'text-red-500';
+      default:
+        return 'text-(--text-3)';
     }
   }
 
+  function traceUrl(): string {
+    if (!traceId || typeof window === 'undefined') return '';
+    return `${window.location.origin}/t/${traceId}`;
+  }
+
+  function copyTraceUrl() {
+    const u = traceUrl();
+    if (u) void navigator.clipboard.writeText(u);
+  }
 </script>
 
 <div class="h-full flex flex-col">
   {#if status === 'idle'}
-    <Card class="h-full flex items-center justify-center border-dashed">
-      <CardContent class="text-center py-12">
-        <p class="text-(--text-3) text-sm">Click <strong>Run</strong> to see output</p>
-        <p class="text-(--text-3) text-xs mt-2">Or press Cmd+Enter</p>
+    <Card class="h-full flex items-center justify-center border-dashed border-(--border) bg-(--surface-alt)/30">
+      <CardContent class="text-center py-10 px-4">
+        <p class="text-(--text-3) text-sm">Run to get a <strong class="text-(--text-2)">trace</strong></p>
+        <p class="text-(--text-3) text-xs mt-2">Cmd+Enter</p>
       </CardContent>
     </Card>
   {:else if status === 'loading'}
-    <Card class="h-full flex items-center justify-center">
+    <Card class="h-full min-h-[140px] flex items-center justify-center border-(--border) bg-(--surface)">
       <CardContent class="text-center">
         <p class="text-(--text-2) text-sm">Running…</p>
       </CardContent>
     </Card>
   {:else if status === 'error'}
-    <Card class="border-red-500/50 bg-red-500/5">
+    <Card class="border-red-500/40 bg-red-500/5">
       <CardHeader class="pb-2">
-        <CardTitle class="text-red-500 text-sm">Error</CardTitle>
+        <CardTitle class="text-red-400 text-sm font-semibold">Failed</CardTitle>
       </CardHeader>
-      <CardContent>
-        <pre class="text-xs font-mono whitespace-pre-wrap text-(--text)">{error}</pre>
-        <p class="mt-3 mb-0 text-[0.75rem] text-(--text-3)">
+      <CardContent class="space-y-3">
+        <pre class="text-xs font-mono whitespace-pre-wrap text-(--text) m-0">{error}</pre>
+        {#if traceId}
+          <div class="flex flex-wrap gap-2 pt-1">
+            <a
+              href="/t/{traceId}"
+              class="inline-flex items-center gap-1.5 rounded-(--radius) bg-(--accent) px-3 py-2 text-xs font-medium text-white no-underline hover:opacity-90"
+            >
+              <ExternalLink class="w-3.5 h-3.5" />
+              Open trace
+            </a>
+            <button
+              type="button"
+              onclick={copyTraceUrl}
+              class="inline-flex items-center gap-1.5 rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2 text-xs text-(--text-2) hover:text-(--text)"
+            >
+              <Link2 class="w-3.5 h-3.5" />
+              Copy URL
+            </button>
+          </div>
+          <p class="text-[0.65rem] font-mono text-(--text-3) m-0 break-all">{traceUrl()}</p>
+        {/if}
+        <p class="mt-2 mb-0 text-[0.75rem] text-(--text-3)">
           <AppLink to={paths.docsHttpApi} class="underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>
-          — request shapes and run modes.
+          — request shapes.
         </p>
       </CardContent>
     </Card>
   {:else}
-    <Card>
-      <CardHeader class="pb-2">
-        <div class="flex items-center justify-between">
-          <CardTitle class="text-sm text-green-500 flex items-center gap-2">
-            <Check class="w-4 h-4" />
-            Success
+    <Card class="border-emerald-500/25 bg-emerald-500/4 shadow-sm">
+      <CardHeader class="pb-2 space-y-2">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <CardTitle class="text-sm text-emerald-400 flex items-center gap-2 m-0">
+            <Check class="w-4 h-4 shrink-0" />
+            Last run
           </CardTitle>
           {#if traceId}
-            <AppLink to={`/t/${traceId}`} class="text-xs text-(--accent) underline underline-offset-2 hover:text-(--accent-alt)">
-              View full trace →
-            </AppLink>
+            <div class="flex flex-wrap gap-2">
+              <a
+                href="/t/{traceId}"
+                class="inline-flex items-center gap-1.5 rounded-(--radius) bg-(--accent) px-3 py-2 text-xs font-medium text-white no-underline hover:opacity-90"
+              >
+                <ExternalLink class="w-3.5 h-3.5" />
+                Open trace
+              </a>
+              <button
+                type="button"
+                onclick={copyTraceUrl}
+                class="inline-flex items-center gap-1.5 rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2 text-xs text-(--text) hover:bg-(--surface-alt)"
+              >
+                <Link2 class="w-3.5 h-3.5" />
+                Copy URL
+              </button>
+            </div>
           {/if}
         </div>
-      </CardHeader>
-      <CardContent class="space-y-3">
+        {#if traceId}
+          <p class="text-[0.65rem] font-mono text-(--text-3) m-0 break-all leading-snug">{traceUrl()}</p>
+        {/if}
         {#if steps.length > 0}
-          <div class="space-y-1.5">
+          <p class="text-[0.75rem] text-(--text-2) m-0">
+            {steps.length} step{steps.length === 1 ? '' : 's'}
+            {#if totalMs !== null}
+              <span class="text-(--text-3)"> · {totalMs}ms total</span>
+            {/if}
+          </p>
+        {/if}
+      </CardHeader>
+      <CardContent class="space-y-3 pt-0">
+        {#if steps.length > 0}
+          <div class="flex flex-wrap gap-1.5">
             {#each steps as step, i}
-              <div class="flex items-center gap-2 text-xs px-2 py-1.5 rounded bg-(--surface-alt)">
+              <div
+                class="flex items-center gap-1.5 text-[0.6875rem] px-2 py-1 rounded-md bg-(--surface) border border-(--border)"
+                title={step.name}
+              >
                 {#if step.status === 'success'}
-                  <Check class={`w-3.5 h-3.5 ${statusColor(step.status)}`} />
+                  <Check class={`w-3 h-3 shrink-0 ${statusColor(step.status)}`} />
                 {:else if step.status === 'error'}
-                  <X class={`w-3.5 h-3.5 ${statusColor(step.status)}`} />
+                  <X class={`w-3 h-3 shrink-0 ${statusColor(step.status)}`} />
                 {:else}
-                  <Circle class={`w-3.5 h-3.5 ${statusColor(step.status)}`} />
+                  <Circle class={`w-3 h-3 shrink-0 ${statusColor(step.status)}`} />
                 {/if}
-                <span class="text-(--text-2)">Step {i + 1}</span>
+                <span class="text-(--text-2)">{i + 1}</span>
                 {#if step.name}
-                  <span class="text-(--text-3) truncate flex-1">{step.name}</span>
+                  <span class="text-(--text-3) truncate max-w-28">{step.name}</span>
                 {/if}
                 <span class="text-(--text-3) font-mono">{step.ms}ms</span>
               </div>
@@ -95,12 +159,16 @@
         {/if}
 
         {#if result !== null && result !== undefined}
-          <details class="group" open>
-            <summary class="text-xs text-(--text-3) cursor-pointer hover:text-(--text) select-none">
-              Output
-              <span class="opacity-60 group-open:rotate-180 inline-block transition-transform">▼</span>
+          <details class="group">
+            <summary
+              class="text-xs text-(--text-3) cursor-pointer hover:text-(--text) select-none list-none flex items-center gap-1"
+            >
+              <span class="opacity-60 group-open:rotate-180 transition-transform inline-block">▼</span>
+              Raw output
             </summary>
-            <pre class="mt-2 p-3 bg-(--surface-alt) rounded text-xs font-mono overflow-auto max-h-64">{JSON.stringify(result, null, 2)}</pre>
+            <pre
+              class="mt-2 p-3 bg-(--surface-alt) rounded-(--radius) border border-(--border) text-xs font-mono overflow-auto max-h-48"
+            >{JSON.stringify(result, null, 2)}</pre>
           </details>
         {/if}
       </CardContent>

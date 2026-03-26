@@ -34,6 +34,8 @@
   let lastResult = $state<unknown>(null);
   let lastSteps = $state<Array<{name: string; status: 'success' | 'error'; ms: number}>>([]);
   let editorView = $state<'builder' | 'raw'>('builder');
+  /** Bumps to remount ChainBuilder when chainJson is replaced (fork, examples, presets). */
+  let chainResetKey = $state(0);
 
   onMount(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -41,26 +43,31 @@
     if (exampleId === 'json-healer') {
       mode = 'chain';
       chainJson = JSON.stringify(JSON_HEALER_STEPS, null, 2);
+      chainResetKey++;
       window.history.replaceState({}, '', window.location.pathname);
       return;
     } else if (exampleId === 'api-retry') {
       mode = 'chain';
       chainJson = JSON.stringify(API_RETRY_STEPS, null, 2);
+      chainResetKey++;
       window.history.replaceState({}, '', window.location.pathname);
       return;
     } else if (exampleId === 'webhook-validator') {
       mode = 'chain';
       chainJson = JSON.stringify(WEBHOOK_VALIDATOR_STEPS, null, 2);
+      chainResetKey++;
       window.history.replaceState({}, '', window.location.pathname);
       return;
     } else if (exampleId === 'data-transformer') {
       mode = 'chain';
       chainJson = JSON.stringify(DATA_TRANSFORMER_STEPS, null, 2);
+      chainResetKey++;
       window.history.replaceState({}, '', window.location.pathname);
       return;
     } else if (exampleId === 'multi-source-aggregator') {
       mode = 'chain';
       chainJson = JSON.stringify(MULTI_SOURCE_AGGREGATOR_STEPS, null, 2);
+      chainResetKey++;
       window.history.replaceState({}, '', window.location.pathname);
       return;
     }
@@ -96,6 +103,7 @@
       if (Array.isArray(f.steps)) {
         chainJson = JSON.stringify(f.steps, null, 2);
       }
+      chainResetKey++;
     } catch {
       sessionStorage.removeItem('lab-fork');
     }
@@ -198,27 +206,115 @@
       run();
     }
   }
+
+  function presetChain() {
+    mode = 'chain';
+    chainJson = JSON.stringify(SIMPLE_CHAIN_STEPS, null, 2);
+    chainResetKey++;
+  }
+
+  function presetSandbox() {
+    mode = 'sandbox';
+    code = 'return { hello: "world" }';
+    guestTemplate = GUEST_TEMPLATE_DEFAULT;
+  }
+
+  function presetKv() {
+    mode = 'kv';
+    code = 'return { hello: "world" }';
+    guestTemplate = GUEST_TEMPLATE_DEFAULT;
+  }
+
+  function presetGenerate() {
+    mode = 'generate';
+    prompt = 'Return the sum of 1 through 10 as a number.';
+  }
+
+  function presetSpawn() {
+    mode = 'spawn';
+    code = 'return { hello: "world" }';
+    guestTemplate = GUEST_TEMPLATE_DEFAULT;
+    depth = 2;
+  }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <SEO
   title="Compose — lab"
-  description="Run code in sandbox/KV/chain/spawn/generate modes and get a shareable trace ID for every execution."
+  description="Chain isolated steps with explicit capabilities at the edge. Every run returns a shareable trace."
   path="/compose"
   type="website"
 />
 
-<div class="max-w-3xl mx-auto px-6 py-8 max-sm:px-4 space-y-6">
+<div class="max-w-6xl mx-auto px-6 py-8 max-sm:px-4 space-y-6">
   <header class="space-y-1">
     <h1 class="text-lg font-semibold tracking-tight">Compose</h1>
-    <p class="text-[0.8125rem] text-(--text-2)">Build and run chainable steps with explicit capabilities.</p>
+    <p class="text-[0.8125rem] text-(--text-2)">
+      Chain isolates with explicit capabilities — every run yields a shareable trace.
+    </p>
   </header>
 
-  <div class="space-y-6">
+  <div
+    class="grid grid-cols-1 gap-6 lg:gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,22rem)] lg:items-start"
+  >
+    <div class="space-y-6 min-w-0">
+    <section aria-label="Start from a preset">
+      <h2 class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) m-0 mb-3">
+        Start from
+      </h2>
+      <div class="grid gap-2 sm:grid-cols-2">
+        <button
+          type="button"
+          onclick={presetChain}
+          class="text-left rounded-(--radius) border border-(--accent)/35 bg-(--accent)/5 px-3 py-3 transition-colors hover:bg-(--accent)/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
+        >
+          <div class="text-sm font-semibold text-(--text)">Chain</div>
+          <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Multi-step pipeline (recommended)</div>
+        </button>
+        <button
+          type="button"
+          onclick={presetSandbox}
+          class="text-left rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
+        >
+          <div class="text-sm font-semibold text-(--text)">Sandbox</div>
+          <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Single isolate, one run</div>
+        </button>
+        <button
+          type="button"
+          onclick={presetKv}
+          class="text-left rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
+        >
+          <div class="text-sm font-semibold text-(--text)">KV read</div>
+          <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Snapshot + guest kv API</div>
+        </button>
+        <button
+          type="button"
+          onclick={presetGenerate}
+          class="text-left rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
+        >
+          <div class="text-sm font-semibold text-(--text)">Generate</div>
+          <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Workers AI with caps</div>
+        </button>
+        <button
+          type="button"
+          onclick={presetSpawn}
+          class="text-left rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-3 sm:col-span-2 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent)"
+        >
+          <div class="text-sm font-semibold text-(--text)">Spawn</div>
+          <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Nested isolates with spawn capability</div>
+        </button>
+      </div>
+    </section>
+
     <div class="border-b border-(--border) pb-6">
       {#if mode === 'chain'}
-        <EditorTabs bind:view={editorView} bind:chainJson disabled={loading} />
+        <EditorTabs
+          bind:view={editorView}
+          bind:chainJson
+          chainResetKey={chainResetKey}
+          disabled={loading}
+        />
       {:else if mode === 'generate'}
         <div class="space-y-4">
           <div>
@@ -282,23 +378,12 @@
       {/if}
     </div>
 
-    <div class="flex flex-wrap items-end gap-4">
-      <div class="flex-1 min-w-[200px]">
-        <label for="compose-mode" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Mode</label>
-        <select
-          id="compose-mode"
-          bind:value={mode}
-          class="w-full border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text)"
-        >
-          <option value="chain">Chain (multiple steps)</option>
-          <option value="sandbox">Sandbox (single run)</option>
-          <option value="kv">KV read</option>
-          <option value="generate">Generate (AI)</option>
-          <option value="spawn">Spawn (nested)</option>
-        </select>
-      </div>
-
-      <Button onclick={run} disabled={loading} class="min-w-[100px]">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <p class="text-[0.75rem] text-(--text-3) m-0">
+        Current: <strong class="text-(--text) font-medium">{mode}</strong>
+        <span class="text-(--text-3)"> — use Start from above to switch</span>
+      </p>
+      <Button onclick={run} disabled={loading} class="min-w-[120px]">
         {loading ? 'Running…' : 'Run'}
       </Button>
     </div>
@@ -313,8 +398,9 @@
         {/if}
       </div>
     {/if}
+    </div>
 
-    <div class="border-t border-(--border) pt-6">
+    <aside class="lg:sticky lg:top-22 shrink-0">
       <ResponsePanel
         status={loading ? 'loading' : lastError ? 'error' : lastTraceId ? 'success' : 'idle'}
         traceId={lastTraceId}
@@ -322,6 +408,6 @@
         steps={lastSteps}
         error={lastError}
       />
-    </div>
+    </aside>
   </div>
 </div>

@@ -7,8 +7,8 @@
 </script>
 
 <SEO
-  title="Lab — Open source edge compute for agents"
-  description="Chain JavaScript steps at the edge. Sandboxed and provable. Every execution produces a shareable trace."
+  title="Lab — Chainable edge execution"
+  description="Chain JavaScript in Cloudflare isolates with explicit capabilities per step. Traces record what ran for sharing and inspection."
   path="/"
   type="website"
 />
@@ -22,13 +22,17 @@
     </div>
     
     <h1 class="text-[1.65rem] sm:text-[2.25rem] font-semibold tracking-tight leading-[1.15]">
-      Chain JavaScript steps at the edge.<br />
-      <span class="text-(--text-2)">Sandboxed and provable.</span>
+      Chainable edge execution.<br />
+      <span class="text-(--text-2)">Isolates, capabilities, composable steps.</span>
     </h1>
     
     <p class="text-[1.0625rem] text-(--text-2) leading-relaxed max-w-[60ch]">
-      Run JavaScript in Cloudflare isolates with explicit capabilities. 
-      Every execution produces a <strong class="text-(--text)">shareable trace</strong>.
+      Run untrusted JavaScript on Cloudflare workers with <strong class="text-(--text)">least-privilege caps per step</strong>.
+      Each run yields a durable <strong class="text-(--text)">trace</strong> you can open and share.
+    </p>
+    <p class="text-[0.9375rem] m-0">
+      <a href="/compose" class="text-(--accent) font-medium no-underline hover:underline">Open Compose</a>
+      <span class="text-(--text-3)"> — build and run chains</span>
     </p>
   </header>
 

@@ -1,6 +1,17 @@
 import { Resvg } from '@cf-wasm/resvg';
 import type { RequestHandler } from './$types';
 
+let cachedFont: Uint8Array | null = null;
+
+async function loadFont(): Promise<Uint8Array> {
+  if (cachedFont) return cachedFont;
+  const response = await fetch(
+    'https://github.com/google/fonts/raw/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf'
+  );
+  cachedFont = new Uint8Array(await response.arrayBuffer());
+  return cachedFont;
+}
+
 function escapeXml(text: string): string {
   return text
     .replaceAll('&', '&amp;')
@@ -33,14 +44,14 @@ function generateOGImageSVG(title: string, description: string): string {
   const titleText = titleLines
     .map(
       (line, i) =>
-        `<text x="60" y="${280 + i * 70}" font-family="Arial, sans-serif" font-size="58" font-weight="bold" fill="#FFFFFF">${escapeXml(line)}</text>`
+        `<text x="60" y="${280 + i * 70}" font-family="Inter" font-size="58" font-weight="700" fill="#FFFFFF">${escapeXml(line)}</text>`
     )
     .join('\n');
 
   const descText = descLines
     .map(
       (line, i) =>
-        `<text x="60" y="${280 + titleLines.length * 70 + 30 + i * 32}" font-family="Arial, sans-serif" font-size="24" fill="#AAAAAA">${escapeXml(line)}</text>`
+        `<text x="60" y="${280 + titleLines.length * 70 + 30 + i * 32}" font-family="Inter" font-size="24" fill="#AAAAAA">${escapeXml(line)}</text>`
     )
     .join('\n');
 
@@ -53,27 +64,27 @@ function generateOGImageSVG(title: string, description: string): string {
 
   return `<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
   <rect width="1200" height="630" fill="#000000"/>
-  
+
   <g transform="translate(900, 350) scale(2.5)" opacity="0.08">
     <path d="${iconBolt}" fill="#FFFFFF"/>
     <path d="${iconLab}" fill="#FFFFFF"/>
   </g>
-  
+
   <g transform="translate(60, 56) scale(0.5)">
     <path d="${iconBolt}" fill="#FFFFFF"/>
     <path d="${iconLab}" fill="#FFFFFF"/>
   </g>
-  
+
   <g transform="translate(140, 68) scale(0.35)" fill="#FFFFFF">
     <path d="${wordmarkL}"/>
     <path d="${wordmarkA}"/>
     <path d="${wordmarkB}"/>
   </g>
-  
+
   ${titleText}
   ${descText}
-  
-  <text x="60" y="590" font-size="18" font-weight="600" fill="rgba(255,255,255,0.7)">lab.coey.dev</text>
+
+  <text x="60" y="590" font-family="Inter" font-size="18" font-weight="600" fill="rgba(255,255,255,0.7)">lab.coey.dev</text>
 </svg>`;
 }
 
@@ -93,8 +104,13 @@ export const GET: RequestHandler = async ({ url }) => {
     });
   }
 
+  const font = await loadFont();
   const resvg = new Resvg(svg, {
     fitTo: { mode: 'width', value: 1200 },
+    font: {
+      fontBuffers: [font],
+      defaultFontFamily: 'Inter',
+    },
   });
 
   const png = resvg.render().asPng();
@@ -105,4 +121,3 @@ export const GET: RequestHandler = async ({ url }) => {
     headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' },
   });
 };
-
