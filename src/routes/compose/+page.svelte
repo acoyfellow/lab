@@ -179,7 +179,7 @@
   <header class="space-y-1">
     <h1 class="text-lg font-semibold tracking-tight">Compose</h1>
     <p class="text-[0.8125rem] text-(--text-2)">
-      Write code, pick capabilities, run. Every execution produces a shareable trace.
+      Build a chain, pick capabilities, execute. Every run produces a trace you can share or hand off.
     </p>
   </header>
 

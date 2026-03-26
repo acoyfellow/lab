@@ -8,18 +8,39 @@
 
   const steps = [
     {
-      name: 'Generate data',
-      body: 'return { users: [{name: "Alice"}, {name: "Bob"}], count: 2 }',
+      name: 'Load broken JSON',
+      body: `const raw = '{"users": [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob",}]}';
+return { raw, attempt: 1 };`,
       capabilities: []
     },
     {
-      name: 'Transform',
-      body: 'return input.users.map(u => u.name.toUpperCase())',
+      name: 'Try to parse',
+      body: `try {
+  return { ok: true, data: JSON.parse(input.raw), attempts: input.attempt };
+} catch (e) {
+  return { ok: false, error: e.message, raw: input.raw, attempt: input.attempt };
+}`,
       capabilities: []
     },
     {
-      name: 'Format result',
-      body: 'return { names: input, total: input.length, timestamp: Date.now() }',
+      name: 'Diagnose and heal',
+      body: `if (input.ok) return input;
+let fixed = input.raw.replace(/,(\\s*[}\\]])/g, '$1');
+try {
+  return { ok: true, data: JSON.parse(fixed), healed: true, diagnosis: 'Removed trailing comma' };
+} catch (e) {
+  return { ok: false, error: e.message, attempt: input.attempt + 1 };
+}`,
+      capabilities: []
+    },
+    {
+      name: 'Validate',
+      body: `return {
+  healed: !!input.healed,
+  valid: input.ok,
+  users: input.data?.users?.length ?? 0,
+  diagnosis: input.diagnosis || 'No repair needed',
+};`,
       capabilities: []
     }
   ];
@@ -52,24 +73,33 @@
     }));
     goto('/compose');
   }
+
+  const stepColors = [
+    'text-red-400',      // broken data
+    'text-amber-400',    // try/fail
+    'text-emerald-400',  // heal
+    'text-blue-400',     // validate
+  ];
+
+  const stepIcons = [
+    '!',   // load broken
+    '?',   // try parse
+    '+',   // heal
+    '=',   // validate
+  ];
 </script>
 
 <div class="space-y-4">
-  <!-- Visual step pipeline -->
+  <!-- Visual step pipeline showing the narrative -->
   <div class="rounded-(--radius) border border-(--border) bg-(--surface) overflow-hidden">
     {#each steps as step, i}
       <div class="px-4 py-3 {i > 0 ? 'border-t border-(--border)' : ''}">
         <div class="flex items-center gap-2.5 mb-1.5">
-          <span class="flex-shrink-0 w-5 h-5 rounded-full bg-(--accent)/10 text-(--accent) flex items-center justify-center text-[0.625rem] font-bold">{i + 1}</span>
+          <span class="flex-shrink-0 w-5 h-5 rounded-full bg-(--surface-alt) flex items-center justify-center text-[0.625rem] font-bold {stepColors[i]}">{stepIcons[i]}</span>
           <span class="text-[0.8125rem] font-medium text-(--text)">{step.name}</span>
         </div>
-        <code class="block text-[0.75rem] font-mono text-(--text-2) pl-[1.875rem] leading-relaxed">{step.body}</code>
+        <pre class="text-[0.7rem] font-mono text-(--text-2) pl-[1.875rem] leading-relaxed m-0 whitespace-pre-wrap">{step.body}</pre>
       </div>
-      {#if i < steps.length - 1}
-        <div class="flex justify-center -my-1.5 relative z-10">
-          <span class="text-(--text-3) text-[0.625rem]">↓</span>
-        </div>
-      {/if}
     {/each}
   </div>
 
@@ -83,17 +113,17 @@
       {/if}
     </Button>
     <button onclick={openInCompose} class="text-[0.8125rem] text-(--text-2) hover:text-(--text) underline underline-offset-2 bg-transparent border-none cursor-pointer p-0">
-      Edit in Compose
+      Fork in Compose
     </button>
   </div>
 
   {#if result && result.ok}
     <div class="rounded-(--radius) border border-emerald-500/25 bg-white p-4 space-y-2">
       <div class="flex items-center justify-between">
-        <span class="text-[0.75rem] font-semibold text-emerald-500">Result</span>
+        <span class="text-[0.75rem] font-semibold text-emerald-500">Healed and validated</span>
         {#if result.traceId}
           <a href="/t/{result.traceId}" class="text-[0.75rem] text-(--accent) hover:underline font-medium">
-            Open trace →
+            Open the trace — follow the full story →
           </a>
         {/if}
       </div>
@@ -102,7 +132,15 @@
   {/if}
 
   {#if result && !result.ok}
-    <pre class="rounded-(--radius) border border-red-500/30 bg-red-500/5 p-3 font-mono text-xs text-red-500 overflow-x-auto">{JSON.stringify({ error: result.error, reason: result.reason }, null, 2)}</pre>
+    <div class="rounded-(--radius) border border-red-500/30 bg-red-500/5 p-4 space-y-2">
+      <span class="text-[0.75rem] font-semibold text-red-400">Failed</span>
+      {#if result.traceId}
+        <a href="/t/{result.traceId}" class="text-[0.75rem] text-(--accent) hover:underline font-medium block">
+          Open the trace to see what happened →
+        </a>
+      {/if}
+      <pre class="font-mono text-xs text-red-500 m-0 overflow-x-auto">{JSON.stringify({ error: result.error, reason: result.reason }, null, 2)}</pre>
+    </div>
   {/if}
 
   {#if error}

@@ -58,56 +58,45 @@ export const SPAWN_PARALLEL_CURL = `curl -X POST https://lab.coey.dev/run/spawn 
   -d ${bashSingleQuoted(SPAWN_JSON)}`;
 
 /**
- * Homepage TypeScript sample — hand-formatted (not JSON.stringify) so Shiki stays readable.
- * Step bodies must match CHAIN_STEPS_FOR_CURL (same strings as POST /run/chain).
+ * Homepage TypeScript sample — agent-oriented workflow.
+ * Shows an agent building a self-healing pipeline and using the trace.
  */
 export const CLIENT_SNIPPET = `import { createLabClient } from "@acoyfellow/lab";
 
-const lab = createLabClient({
-  baseUrl: process.env.LAB_URL,
-});
+const lab = createLabClient({ baseUrl: process.env.LAB_URL });
 
-// Each step = new isolate. 
-
-// Only Load has kvRead; Pack and Line cannot touch KV.
-await lab.seed();
-
+// Agent builds a self-healing chain.
+// Each step = fresh V8 isolate. No shared state.
 const out = await lab.runChain([
   {
-    name: "Load",
-    body: \`const keys = await kv.list("user:");
-const rows = [];
-for (const key of keys) {
-  const raw = await kv.get(key);
-  rows.push(JSON.parse(raw));
-}
-return rows;\`,
-    capabilities: ["kvRead"],
-  },
-  {
-    name: "Pack",
+    name: "Load broken data",
     body: \`return {
-  n: input.length,
-  names: input.map((u) => u.name),
+  raw: '{"users": [{"id": 1,}]}',
+  source: "webhook-ingest",
 };\`,
     capabilities: [],
   },
   {
-    name: "Line",
-    body: \`return (
-  "Roll call: " +
-  input.names.join(", ") +
-  " (" + input.n + ")"
-);\`,
+    name: "Parse (will fail)",
+    body: \`try {
+  return { ok: true, data: JSON.parse(input.raw) };
+} catch (e) {
+  return { ok: false, error: e.message, raw: input.raw };
+}\`,
+    capabilities: [],
+  },
+  {
+    name: "Heal",
+    body: \`if (input.ok) return input;
+const fixed = input.raw.replace(/,(\\\\s*[}\\\\]])/g, "$1");
+return { ok: true, data: JSON.parse(fixed), healed: true };\`,
     capabilities: [],
   },
 ]);
 
-console.log(out.result);
-
-if (out.traceId) {
-  console.log(\`Trace: https://\${process.env.LAB_URL}/t/\${out.traceId}\`);
-}`;
+// The trace is the proof. Share it with another agent or a reviewer.
+console.log(out.result);   // { ok: true, data: {...}, healed: true }
+console.log(out.traceId);  // → shareable URL`;
 
 /** Illustrative RunResult.trace shape for seeded KV + Load → Pack → Line. */
 export const EXAMPLE_RUN_RESULT_SHAPE = JSON.stringify(

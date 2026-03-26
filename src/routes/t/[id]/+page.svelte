@@ -178,8 +178,8 @@
 </script>
 
 <SEO
-  title={`Run ${trace.id} — lab`}
-  description="Execution trace — code, capabilities, inputs, outputs, and timing for every step."
+  title={`Trace ${trace.id} — lab`}
+  description="Execution trace — the full story of what ran, what returned, and how long it took. Inspect, fork, or share."
   path={page.url.pathname}
   type="website"
 />

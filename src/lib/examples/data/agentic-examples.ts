@@ -456,6 +456,161 @@ return [...prev, { isolate: ${i + 1}, primes: primes.length, ms: Date.now() % 10
 	capabilities: [],
 }));
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 7. TRACE HANDOFF — Agent A produces work, Agent B picks it up via trace
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const TRACE_HANDOFF_STEPS: ChainStep[] = [
+	{
+		name: 'Agent A: Research',
+		body: `// Agent A gathers and structures data
+const findings = {
+  topic: 'Edge isolate performance',
+  sources: [
+    { name: 'CF docs', claim: 'sub-millisecond cold starts', confidence: 'high' },
+    { name: 'Benchmark', claim: '< 5ms for prime sieve to 10k', confidence: 'measured' },
+    { name: 'Community', claim: 'isolates share nothing', confidence: 'verified' },
+  ],
+  summary: '3 sources checked, all consistent.',
+  handoff: 'Ready for Agent B to synthesize.',
+};
+return findings;`,
+		capabilities: [],
+	},
+	{
+		name: 'Agent B: Synthesize',
+		body: `// Agent B receives Agent A's findings via the chain
+const { sources, topic } = input;
+const highConfidence = sources.filter(s => s.confidence !== 'low');
+const synthesis = {
+  topic,
+  conclusion: highConfidence.length + '/' + sources.length + ' sources are high-confidence.',
+  claims: highConfidence.map(s => s.claim),
+  recommendation: 'Sufficient evidence to proceed.',
+};
+return synthesis;`,
+		capabilities: [],
+	},
+	{
+		name: 'Agent C: Draft',
+		body: `// Agent C takes the synthesis and produces a deliverable
+const { topic, conclusion, claims, recommendation } = input;
+return {
+  draft: topic + ': ' + claims.join('. ') + '.',
+  status: 'ready_for_review',
+  conclusion,
+  recommendation,
+  agentsInvolved: 3,
+  note: 'Each agent ran in a separate isolate. The trace shows the full handoff chain.',
+};`,
+		capabilities: [],
+	},
+];
+
+export const traceHandoff: ExampleData = {
+	id: 'trace-handoff',
+	title: 'Trace Handoff',
+	description: 'Three agents in a relay. Each picks up where the last left off. The trace is the handoff protocol.',
+	problem: 'How do agents share work? Custom APIs? Shared databases? Message queues?',
+	solution: 'Agent A → isolate → trace. Agent B reads the trace, continues in a new isolate. Repeat.',
+	result: '3 agents, 3 isolates, 1 trace URL. The trace IS the coordination layer.',
+	icon: 'arrow-right-left',
+	tags: ['handoff', 'multi-agent', 'coordination', 'trace', 'relay'],
+	steps: [
+		{ name: 'Agent A: Research', description: 'Gather and structure findings', code: '{ sources: 3, summary: "All consistent" }', input: {}, output: { sources: 3, handoff: 'Ready for Agent B' }, capabilities: [], ms: 2 },
+		{ name: 'Agent B: Synthesize', description: 'Filter and conclude', code: '{ conclusion: "3/3 high-confidence" }', input: { sources: '...' }, output: { recommendation: 'Proceed' }, capabilities: [], ms: 1 },
+		{ name: 'Agent C: Draft', description: 'Produce deliverable', code: '{ status: "ready_for_review" }', input: { synthesis: '...' }, output: { agentsInvolved: 3 }, capabilities: [], ms: 1 },
+	],
+};
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 8. ITERATIVE REPAIR — Agent tries, fails, reads the error, fixes, retries
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const ITERATIVE_REPAIR_STEPS: ChainStep[] = [
+	{
+		name: 'Attempt 1: Naive parse',
+		body: `const raw = '{ name: "Alice", age: 30 }';  // not valid JSON (unquoted keys)
+try {
+  return { ok: true, data: JSON.parse(raw), attempt: 1 };
+} catch (e) {
+  return { ok: false, error: e.message, raw, attempt: 1 };
+}`,
+		capabilities: [],
+	},
+	{
+		name: 'Diagnose failure',
+		body: `if (input.ok) return { ...input, diagnosis: 'No repair needed' };
+// Agent reads the error and raw data from the trace
+const diagnosis = [];
+if (input.raw.match(/\\b\\w+:/)) diagnosis.push('unquoted_keys');
+if (input.raw.match(/'/)) diagnosis.push('single_quotes');
+if (input.raw.match(/,\\s*[}\\]]/)) diagnosis.push('trailing_commas');
+return {
+  ok: false,
+  raw: input.raw,
+  attempt: input.attempt,
+  error: input.error,
+  diagnosis,
+  strategy: diagnosis.includes('unquoted_keys')
+    ? 'Quote all keys with regex before re-parse'
+    : 'Unknown pattern — escalate',
+};`,
+		capabilities: [],
+	},
+	{
+		name: 'Attempt 2: Apply fix',
+		body: `if (input.ok) return input;
+let fixed = input.raw;
+// Apply the strategy from diagnosis
+if (input.diagnosis.includes('unquoted_keys')) {
+  fixed = fixed.replace(/(\\s*)([a-zA-Z_]\\w*)\\s*:/g, '$1"$2":');
+}
+if (input.diagnosis.includes('trailing_commas')) {
+  fixed = fixed.replace(/,\\s*([}\\]])/g, '$1');
+}
+try {
+  return { ok: true, data: JSON.parse(fixed), attempt: input.attempt + 1, fixed: true, appliedFixes: input.diagnosis };
+} catch (e) {
+  return { ok: false, error: e.message, raw: fixed, attempt: input.attempt + 1, diagnosis: input.diagnosis };
+}`,
+		capabilities: [],
+	},
+	{
+		name: 'Report',
+		body: `return {
+  success: input.ok,
+  attempts: input.attempt,
+  fixed: !!input.fixed,
+  appliedFixes: input.appliedFixes || [],
+  data: input.data,
+  narrative: input.fixed
+    ? 'Attempt 1 failed. Diagnosed ' + (input.appliedFixes || []).join(', ') + '. Attempt 2 succeeded.'
+    : input.ok ? 'Parsed on first try.' : 'All attempts failed.',
+};`,
+		capabilities: [],
+	},
+];
+
+export const iterativeRepair: ExampleData = {
+	id: 'iterative-repair',
+	title: 'Iterative Repair',
+	description: 'Agent tries to parse, fails, reads the error, diagnoses the problem, applies a fix, retries. The trace shows the thinking.',
+	problem: 'Data is broken in unpredictable ways. A single-shot parser either works or crashes.',
+	solution: 'Try → fail → diagnose from the error → apply targeted fix → retry. Each step in its own isolate.',
+	result: 'Attempt 1 failed (unquoted keys). Diagnosed. Attempt 2 succeeded. The trace shows the full reasoning chain.',
+	icon: 'refresh-cw',
+	tags: ['self-healing', 'repair', 'iterative', 'diagnosis', 'agent'],
+	steps: [
+		{ name: 'Attempt 1', description: 'Naive JSON.parse', code: 'JSON.parse(raw) → throws', input: {}, output: { ok: false, error: 'Unexpected token' }, capabilities: [], ms: 1 },
+		{ name: 'Diagnose', description: 'Read error + raw data', code: '{ diagnosis: ["unquoted_keys"] }', input: { error: '...' }, output: { strategy: 'Quote all keys' }, capabilities: [], ms: 1 },
+		{ name: 'Attempt 2', description: 'Apply regex fix + re-parse', code: 'fixed.replace(/(\\w+):/g, \'"$1":\')', input: { diagnosis: '...' }, output: { ok: true, fixed: true }, capabilities: [], ms: 1 },
+		{ name: 'Report', description: 'Summarize the repair narrative', code: '{ narrative: "Attempt 1 failed. Diagnosed. Attempt 2 succeeded." }', input: { ok: true }, output: { attempts: 2, success: true }, capabilities: [], ms: 1 },
+	],
+};
+
+
 export const coldBootSprint: ExampleData = {
 	id: 'cold-boot-sprint',
 	title: 'Cold Boot Sprint',
