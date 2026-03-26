@@ -33,14 +33,14 @@ function generateOGImageSVG(title: string, description: string): string {
   const titleText = titleLines
     .map(
       (line, i) =>
-        `<text x="60" y="${280 + i * 70}" font-family="system-ui, -apple-system, sans-serif" font-size="58" font-weight="700" fill="#FFFFFF">${escapeXml(line)}</text>`
+        `<text x="60" y="${280 + i * 70}" font-family="Arial, sans-serif" font-size="58" font-weight="bold" fill="#FFFFFF">${escapeXml(line)}</text>`
     )
     .join('\n');
 
   const descText = descLines
     .map(
       (line, i) =>
-        `<text x="60" y="${280 + titleLines.length * 70 + 30 + i * 32}" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="rgba(255,255,255,0.8)">${escapeXml(line)}</text>`
+        `<text x="60" y="${280 + titleLines.length * 70 + 30 + i * 32}" font-family="Arial, sans-serif" font-size="24" fill="#AAAAAA">${escapeXml(line)}</text>`
     )
     .join('\n');
 
