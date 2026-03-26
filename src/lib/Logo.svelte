@@ -5,31 +5,45 @@
   };
 
   let { class: className, title }: Props = $props();
+
+  let active = $state(false);
 </script>
 
 <svg
-  class={`logo ${className ?? ''}`}
+  class={`logo ${active ? 'active' : ''} ${className ?? ''}`}
   viewBox="0 0 312 96"
   xmlns="http://www.w3.org/2000/svg"
   aria-label={title}
   aria-hidden={title ? undefined : 'true'}
   role={title ? 'img' : undefined}
   focusable="false"
+  onmouseenter={() => (active = true)}
+  onmouseleave={() => (active = false)}
 >
   {#if title}
     <title>{title}</title>
   {/if}
 
-  <path d="M288 0H276H264H252H240H228H216V12V24V36V48V60V72V84V96H228H240H252H264H276H288H300H312V84V72V60V48V36H300V24V12V0H288ZM264 24H276V36H264H252H240V24H252H264ZM276 60H288V72H276H264H252H240V60H252H264H276Z" />
-  <path d="M192 96H180V84V72H168H156H144H132V84V96H120H108V84V72V60V48V36V24V12V0H120H132H144H156H168H180H192H204V12V24V36V48V60V72V84V96H192ZM168 48H180V36V24H168H156H144H132V36V48H144H156H168Z" />
-  <path d="M84 96H72H60H48H36H24H12H0V84V72V60V48V36V24V12V0H12H24V12V24V36V48V60V72H36H48H60H72H84H96V84V96H84Z" />
+  <path
+    d="M311.5 95.5V36.5H299.5V0.5H216.5V95.5H311.5ZM239.5 23.5H276.5V36.5H239.5V23.5ZM239.5 59.5H288.5V72.5H239.5V59.5Z"
+    class="svg-elem-1"
+  />
+  <path
+    d="M203.5 0.5V95.5H180.5V71.5H131.5V95.5H108.5V0.5H203.5ZM131.5 48.5H180.5V23.5H131.5V48.5Z"
+    class="svg-elem-2"
+  />
+  <path
+    d="M23.5 0.5V72.5H95.5V95.5H0.5V0.5H23.5Z"
+    class="svg-elem-3"
+  />
 </svg>
 
-<style>
+<style lang="postcss">
   .logo {
     --logo-fill: #000;
     --logo-stroke: transparent;
     display: block;
+    cursor: pointer;
   }
 
   .logo path {
@@ -42,26 +56,53 @@
       fill 160ms ease,
       stroke 160ms ease,
       stroke-opacity 160ms ease;
-    stroke-dasharray: 1200;
-    stroke-dashoffset: 1200;
     stroke-opacity: 0;
   }
 
   .logo:hover,
+  .logo.active,
   .logo:focus-visible {
     --logo-fill: #fff;
     --logo-stroke: #000;
   }
 
   .logo:hover path,
+  .logo.active path,
   .logo:focus-visible path {
     stroke-opacity: 1;
-    stroke-dashoffset: 0;
     transition:
       fill 160ms ease,
       stroke 160ms ease,
       stroke-opacity 160ms ease,
       stroke-dashoffset 520ms ease;
+  }
+
+  .logo .svg-elem-1 {
+    stroke-dasharray: 606px;
+    stroke-dashoffset: 606px;
+    transition-delay: 0ms;
+  }
+  .logo .svg-elem-2 {
+    stroke-dasharray: 578px;
+    stroke-dashoffset: 578px;
+    transition-delay: 20ms;
+  }
+  .logo .svg-elem-3 {
+    stroke-dasharray: 382px;
+    stroke-dashoffset: 382px;
+    transition-delay: 40ms;
+  }
+
+  .logo:hover .svg-elem-1,
+  .logo.active .svg-elem-1,
+  .logo:focus-visible .svg-elem-1,
+  .logo:hover .svg-elem-2,
+  .logo.active .svg-elem-2,
+  .logo:focus-visible .svg-elem-2,
+  .logo:hover .svg-elem-3,
+  .logo.active .svg-elem-3,
+  .logo:focus-visible .svg-elem-3 {
+    stroke-dashoffset: 0px;
   }
 
   @media (prefers-reduced-motion: reduce) {

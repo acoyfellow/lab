@@ -1,13 +1,10 @@
 <script lang="ts">
-  import { env } from '$env/dynamic/public';
-  import AppLink from '$lib/AppLink.svelte';
+  import { goto } from '$app/navigation';
   import SEO from '$lib/SEO.svelte';
   import ExampleCard from '$lib/examples/ExampleCard.svelte';
   import { jsonHealer } from '$lib/examples';
   import { apiRetry, webhookValidator, dataTransformer, multiSourceAggregator } from '$lib/examples/data/new-examples';
-  import { paths } from '$lib/paths';
 
-  const exampleId = $derived(env.PUBLIC_EXAMPLE_TRACE_ID ?? '');
 </script>
 
 <SEO
@@ -35,78 +32,29 @@
       <ExampleCard 
         data={jsonHealer} 
         variant="card" 
-        onRun={() => window.location.href = '/compose?example=json-healer'}
+        onRun={() => goto('/compose?example=json-healer')}
       />
       <ExampleCard 
         data={apiRetry} 
         variant="card" 
-        onRun={() => window.location.href = '/compose?example=api-retry'}
+        onRun={() => goto('/compose?example=api-retry')}
       />
       <ExampleCard 
         data={webhookValidator} 
         variant="card" 
-        onRun={() => window.location.href = '/compose?example=webhook-validator'}
+        onRun={() => goto('/compose?example=webhook-validator')}
       />
       <ExampleCard 
         data={dataTransformer} 
         variant="card" 
-        onRun={() => window.location.href = '/compose?example=data-transformer'}
+        onRun={() => goto('/compose?example=data-transformer')}
       />
       <ExampleCard 
         data={multiSourceAggregator} 
         variant="card" 
-        onRun={() => window.location.href = '/compose?example=multi-source-aggregator'}
+        onRun={() => goto('/compose?example=multi-source-aggregator')}
       />
     </div>
   </section>
 
-  <section class="mb-12">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) mb-4">
-      Getting Started
-    </h2>
-    <div class="grid gap-4 sm:grid-cols-2">
-      <AppLink
-        to={paths.tutorial}
-        class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
-      >
-        <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Tutorial</div>
-        <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Three pages, runners on 1–2, agent handoff on 3.</div>
-      </AppLink>
-      <AppLink
-        to={paths.docsCapabilities}
-        class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
-      >
-        <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Capabilities</div>
-        <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">
-          Each guest string, binding, <code class="font-mono text-[0.7rem]">/invoke/*</code> route, pros and caveats.
-        </div>
-      </AppLink>
-      <AppLink
-        to={paths.docs}
-        class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
-      >
-        <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Docs</div>
-        <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">HTTP API, TypeScript client, architecture, trace schema.</div>
-      </AppLink>
-      <a
-        href="/compose"
-        class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
-      >
-        <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Compose</div>
-        <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">
-          Build and run chains, sandbox, spawn, or KV read modes.
-        </div>
-      </a>
-    </div>
-  </section>
-
-  <section class="mt-10 rounded-(--radius) border border-(--border) bg-(--surface) p-4 text-[0.8125rem] text-(--text-2) leading-relaxed">
-    <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Curated example trace</div>
-    {#if exampleId}
-      <a href="/t/{exampleId}" class="text-(--text) font-mono text-xs underline underline-offset-2">/t/{exampleId}</a>
-      <p class="mt-2 text-[0.75rem] text-(--text-3)">Set <code class="font-mono">PUBLIC_EXAMPLE_TRACE_ID</code> in deploy env to override.</p>
-    {:else}
-      <p>Run any mode in Compose, then bookmark the trace URL. Optionally set <code class="font-mono text-[0.75rem]">PUBLIC_EXAMPLE_TRACE_ID</code> in <code class="font-mono text-[0.75rem]">.env</code> for a stable demo link on this page.</p>
-    {/if}
-  </section>
 </div>

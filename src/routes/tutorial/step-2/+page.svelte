@@ -10,37 +10,83 @@
 </script>
 
 <SEO
-  title="Step 2 · Chain — lab"
+  title="Step 2 · Multi-Step Chains — lab"
   description="Chain multiple isolate steps into one run; each step uses the previous output as input."
   path="/tutorial/step-2"
   type="website"
 />
 
-<h1 class="text-lg font-semibold text-(--text) tracking-tight m-0 mb-1">Chain a program</h1>
-<p class="text-[0.8125rem] text-(--text-3) m-0 mb-8 max-w-[52ch]">
-  Each array entry = one isolate. The return value becomes the next step&rsquo;s
-  <code class="text-[0.75rem]">input</code>. You still get one trace for the whole run.
-</p>
+<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-8">
+  <header class="space-y-2">
+    <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      Tutorial • Step 2 of 3
+    </div>
+    <h1 class="text-2xl font-semibold tracking-tight">Multi-Step Chains</h1>
+    <p class="text-[0.9375rem] text-(--text-2)">
+      Chain multiple isolates together. Pass data between steps, use capabilities per-step, and get one trace for the entire run.
+    </p>
+  </header>
 
-<ul class="m-0 mb-8 pl-5 space-y-2 text-[0.8125rem] text-(--text-2) list-disc max-w-[52ch]">
-  <li>Put <code class="text-[0.75rem]">capabilities</code> on each step (e.g. only step 0 gets <code class="text-[0.75rem]">kvRead</code>).</li>
-  <li>
-    Presets below: simple map, or KV roll call (
-    <AppLink to={paths.docsCapabilities} class="underline underline-offset-2 hover:text-(--text)">caps</AppLink>
-    ).
-  </li>
-</ul>
+  <section class="space-y-3">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      1. Install
+    </h2>
+    <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+      {@html data.codeHtml.install}
+    </div>
+  </section>
 
-<MiniChain kvTools />
+  <section class="space-y-3">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      2. Write
+    </h2>
+    <p class="text-[0.8125rem] text-(--text-2)">
+      Each step runs in a fresh isolate. The return value becomes the next step's <code class="font-mono text-[0.7rem]">input</code>.
+    </p>
+    <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+      {@html data.codeHtml.client}
+    </div>
+  </section>
 
-<div class="mt-10 space-y-3">
-  <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">Minimal curl</div>
-  <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
-    {@html data.codeHtml.curl}
-  </div>
+  <section class="space-y-3">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      3. Run
+    </h2>
+    <p class="text-[0.8125rem] text-(--text-2)">
+      Try it below. See how data flows from step 1 → step 2 → step 3.
+    </p>
+    <MiniChain kvTools />
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      4. Inspect the Trace
+    </h2>
+    <p class="text-[0.8125rem] text-(--text-2)">
+      One traceId for the entire chain. Each step shows its input, output, and execution time.
+    </p>
+    <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4">
+      <div class="text-[0.75rem] text-(--text-3) mb-2">Example trace output:</div>
+      <pre class="text-[0.75rem] bg-(--code-bg) p-3 rounded font-mono overflow-x-auto">{`Step 1: [1, 2, 3]
+Step 2: 3
+Step 3: { count: 3, items: "1, 2, 3" }
+
+Trace: https://lab.coey.dev/t/abc123...`}</pre>
+    </div>
+  </section>
+
+  <section class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 space-y-2">
+    <h3 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      Capabilities
+    </h3>
+    <p class="text-[0.8125rem] text-(--text-2)">
+      Each step declares its own capabilities. Only give <code class="font-mono text-[0.7rem]">kvRead</code> to steps that need it. 
+      <AppLink to={paths.docsCapabilities} class="text-(--accent) hover:underline">Learn more →</AppLink>
+    </p>
+  </section>
+
+  <TutorialPager 
+    prev={{ href: paths.tutorialStep1, label: 'Step 1 · Install and First Run' }}
+    next={{ href: paths.tutorialStep3, label: 'Step 3 · Agents and Handoffs' }} 
+  />
 </div>
-
-<TutorialPager
-  prev={{ href: paths.tutorialStep1, label: 'Step 1' }}
-  next={{ href: paths.tutorialStep3, label: 'Step 3 · CLI agents' }}
-/>
