@@ -33,21 +33,46 @@ function generateOGImageSVG(title: string, description: string): string {
   const titleText = titleLines
     .map(
       (line, i) =>
-        `<text x="60" y="${260 + i * 70}" font-size="58" font-weight="700" fill="#FFFFFF">${escapeXml(line)}</text>`
+        `<text x="60" y="${280 + i * 70}" font-size="58" font-weight="700" fill="#FFFFFF">${escapeXml(line)}</text>`
     )
     .join('\n');
 
   const descText = descLines
     .map(
       (line, i) =>
-        `<text x="60" y="${260 + titleLines.length * 70 + 30 + i * 32}" font-size="24" fill="rgba(255,255,255,0.8)">${escapeXml(line)}</text>`
+        `<text x="60" y="${280 + titleLines.length * 70 + 30 + i * 32}" font-size="24" fill="rgba(255,255,255,0.8)">${escapeXml(line)}</text>`
     )
     .join('\n');
 
+  const iconBolt = 'M85.8 93.5C88.1 114.3 71.5 133.9 48.5 136.6C25.5 139.3 4.9 124.2 2.6 103.4C0.8 87.2 7.2 114.1 46.2 109.5C73.4 106.1 83.6 72.7 85.8 93.5Z';
+  const iconLab = 'M76.6 4.5C82.5 -1.5 92.2 -1.5 98.1 4.5L128.2 34.7C134.1 40.7 134.1 50.4 128.2 56.3C122.3 62.2 112.7 62.2 106.8 56.4L103.9 59.3C116.8 85.1 112.6 117.4 91.3 138.7C64.7 165.3 22.3 165.3 -4.3 138.7C-30.9 112.1 -30.9 69.7 -4.3 43.1C17 21.8 49.4 17.6 75.2 30.6L78.1 27.7L78.1 27.7C72.2 21.7 72.2 12 78.1 6L76.6 4.5ZM91.2 13.6C90 12.4 88.1 12.4 86.9 13.6L86.9 13.6C85.7 14.8 85.7 16.7 86.9 17.9L91.2 22.2C93.7 24.7 93.7 28.7 91.3 31.2L77.3 45.3L73.2 42.8C51.5 29.8 23.3 32.6 4.8 51.1C-16.8 72.7 -16.8 108.6 4.8 130.2C26.4 151.8 62.3 151.8 83.9 130.2C102.5 111.7 105.3 83.5 92.2 61.8L89.6 57.6L108.5 39.6L117.1 48.2C118.3 49.4 120.2 49.4 121.4 48.2C122.6 47 122.6 45.1 121.4 43.9L91.2 13.6Z';
+
+  const wordmarkL = 'M180 0H150V96H180V72H195V48H180V24H210V0H180Z';
+  const wordmarkA = 'M120 0H90V96H120V72H135V48H120V24H150V0H120Z';
+  const wordmarkB = 'M30 0H0V96H30V72H45V48H30V24H60V0H30Z';
+
   return `<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
   <rect width="1200" height="630" fill="#000000"/>
+  
+  <g transform="translate(900, 350) scale(2.5)" opacity="0.08">
+    <path d="${iconBolt}" fill="#FFFFFF"/>
+    <path d="${iconLab}" fill="#FFFFFF"/>
+  </g>
+  
+  <g transform="translate(60, 60) scale(0.5)">
+    <path d="${iconBolt}" fill="#FFFFFF"/>
+    <path d="${iconLab}" fill="#FFFFFF"/>
+  </g>
+  
+  <g transform="translate(140, 48) scale(0.35)" fill="#FFFFFF">
+    <path d="${wordmarkL}"/>
+    <path d="${wordmarkA}"/>
+    <path d="${wordmarkB}"/>
+  </g>
+  
   ${titleText}
   ${descText}
+  
   <text x="60" y="590" font-size="18" font-weight="600" fill="rgba(255,255,255,0.7)">lab.coey.dev</text>
 </svg>`;
 }
