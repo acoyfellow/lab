@@ -172,7 +172,7 @@ Trace: https://lab.coey.dev/t/clu01example00...</pre>
     </h2>
     <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
       Deploy to your own Cloudflare account. You control the data, bindings (KV, AI, R2, D1), and capabilities. 
-      <a href="https://github.com/acoyfellow/lab#self-host" class="text-(--accent) hover:underline">Read the self-host guide →</a>
+      <a href="/docs/self-host" class="text-(--accent) hover:underline">Read the self-hosting guide →</a>
     </p>
   </section>
 

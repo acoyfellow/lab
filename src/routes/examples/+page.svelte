@@ -43,8 +43,7 @@
         <Table.Header>
           <Table.Row>
             <Table.Head>Example</Table.Head>
-            <Table.Head class="hidden sm:table-cell">Tags</Table.Head>
-            <Table.Head class="hidden md:table-cell">Description</Table.Head>
+            <Table.Head class="hidden sm:table-cell">Description</Table.Head>
             <Table.Head class="text-end">Run</Table.Head>
           </Table.Row>
         </Table.Header>
@@ -54,17 +53,10 @@
               <Table.Cell class="font-medium">
                 <div class="space-y-1">
                   <div class="text-(--text)">{ex.title}</div>
-                  <div class="text-[0.75rem] text-(--text-3) sm:hidden">{ex.tags.slice(0, 3).join(' · ')}</div>
+                  <div class="text-[0.8125rem] text-(--text-2) sm:hidden">{ex.description}</div>
                 </div>
               </Table.Cell>
-              <Table.Cell class="hidden sm:table-cell">
-                <div class="flex flex-wrap gap-1">
-                  {#each ex.tags.slice(0, 4) as tag (tag)}
-                    <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">{tag}</span>
-                  {/each}
-                </div>
-              </Table.Cell>
-              <Table.Cell class="hidden md:table-cell text-(--text-2)">
+              <Table.Cell class="hidden sm:table-cell text-(--text-2)">
                 {ex.description}
               </Table.Cell>
               <Table.Cell class="text-end">

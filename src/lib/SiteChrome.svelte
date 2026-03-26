@@ -1,7 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
   import AppLink from '$lib/AppLink.svelte';
-  import Logo from '$lib/Logo.svelte';
   import { paths } from '$lib/paths';
 
   let { children } = $props();
@@ -42,7 +41,7 @@
       class="max-w-3xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-3"
     >
       <AppLink to="/" class="flex items-center gap-2 shrink-0 no-underline">
-        <Logo class="h-7 w-auto" title="lab" />
+        <img src="/logo.svg" alt="lab" class="h-7 w-auto" />
       </AppLink>
       <nav
         class="flex flex-wrap items-center gap-x-4 gap-y-1 justify-end text-[0.8125rem]"

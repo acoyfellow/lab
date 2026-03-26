@@ -10,6 +10,7 @@
       items: [
         { label: 'Introduction', to: '/docs', active: true },
         { label: 'Installation', to: '/docs/install' },
+        { label: 'Self-Hosting', to: '/docs/self-host' },
         { label: 'How It Works', to: '/docs/how-it-works' },
         { label: 'Tutorial', to: paths.tutorial },
       ]
@@ -33,6 +34,12 @@
   ];
   
   const mainCards = [
+    {
+      to: '/docs/self-host',
+      title: 'Self-Hosting',
+      description: 'Deploy to Cloudflare. Infrastructure setup, configuration, deployment.',
+      tags: ['Production', 'Cloudflare']
+    },
     {
       to: paths.docsHttpApi,
       title: 'HTTP API',
@@ -60,7 +67,7 @@
     {
       to: paths.docsCapabilities,
       title: 'Capabilities',
-      description: 'KV snapshot, spawn, why shims exist.',
+      description: 'KV snapshot, spawn, why shims exist.',</content>
       tags: ['Security']
     },
     {
