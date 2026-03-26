@@ -61,7 +61,7 @@
       </CardContent>
     </Card>
   {:else if status === 'error'}
-    <Card class="border-red-500/40 bg-red-500/5">
+    <Card class="border-red-500/40 bg-white shadow-sm shadow-red-500/20">
       <CardHeader class="pb-2">
         <CardTitle class="text-red-400 text-sm font-semibold">Failed</CardTitle>
       </CardHeader>
@@ -79,7 +79,7 @@
             <button
               type="button"
               onclick={copyTraceUrl}
-              class="inline-flex items-center gap-1.5 rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2 text-xs text-(--text-2) hover:text-(--text)"
+              class="inline-flex items-center gap-1.5 rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2 text-xs text-(--text) hover:bg-(--surface-alt)"
             >
               <Link2 class="w-3.5 h-3.5" />
               Copy URL
@@ -94,7 +94,7 @@
       </CardContent>
     </Card>
   {:else}
-    <Card class="border-emerald-500/25 bg-emerald-500/4 shadow-sm">
+    <Card class="border-emerald-500/25 bg-white shadow-sm shadow-emerald-500/20">
       <CardHeader class="pb-2 space-y-2">
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <CardTitle class="text-sm text-emerald-400 flex items-center gap-2 m-0">

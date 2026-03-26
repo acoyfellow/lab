@@ -11,6 +11,7 @@ export const paths = {
 	docsSecurity: '/docs/security',
 	docsFailures: '/docs/failures',
 	docsWhenToUse: '/docs/when-to-use',
+	docsFaq: '/docs/faq',
 	tutorial: '/tutorial',
 	tutorialStep1: '/tutorial/step-1',
 	tutorialStep2: '/tutorial/step-2',

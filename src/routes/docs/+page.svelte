@@ -28,6 +28,7 @@
         { label: 'HTTP API', to: paths.docsHttpApi },
         { label: 'TypeScript Client', to: paths.docsTypescript },
         { label: 'Agent Integration', to: paths.docsAgentIntegration },
+        { label: 'FAQ', to: paths.docsFaq },
         { label: 'Capabilities', to: paths.docsCapabilities },
       ]
     },

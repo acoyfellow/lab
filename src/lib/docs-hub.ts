@@ -33,6 +33,13 @@ export const docsHubCards: DocsHubCard[] = [
 	},
 	{
 		group: 'guides',
+		to: paths.docsFaq,
+		title: 'FAQ',
+		description: 'Agents, sandbox, traces, limits, why edge — for AI-curious SWEs.',
+		tags: ['FAQ', 'AI']
+	},
+	{
+		group: 'guides',
 		to: paths.docsTypescript,
 		title: 'TypeScript Client',
 		description: '@acoyfellow/lab — install, createLabClient, methods.',

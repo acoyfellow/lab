@@ -55,6 +55,7 @@
       if (Array.isArray(f.steps)) {
         chainJson = JSON.stringify(f.steps, null, 2);
         mode = 'chain';
+        inputType = 'code';
       }
       chainResetKey++;
     } catch {
@@ -182,35 +183,37 @@
     </p>
   </header>
 
-  <div class="space-y-2">
-    <div class="flex items-center gap-4">
-      <span class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">
-        Input
-      </span>
-      <div class="flex items-center gap-1 text-[0.75rem]">
-        <button
-          type="button"
-          onclick={() => inputType = 'code'}
-          class="px-2 py-1 rounded transition-colors {inputType === 'code' ? 'bg-(--accent) text-white' : 'text-(--text-2) hover:bg-(--surface-alt)'}"
-        >
-          Code
-        </button>
-        <button
-          type="button"
-          onclick={() => inputType = 'prompt'}
-          class="px-2 py-1 rounded transition-colors {inputType === 'prompt' ? 'bg-(--accent) text-white' : 'text-(--text-2) hover:bg-(--surface-alt)'}"
-        >
-          Prompt (AI)
-        </button>
+  {#if mode !== 'chain'}
+    <div class="space-y-2">
+      <div class="flex items-center gap-4">
+        <span class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">
+          Input
+        </span>
+        <div class="flex items-center gap-1 text-[0.75rem]">
+          <button
+            type="button"
+            onclick={() => inputType = 'code'}
+            class="px-2 py-1 rounded transition-colors {inputType === 'code' ? 'bg-(--accent) text-white' : 'text-(--text-2) hover:bg-(--surface-alt)'}"
+          >
+            Code
+          </button>
+          <button
+            type="button"
+            onclick={() => inputType = 'prompt'}
+            class="px-2 py-1 rounded transition-colors {inputType === 'prompt' ? 'bg-(--accent) text-white' : 'text-(--text-2) hover:bg-(--surface-alt)'}"
+          >
+            Prompt (AI)
+          </button>
+        </div>
       </div>
+
+      {#if inputType === 'code'}
+        <Textarea bind:value={code} class="min-h-[200px] font-mono text-xs bg-white" placeholder={`return { hello: "world" }`} />
+      {:else}
+        <Textarea bind:value={prompt} class="min-h-[100px] font-mono text-xs bg-white" placeholder="Describe what you want the AI to generate..." />
+      {/if}
     </div>
-    
-    {#if inputType === 'code'}
-      <Textarea bind:value={code} class="min-h-[200px] font-mono text-xs bg-white" placeholder={`return { hello: "world" }`} />
-    {:else}
-      <Textarea bind:value={prompt} class="min-h-[100px] font-mono text-xs bg-white" placeholder="Describe what you want the AI to generate..." />
-    {/if}
-  </div>
+  {/if}
 
   <details class="border border-(--border) rounded-(--radius) bg-white group">
     <summary class="flex items-center justify-between px-3 py-2 cursor-pointer text-[0.8125rem] text-(--text-2) hover:text-(--text) select-none list-none">

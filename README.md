@@ -1,6 +1,6 @@
 # lab
 
-**Release: 0.0.1 (early feedback).** API and trace shapes may still move; treat as a demo you can fork and self-host, not a stable semver contract yet.
+**Release: 0.0.1 (early feedback).** [CHANGELOG](CHANGELOG.md). API and trace shapes may still move; treat as a demo you can fork and self-host, not a stable semver contract yet.
 
 **Lab** is a **chainable** edge execution layer: run **untrusted JavaScript** in **isolated Cloudflare Workers**, then **chain** steps (and spawn child isolates) with **explicit capabilities** per step.
 
