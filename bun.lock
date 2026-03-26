@@ -55,6 +55,21 @@
         "effect",
       ],
     },
+    "packages/lab-cli": {
+      "name": "@acoyfellow/lab-cli",
+      "version": "0.0.1",
+      "bin": {
+        "lab": "./dist/cli.js",
+      },
+      "dependencies": {
+        "@acoyfellow/lab": "^0.0.1",
+        "effect": "4.0.0-beta.40",
+      },
+      "devDependencies": {
+        "@types/node": "^25.5.0",
+        "typescript": "^5.9.3",
+      },
+    },
     "packages/lab-mcp": {
       "name": "@acoyfellow/lab-mcp",
       "version": "0.0.1",
@@ -72,6 +87,8 @@
   },
   "packages": {
     "@acoyfellow/lab": ["@acoyfellow/lab@workspace:packages/lab"],
+
+    "@acoyfellow/lab-cli": ["@acoyfellow/lab-cli@workspace:packages/lab-cli"],
 
     "@acoyfellow/lab-mcp": ["@acoyfellow/lab-mcp@workspace:packages/lab-mcp"],
 
