@@ -170,7 +170,7 @@
 
 <SEO
   title="Compose — lab"
-  description="Chain isolates with explicit capabilities — every run yields a shareable trace."
+  description="Build execution chains with explicit capabilities. Every run produces a trace — the permanent proof of what happened."
   path="/compose"
   type="website"
 />
