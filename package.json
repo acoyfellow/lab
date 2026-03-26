@@ -1,7 +1,7 @@
 {
   "name": "lab",
   "version": "0.0.1",
-  "private": true,
+  "private": false,
   "workspaces": [
     "packages/*"
   ],
