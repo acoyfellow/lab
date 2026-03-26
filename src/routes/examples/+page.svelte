@@ -1,9 +1,19 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import SEO from '$lib/SEO.svelte';
-  import ExampleCard from '$lib/examples/ExampleCard.svelte';
   import { jsonHealer } from '$lib/examples';
   import { apiRetry, webhookValidator, dataTransformer, multiSourceAggregator } from '$lib/examples/data/new-examples';
+  import * as Table from '$lib/components/ui/table';
+  import { Button } from '$lib/components/ui/button';
+  import AppLink from '$lib/AppLink.svelte';
+
+  const examples = [
+    jsonHealer,
+    apiRetry,
+    webhookValidator,
+    dataTransformer,
+    multiSourceAggregator
+  ];
 
 </script>
 
@@ -28,32 +38,50 @@
     <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) mb-4">
       Runnable Examples
     </h2>
-    <div class="grid gap-6 sm:grid-cols-2">
-      <ExampleCard 
-        data={jsonHealer} 
-        variant="card" 
-        onRun={() => goto('/compose?example=json-healer')}
-      />
-      <ExampleCard 
-        data={apiRetry} 
-        variant="card" 
-        onRun={() => goto('/compose?example=api-retry')}
-      />
-      <ExampleCard 
-        data={webhookValidator} 
-        variant="card" 
-        onRun={() => goto('/compose?example=webhook-validator')}
-      />
-      <ExampleCard 
-        data={dataTransformer} 
-        variant="card" 
-        onRun={() => goto('/compose?example=data-transformer')}
-      />
-      <ExampleCard 
-        data={multiSourceAggregator} 
-        variant="card" 
-        onRun={() => goto('/compose?example=multi-source-aggregator')}
-      />
+    <div class="rounded-(--radius) border border-(--border) bg-(--surface)">
+      <Table.Root>
+        <Table.Header>
+          <Table.Row>
+            <Table.Head>Example</Table.Head>
+            <Table.Head class="hidden sm:table-cell">Tags</Table.Head>
+            <Table.Head class="hidden md:table-cell">Description</Table.Head>
+            <Table.Head class="text-end">Run</Table.Head>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {#each examples as ex (ex.id)}
+            <Table.Row>
+              <Table.Cell class="font-medium">
+                <div class="space-y-1">
+                  <div class="text-(--text)">{ex.title}</div>
+                  <div class="text-[0.75rem] text-(--text-3) sm:hidden">{ex.tags.slice(0, 3).join(' · ')}</div>
+                </div>
+              </Table.Cell>
+              <Table.Cell class="hidden sm:table-cell">
+                <div class="flex flex-wrap gap-1">
+                  {#each ex.tags.slice(0, 4) as tag (tag)}
+                    <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">{tag}</span>
+                  {/each}
+                </div>
+              </Table.Cell>
+              <Table.Cell class="hidden md:table-cell text-(--text-2)">
+                {ex.description}
+              </Table.Cell>
+              <Table.Cell class="text-end">
+                <div class="inline-flex items-center gap-2">
+                  <Button size="sm" onclick={() => goto(`/compose?example=${ex.id}`)}>Run</Button>
+                  <AppLink
+                    to={`/compose?example=${ex.id}`}
+                    class="text-[0.75rem] text-(--accent) hover:underline"
+                  >
+                    Open →
+                  </AppLink>
+                </div>
+              </Table.Cell>
+            </Table.Row>
+          {/each}
+        </Table.Body>
+      </Table.Root>
     </div>
   </section>
 
