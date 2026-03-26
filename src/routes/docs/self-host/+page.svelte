@@ -9,9 +9,9 @@
   ];
   
   const resources = [
-    { name: 'D1 Database', detail: 'SQLite database for trace storage', required: true },
-    { name: 'R2 Bucket', detail: 'Object storage for large outputs', required: true },
-    { name: 'KV Namespace', detail: 'Key-value for chain state', required: false },
+    { name: 'D1 Database', detail: 'Better Auth user sessions (optional)', required: false },
+    { name: 'R2 Bucket', detail: 'Object storage for large outputs', required: false },
+    { name: 'KV Namespace', detail: 'Trace storage and chain state', required: true },
     { name: 'Worker', detail: 'V8 isolate execution environment', required: true },
     { name: 'AI Binding', detail: 'Workers AI for generate mode', required: false },
   ];

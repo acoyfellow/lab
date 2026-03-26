@@ -45,36 +45,21 @@
   let editorView = $state<'builder' | 'raw'>('builder');
   let chainResetKey = $state(0);
 
+  const EXAMPLE_MAP: Record<string, ChainStep[]> = {
+    'json-healer': JSON_HEALER_STEPS,
+    'api-retry': API_RETRY_STEPS,
+    'webhook-validator': WEBHOOK_VALIDATOR_STEPS,
+    'data-transformer': DATA_TRANSFORMER_STEPS,
+    'multi-source-aggregator': MULTI_SOURCE_AGGREGATOR_STEPS,
+  };
+
   onMount(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const exampleId = urlParams.get('example');
-    if (exampleId === 'json-healer') {
+    const exampleSteps = exampleId ? EXAMPLE_MAP[exampleId] : undefined;
+    if (exampleSteps) {
       mode = 'chain';
-      chainJson = JSON.stringify(JSON_HEALER_STEPS, null, 2);
-      chainResetKey++;
-      window.history.replaceState({}, '', window.location.pathname);
-      return;
-    } else if (exampleId === 'api-retry') {
-      mode = 'chain';
-      chainJson = JSON.stringify(API_RETRY_STEPS, null, 2);
-      chainResetKey++;
-      window.history.replaceState({}, '', window.location.pathname);
-      return;
-    } else if (exampleId === 'webhook-validator') {
-      mode = 'chain';
-      chainJson = JSON.stringify(WEBHOOK_VALIDATOR_STEPS, null, 2);
-      chainResetKey++;
-      window.history.replaceState({}, '', window.location.pathname);
-      return;
-    } else if (exampleId === 'data-transformer') {
-      mode = 'chain';
-      chainJson = JSON.stringify(DATA_TRANSFORMER_STEPS, null, 2);
-      chainResetKey++;
-      window.history.replaceState({}, '', window.location.pathname);
-      return;
-    } else if (exampleId === 'multi-source-aggregator') {
-      mode = 'chain';
-      chainJson = JSON.stringify(MULTI_SOURCE_AGGREGATOR_STEPS, null, 2);
+      chainJson = JSON.stringify(exampleSteps, null, 2);
       chainResetKey++;
       window.history.replaceState({}, '', window.location.pathname);
       return;

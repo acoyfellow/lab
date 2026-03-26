@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { RunResult } from '@acoyfellow/lab';
-  import { runChain } from '../../routes/data.remote';
+  import { runChain } from '$lib/api';
   import { Textarea } from '$lib/components/ui/textarea';
   import { Button } from '$lib/components/ui/button';
   import { goto } from '$app/navigation';
