@@ -75,7 +75,7 @@
     lastSteps = [];
     try {
       let r;
-      if (mode === 'generate') {
+      if (mode === 'generate' || inputType === 'prompt') {
         r = await runGenerate({
           prompt,
           capabilities: guestCaps(),
