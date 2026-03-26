@@ -3,6 +3,8 @@
   import { runChain } from '$lib/api';
   import { Button } from '$lib/components/ui/button';
   import { goto } from '$app/navigation';
+  import PlayIcon from '@lucide/svelte/icons/play';
+  import Loader2Icon from '@lucide/svelte/icons/loader-2';
 
   const steps = [
     {
@@ -57,14 +59,22 @@
     <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">
       3-Step Chain
     </div>
-    <button onclick={openInCompose} class="text-[0.8125rem] text-(--accent) hover:underline bg-transparent border-none cursor-pointer">Open in Compose →</button>
+    <Button onclick={openInCompose} variant="outline" size="sm">
+      Edit →
+    </Button>
   </div>
   
   <pre class="rounded-(--radius) border border-(--border) bg-(--code-bg) p-3 font-mono text-xs text-(--text) overflow-x-auto">{JSON.stringify(steps, null, 2)}</pre>
   
   <div class="flex items-center gap-3">
-    <Button onclick={run} disabled={loading} size="sm">
+    <Button onclick={run} disabled={loading}>
       {loading ? 'Running…' : 'Run'}
+      <!-- icons -->
+      {#if loading}
+        <Loader2Icon class="w-4 h-4 animate-spin" />
+      {:else}
+        <PlayIcon class="w-4 h-4" />
+      {/if}
     </Button>
     
     {#if result?.traceId}

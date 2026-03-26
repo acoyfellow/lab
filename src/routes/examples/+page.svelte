@@ -3,6 +3,8 @@
   import SEO from '$lib/SEO.svelte';
   import { jsonHealer } from '$lib/examples';
   import { apiRetry, webhookValidator, dataTransformer, multiSourceAggregator } from '$lib/examples/data/new-examples';
+  import { COMPOSE_FORK_STEPS, type RunnableExampleId } from '$lib/examples/compose-fork-steps';
+  import type { ExampleData } from '$lib/examples/types';
   import * as Table from '$lib/components/ui/table';
   import { Button } from '$lib/components/ui/button';
 
@@ -13,6 +15,16 @@
     dataTransformer,
     multiSourceAggregator
   ];
+
+  function openExample(ex: ExampleData) {
+    const steps = COMPOSE_FORK_STEPS[ex.id as RunnableExampleId];
+    if (steps === undefined) throw new Error(`No compose fork for example id: ${ex.id}`);
+    sessionStorage.setItem(
+      'lab-fork',
+      JSON.stringify({ mode: 'chain', steps })
+    );
+    goto('/compose');
+  }
 
 </script>
 
@@ -48,8 +60,8 @@
         </Table.Header>
         <Table.Body>
           {#each examples as ex (ex.id)}
-            <Table.Row>
-              <Table.Cell class="font-medium">
+            <Table.Row class="hover:bg-(--surface-alt)">
+              <Table.Cell class="font-medium cursor-pointer" onclick={() => openExample(ex)}>
                 <div class="space-y-1">
                   <div class="text-(--text)">{ex.title}</div>
                   <div class="sm:hidden space-y-1">
@@ -62,7 +74,9 @@
                   </div>
                 </div>
               </Table.Cell>
-              <Table.Cell class="hidden sm:table-cell text-(--text-2)">
+              <Table.Cell class="hidden sm:table-cell text-(--text-2) cursor-pointer"
+              onclick={() => openExample(ex)}
+              >
                 <div class="space-y-1">
                   <div>{ex.description}</div>
                   <div class="flex flex-wrap gap-1">
@@ -73,7 +87,7 @@
                 </div>
               </Table.Cell>
               <Table.Cell class="text-end">
-                <Button size="sm" onclick={() => goto(`/compose?example=${ex.id}`)}>
+                <Button size="lg" onclick={() => openExample(ex)}>
                   →
                 </Button>
               </Table.Cell>

@@ -8,6 +8,8 @@
   import type { ChainStep } from '@acoyfellow/lab';
   import { SIMPLE_CHAIN_STEPS } from '$lib/guest-code-fixtures';
   import { ChainBuilder } from '$lib/compose';
+  import PlayIcon from '@lucide/svelte/icons/play';
+  import Loader2Icon from '@lucide/svelte/icons/loader-2';
 
   type ExecutionMode = 'once' | 'chain' | 'spawn' | 'generate';
 
@@ -281,8 +283,13 @@
     <p class="text-[0.75rem] text-(--text-3) m-0">
       Press <kbd class="px-1.5 py-0.5 rounded bg-(--surface-alt) font-mono text-[0.7rem]">Cmd+Enter</kbd> to run
     </p>
-    <Button onclick={run} disabled={loading} class="min-w-[120px]">
+    <Button onclick={run} disabled={loading} class="min-w-[120px]" size="lg">
       {loading ? 'Running…' : 'Run'}
+      {#if loading}
+        <Loader2Icon class="w-4 h-4 animate-spin" />
+      {:else}
+        <PlayIcon class="w-4 h-4" />
+      {/if}
     </Button>
   </div>
 

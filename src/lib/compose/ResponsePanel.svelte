@@ -159,17 +159,12 @@
         {/if}
 
         {#if result !== null && result !== undefined}
-          <details class="group">
-            <summary
-              class="text-xs text-(--text-3) cursor-pointer hover:text-(--text) select-none list-none flex items-center gap-1"
-            >
-              <span class="opacity-60 group-open:rotate-180 transition-transform inline-block">▼</span>
-              Raw output
-            </summary>
+          <div class="space-y-1">
+            <div class="text-xs text-(--text-3)">Result</div>
             <pre
-              class="mt-2 p-3 bg-(--surface-alt) rounded-(--radius) border border-(--border) text-xs font-mono overflow-auto max-h-48"
+              class="p-3 bg-(--surface-alt) rounded-(--radius) border border-(--border) text-xs font-mono overflow-auto max-h-64"
             >{JSON.stringify(result, null, 2)}</pre>
-          </details>
+          </div>
         {/if}
       </CardContent>
     </Card>

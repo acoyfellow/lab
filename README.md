@@ -36,6 +36,8 @@ CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (PR + main). Deploy w
 2. **HTTP** — `POST /run/…` (and related paths) → optional **`traceId`** → `GET /t/:id` (or `GET /t/:id.json`; same body).
 3. **TypeScript** — `createLabClient({ baseUrl })` against **your** origin (`/run/*`, `/t/:id`, `/seed`). Use **`getTraceJson`** if you want the explicit `.json` path against a Worker-only origin.
 
+**Examples → Compose:** [Examples](https://lab.coey.dev/examples) “Run” preloads chain steps by writing `sessionStorage` key `lab-fork` (`{ mode: 'chain', steps }`), then navigating to Compose — same idea as Fork from a trace or the tutorial sandbox. Do not rely on `?example=` query params.
+
 ### Agent / MCP (0.0.1)
 
 **Two-tool model:** progressive disclosure — **`find`** (catalog slice or trace JSON) and **`execute`** (sandbox, kv, chain, spawn, generate, seed). Implemented as a stdio MCP server in this monorepo: **`@acoyfellow/lab-mcp`** ([`packages/lab-mcp`](packages/lab-mcp)), **Effect v4 beta** (`effect@4.0.0-beta.40`) + `@acoyfellow/lab/effect`.
