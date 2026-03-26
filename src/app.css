@@ -72,22 +72,22 @@
   --sans: var(--font-sans);
   --radius: 6px;
   
-  /* shadcn-svelte theme - separate from Lab's theme */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --destructive: oklch(0.577 0.245 27.325);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
+  /* shadcn-svelte theme - mapped to Lab's theme for consistency */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface);
+  --popover-foreground: var(--text);
+  --primary: var(--accent);
+  --primary-foreground: #fff;
+  --secondary: var(--surface-alt);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-alt);
+  --muted-foreground: var(--text-2);
+  --destructive: #dc2626;
+  --input: var(--border);
+  --ring: var(--accent);
   --chart-1: oklch(0.879 0.169 91.605);
   --chart-2: oklch(0.769 0.188 70.08);
   --chart-3: oklch(0.666 0.179 58.318);
