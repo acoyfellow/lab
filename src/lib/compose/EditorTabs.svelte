@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Tabs, TabsList, TabsTrigger, TabsContent } from '$lib/components/ui/tabs';
-  import AutoResizeTextarea from '$lib/AutoResizeTextarea.svelte';
+  import { Textarea } from '$lib/components/ui/textarea';
   import { ChainBuilder } from './index.js';
 
   let {
@@ -23,10 +23,9 @@
       </TabsContent>
 
       <TabsContent value="raw" class="h-full mt-0">
-        <AutoResizeTextarea
+        <Textarea
           bind:value={chainJson}
-          minRows={12}
-          maxRows={50}
+          class="min-h-[400px] font-mono text-xs h-full"
         />
       </TabsContent>
     </div>

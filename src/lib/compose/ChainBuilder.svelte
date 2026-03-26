@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
   import { Button } from '$lib/components/ui/button';
-  import AutoResizeTextarea from '$lib/AutoResizeTextarea.svelte';
+  import { Textarea } from '$lib/components/ui/textarea';
   import type { ChainStep } from '@acoyfellow/lab';
   import { GUEST_TEMPLATE_IDS } from '$lib/guest-templates';
 
@@ -174,14 +174,13 @@
               class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">
               Code
             </label>
-            <textarea
+            <Textarea
               id="step-body-{index}"
               value={step.body || step.code || ''}
               oninput={(e) => updateStepBody(index, e.currentTarget.value)}
               {disabled}
-              rows={4}
-              class="w-full border border-(--border) rounded-(--radius) bg-(--surface) p-3 font-mono text-xs text-(--text) resize-y min-h-[80px]"
-            ></textarea>
+              class="min-h-[120px] font-mono text-xs"
+            />
           </div>
 
           <fieldset class="border border-(--border) rounded-(--radius) p-2.5">

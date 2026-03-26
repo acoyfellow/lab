@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import SEO from '$lib/SEO.svelte';
-  import AutoResizeTextarea from '$lib/AutoResizeTextarea.svelte';
   import { EditorTabs, ResponsePanel } from '$lib/compose';
   import { Button } from '$lib/components/ui/button';
+  import { Textarea } from '$lib/components/ui/textarea';
   import { runSandbox, runKv, runChain, runSpawn, runGenerate, seedKv } from '../data.remote';
   import type { ChainStep } from '@acoyfellow/lab';
   import { SIMPLE_CHAIN_STEPS, JSON_HEALER_STEPS, API_RETRY_STEPS, WEBHOOK_VALIDATOR_STEPS, DATA_TRANSFORMER_STEPS, MULTI_SOURCE_AGGREGATOR_STEPS } from '$lib/guest-code-fixtures';
@@ -223,7 +223,7 @@
         <div class="space-y-4">
           <div>
             <label for="gen-prompt" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Prompt</label>
-            <AutoResizeTextarea id="gen-prompt" bind:value={prompt} minRows={4} maxRows={20} />
+            <Textarea id="gen-prompt" bind:value={prompt} class="min-h-[100px] font-mono text-xs" />
           </div>
           <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2)">
             <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
@@ -263,7 +263,7 @@
           </fieldset>
           <div>
             <label for="guest-code" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Code</label>
-            <AutoResizeTextarea id="guest-code" bind:value={code} minRows={10} maxRows={30} />
+            <Textarea id="guest-code" bind:value={code} class="min-h-[200px] font-mono text-xs" />
           </div>
           {#if mode === 'spawn'}
             <div>

@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { ExampleData } from './types';
+  import type { Component } from 'svelte';
+  import { Lock, Scale, Shield, Sparkles, Wrench, X } from '@lucide/svelte';
   
   type Props = {
     data: ExampleData;
@@ -8,22 +10,24 @@
   };
   
   let { data, variant, onRun }: Props = $props();
+
+  const Icon = $derived(getIcon(data.icon ?? ''));
   
-  function getIcon(iconName: string): string {
-    const icons: Record<string, string> = {
-      wand: '✨',
-      shield: '🛡️',
-      lock: '🔒',
-      scale: '⚖️'
+  function getIcon(iconName: string): Component {
+    const icons: Record<string, Component> = {
+      wand: Sparkles,
+      shield: Shield,
+      lock: Lock,
+      scale: Scale
     };
-    return icons[iconName] || '🔧';
+    return icons[iconName] ?? Wrench;
   }
 </script>
 
 {#if variant === 'mini'}
   <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 hover:border-(--accent)/30 transition-colors">
     <div class="flex items-center gap-2 mb-2">
-      <span class="text-xl">{getIcon(data.icon || '')}</span>
+      <Icon class="w-5 h-5 text-(--text-2)" />
       <h3 class="font-semibold text-(--text)">{data.title}</h3>
     </div>
     <p class="text-[0.8125rem] text-(--text-2) mb-3">{data.description}</p>
@@ -38,7 +42,7 @@
   <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-5 hover:border-(--accent)/30 transition-colors">
     <div class="flex items-start justify-between mb-3">
       <div class="flex items-center gap-2">
-        <span class="text-2xl">{getIcon(data.icon || '')}</span>
+        <Icon class="w-6 h-6 text-(--text-2)" />
         <h3 class="font-semibold text-lg text-(--text)">{data.title}</h3>
       </div>
       <div class="flex gap-1">
@@ -74,7 +78,7 @@
 {:else if variant === 'full'}
   <div class="space-y-6">
     <div class="flex items-start gap-4">
-      <span class="text-4xl">{getIcon(data.icon || '')}</span>
+      <Icon class="w-10 h-10 text-(--text-2)" />
       <div>
         <h2 class="text-2xl font-semibold text-(--text) mb-2">{data.title}</h2>
         <p class="text-[1.0625rem] text-(--text-2)">{data.description}</p>
@@ -100,8 +104,8 @@
       <h3 class="font-semibold text-(--text) mb-4">Execution Steps</h3>
       <div class="space-y-3">
         {#each data.steps as step, i}
-          <div class="flex gap-3 p-3 rounded-(--radius) bg-(--surface-alt)">
-            <div class="flex-shrink-0 w-6 h-6 rounded-full bg-(--accent) text-white flex items-center justify-center text-[0.75rem] font-semibold">
+            <div class="flex gap-3 p-3 rounded-(--radius) bg-(--surface-alt)">
+            <div class="shrink-0 w-6 h-6 rounded-full bg-(--accent) text-white flex items-center justify-center text-[0.75rem] font-semibold">
               {i + 1}
             </div>
             <div class="flex-1">
@@ -138,7 +142,7 @@
 {:else if variant === 'hero'}
   <div class="space-y-8">
     <div class="flex items-center gap-3">
-      <span class="text-5xl">{getIcon(data.icon || '')}</span>
+      <Icon class="w-12 h-12 text-(--text-2)" />
       <div>
         <div class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--accent) mb-1">Featured Example</div>
         <h2 class="text-3xl font-semibold text-(--text)">{data.title}</h2>
@@ -164,8 +168,12 @@
         <div class="space-y-2">
           {#each data.steps as step, i}
             <div class="flex items-center gap-3 p-3 rounded-(--radius) bg-(--surface-alt) {step.error ? 'border border-red-500/30' : ''}">
-              <div class="flex-shrink-0 w-7 h-7 rounded-full {step.error ? 'bg-red-500' : 'bg-(--accent)'} text-white flex items-center justify-center text-[0.75rem] font-semibold">
-                {step.error ? '✕' : i + 1}
+              <div class="shrink-0 w-7 h-7 rounded-full {step.error ? 'bg-red-500' : 'bg-(--accent)'} text-white flex items-center justify-center text-[0.75rem] font-semibold">
+                {#if step.error}
+                  <X class="w-4 h-4" />
+                {:else}
+                  {i + 1}
+                {/if}
               </div>
               <div class="flex-1">
                 <div class="font-medium text-(--text)">{step.name}</div>

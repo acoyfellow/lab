@@ -2,6 +2,7 @@
   import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
   import AppLink from '$lib/AppLink.svelte';
   import { paths } from '$lib/paths';
+  import { Check, Circle, X } from '@lucide/svelte';
 
   type StepStatus = 'pending' | 'success' | 'error';
 
@@ -27,13 +28,6 @@
     }
   }
 
-  function statusIcon(s: StepStatus): string {
-    switch (s) {
-      case 'success': return '✓';
-      case 'error': return '✗';
-      default: return '○';
-    }
-  }
 </script>
 
 <div class="h-full flex flex-col">
@@ -68,7 +62,8 @@
       <CardHeader class="pb-2">
         <div class="flex items-center justify-between">
           <CardTitle class="text-sm text-green-500 flex items-center gap-2">
-            <span>✓</span> Success
+            <Check class="w-4 h-4" />
+            Success
           </CardTitle>
           {#if traceId}
             <AppLink to={`/t/${traceId}`} class="text-xs text-(--accent) underline underline-offset-2 hover:text-(--accent-alt)">
@@ -82,7 +77,13 @@
           <div class="space-y-1.5">
             {#each steps as step, i}
               <div class="flex items-center gap-2 text-xs px-2 py-1.5 rounded bg-(--surface-alt)">
-                <span class={statusColor(step.status)}>{statusIcon(step.status)}</span>
+                {#if step.status === 'success'}
+                  <Check class={`w-3.5 h-3.5 ${statusColor(step.status)}`} />
+                {:else if step.status === 'error'}
+                  <X class={`w-3.5 h-3.5 ${statusColor(step.status)}`} />
+                {:else}
+                  <Circle class={`w-3.5 h-3.5 ${statusColor(step.status)}`} />
+                {/if}
                 <span class="text-(--text-2)">Step {i + 1}</span>
                 {#if step.name}
                   <span class="text-(--text-3) truncate flex-1">{step.name}</span>

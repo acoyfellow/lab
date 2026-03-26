@@ -2,6 +2,7 @@
   import AppLink from '$lib/AppLink.svelte';
   import SEO from '$lib/SEO.svelte';
   import { paths } from '$lib/paths';
+  import { GraduationCap, Play, Zap } from '@lucide/svelte';
   
   const navSections = [
     {
@@ -88,7 +89,7 @@
 <div class="max-w-[1200px] mx-auto px-6 py-8">
   <div class="flex gap-8">
     <!-- Left Sidebar - Navigation -->
-    <aside class="hidden lg:block w-64 flex-shrink-0">
+    <aside class="hidden lg:block w-64 shrink-0">
       <nav class="sticky top-8 space-y-6">
         {#each navSections as section}
           <div>
@@ -132,7 +133,7 @@
               class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
             >
               <div class="flex items-center gap-2 mb-2">
-                <span class="text-lg">⚡</span>
+                <Zap class="w-4 h-4 text-(--text-2) group-hover:text-(--accent)" />
                 <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Install</h3>
               </div>
               <p class="text-[0.8125rem] text-(--text-2)">
@@ -144,7 +145,7 @@
               class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
             >
               <div class="flex items-center gap-2 mb-2">
-                <span class="text-lg">🎓</span>
+                <GraduationCap class="w-4 h-4 text-(--text-2) group-hover:text-(--accent)" />
                 <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Tutorial</h3>
               </div>
               <p class="text-[0.8125rem] text-(--text-2)">
@@ -156,7 +157,7 @@
               class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
             >
               <div class="flex items-center gap-2 mb-2">
-                <span class="text-lg">▶️</span>
+                <Play class="w-4 h-4 text-(--text-2) group-hover:text-(--accent)" />
                 <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Compose</h3>
               </div>
               <p class="text-[0.8125rem] text-(--text-2)">
@@ -219,7 +220,7 @@
     </main>
 
     <!-- Right Sidebar - TOC -->
-    <aside class="hidden xl:block w-48 flex-shrink-0">
+    <aside class="hidden xl:block w-48 shrink-0">
       <nav class="sticky top-8">
         <h3 class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-3">
           On this page

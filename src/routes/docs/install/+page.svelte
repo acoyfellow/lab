@@ -151,7 +151,7 @@ bun run deploy</pre>
         <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Verify</p>
         <pre class="text-[0.75rem] bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">curl https://lab.YOUR-SUBDOMAIN.workers.dev</pre>
         <p class="text-[0.8125rem] text-(--text-3) mt-2">
-          Should return: <code class="font-mono text-[0.7rem]">{"ok":true,"version":"0.x.x"}</code>
+          Should return: <code class="font-mono text-[0.7rem]">{'{"ok":true,"version":"0.x.x"}'}</code>
         </p>
       </div>
     </div>
