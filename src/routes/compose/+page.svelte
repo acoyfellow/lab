@@ -216,39 +216,7 @@
   </header>
 
   <div class="space-y-6">
-    <div class="flex flex-wrap items-end gap-4">
-      <div class="flex-1 min-w-[200px]">
-        <label for="compose-mode" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Mode</label>
-        <select
-          id="compose-mode"
-          bind:value={mode}
-          class="w-full border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text)"
-        >
-          <option value="chain">Chain (multiple steps)</option>
-          <option value="sandbox">Sandbox (single run)</option>
-          <option value="kv">KV read</option>
-          <option value="generate">Generate (AI)</option>
-          <option value="spawn">Spawn (nested)</option>
-        </select>
-      </div>
-
-      <Button onclick={run} disabled={loading} class="min-w-[100px]">
-        {loading ? 'Running…' : 'Run'}
-      </Button>
-    </div>
-
-    {#if mode === 'kv'}
-      <div class="flex items-center gap-3">
-        <Button onclick={seed} variant="outline" class="text-xs">
-          Seed demo KV
-        </Button>
-        {#if seedMsg}
-          <span class="text-[0.75rem] text-(--text-2)">{seedMsg}</span>
-        {/if}
-      </div>
-    {/if}
-
-    <div class="border-t border-(--border) pt-6">
+    <div class="border-b border-(--border) pb-6">
       {#if mode === 'chain'}
         <EditorTabs bind:view={editorView} bind:chainJson disabled={loading} />
       {:else if mode === 'generate'}
@@ -313,6 +281,38 @@
         </div>
       {/if}
     </div>
+
+    <div class="flex flex-wrap items-end gap-4">
+      <div class="flex-1 min-w-[200px]">
+        <label for="compose-mode" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Mode</label>
+        <select
+          id="compose-mode"
+          bind:value={mode}
+          class="w-full border border-(--border) rounded-(--radius) bg-(--surface) px-3 py-2 text-[0.8125rem] text-(--text)"
+        >
+          <option value="chain">Chain (multiple steps)</option>
+          <option value="sandbox">Sandbox (single run)</option>
+          <option value="kv">KV read</option>
+          <option value="generate">Generate (AI)</option>
+          <option value="spawn">Spawn (nested)</option>
+        </select>
+      </div>
+
+      <Button onclick={run} disabled={loading} class="min-w-[100px]">
+        {loading ? 'Running…' : 'Run'}
+      </Button>
+    </div>
+
+    {#if mode === 'kv'}
+      <div class="flex items-center gap-3">
+        <Button onclick={seed} variant="outline" class="text-xs">
+          Seed demo KV
+        </Button>
+        {#if seedMsg}
+          <span class="text-[0.75rem] text-(--text-2)">{seedMsg}</span>
+        {/if}
+      </div>
+    {/if}
 
     <div class="border-t border-(--border) pt-6">
       <ResponsePanel

@@ -123,26 +123,6 @@
     </div>
   </section>
 
-  <!-- Examples -->
-  <section class="space-y-4" aria-labelledby="examples">
-    <div class="flex items-center justify-between">
-      <h2 id="examples" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
-        Example
-      </h2>
-      <a href="/compose" class="text-[0.8125rem] text-(--accent) hover:underline">Try it →</a>
-    </div>
-    <a 
-      href="/compose?example=json-healer" 
-      class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 hover:border-(--accent)/30 transition-colors group"
-    >
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-xl">✨</span>
-        <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">JSON Healer</h3>
-      </div>
-      <p class="text-[0.8125rem] text-(--text-2)">Fix broken JSON automatically with full audit trail.</p>
-    </a>
-  </section>
-
   <!-- Run Modes -->
   <section class="space-y-3" aria-labelledby="modes">
     <h2 id="modes" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
@@ -164,12 +144,24 @@
     </div>
   </section>
 
-  <!-- Links -->
-  <section class="flex flex-wrap gap-4 pt-4 border-t border-(--border)" aria-labelledby="links">
-    <h2 id="links" class="sr-only">Links</h2>
-    <AppLink to={paths.docs} class="text-[0.8125rem] text-(--text-2) hover:text-(--text)">Documentation</AppLink>
-    <AppLink to={paths.docsHttpApi} class="text-[0.8125rem] text-(--text-2) hover:text-(--text)">HTTP API</AppLink>
-    <AppLink to={paths.tutorial} class="text-[0.8125rem] text-(--text-2) hover:text-(--text)">Tutorial</AppLink>
-    <a href="https://github.com/acoyfellow/lab" class="text-[0.8125rem] text-(--text-2) hover:text-(--text)">GitHub</a>
+  <!-- Examples -->
+  <section class="space-y-4" aria-labelledby="examples">
+    <div class="flex items-center justify-between">
+      <h2 id="examples" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+        Example
+      </h2>
+      <a href="/compose" class="text-[0.8125rem] text-(--accent) hover:underline">Try it →</a>
+    </div>
+    <a 
+      href="/compose?example=json-healer" 
+      class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 hover:border-(--accent)/30 transition-colors group"
+    >
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-xl">✨</span>
+        <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">JSON Healer</h3>
+      </div>
+      <p class="text-[0.8125rem] text-(--text-2)">Fix broken JSON automatically with full audit trail.</p>
+    </a>
   </section>
+
 </div>
