@@ -1,19 +1,38 @@
 <script lang="ts">
   import type { RunResult } from '@acoyfellow/lab';
-  import { runSandbox } from '../../routes/data.remote';
+  import { runChain } from '../../routes/data.remote';
+  import { Textarea } from '$lib/components/ui/textarea';
+  import { Button } from '$lib/components/ui/button';
 
-  let code = $state('return { ok: true, value: 1 + 1 }');
+  let steps = $state([
+    {
+      name: 'Generate data',
+      body: 'return { users: [{name: "Alice"}, {name: "Bob"}], count: 2 }',
+      capabilities: [] as string[]
+    },
+    {
+      name: 'Transform', 
+      body: 'return input.users.map(u => u.name.toUpperCase())',
+      capabilities: [] as string[]
+    },
+    {
+      name: 'Format result',
+      body: 'return { names: input, total: input.length, timestamp: Date.now() }',
+      capabilities: [] as string[]
+    }
+  ]);
+  
   let loading = $state(false);
-  let traceId = $state<string | null>(null);
+  let result = $state<RunResult | null>(null);
   let error = $state<string | null>(null);
 
   async function run() {
     loading = true;
     error = null;
-    traceId = null;
+    result = null;
     try {
-      const r: RunResult = await runSandbox({ body: code, capabilities: [] });
-      if (r.traceId) traceId = r.traceId;
+      const r = await runChain(steps);
+      result = r;
       if (!r.ok) {
         error = JSON.stringify({ error: r.error, reason: r.reason }, null, 2);
       }
@@ -25,38 +44,51 @@
   }
 </script>
 
-<div
-  class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 space-y-3"
-  aria-label="Run sandbox code on this page"
->
-  <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">
-    Try it · POST /run
+<div class="rounded-(--radius) border border-(--border) bg-(--surface) p-5 space-y-4">
+  <div class="flex items-center justify-between">
+    <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      Try It · 3-Step Chain
+    </div>
+    <a href="/compose" class="text-[0.8125rem] text-(--accent) hover:underline">Open in Compose →</a>
   </div>
-  <textarea
-    bind:value={code}
-    rows="5"
-    class="w-full border border-(--border) rounded-(--radius) bg-(--code-bg) p-3 font-(family-name:--mono) text-xs text-(--text)"
-    spellcheck="false"
-  ></textarea>
-  <button
-    type="button"
-    onclick={run}
-    disabled={loading}
-    class="inline-flex items-center min-h-9 font-medium text-[0.8125rem] px-4 py-2 rounded-(--radius) bg-(--accent) text-white border border-(--accent) cursor-pointer disabled:opacity-50"
-  >
-    {loading ? 'Running…' : 'Run'}
-  </button>
-  {#if traceId}
-    <p class="m-0 text-[0.8125rem] text-(--text-2)">
-      Trace:
-      <a href="/t/{traceId}" class="font-(family-name:--mono) text-xs text-(--text) underline underline-offset-2"
-        >/t/{traceId}</a
-      >
-    </p>
+  
+  <div class="space-y-3">
+    {#each steps as step, i}
+      <div class="rounded-(--radius) border border-(--border) bg-(--surface-alt) p-3">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-xs text-(--text-3) font-mono">Step {i + 1}</span>
+          <span class="text-sm font-medium text-(--text)">{step.name}</span>
+        </div>
+        <Textarea
+          bind:value={step.body}
+          class="min-h-[60px] font-mono text-xs text-(--text) bg-(--code-bg)"
+        />
+      </div>
+    {/each}
+  </div>
+  
+  <div class="flex items-center gap-3">
+    <Button onclick={run} disabled={loading} size="sm">
+      {loading ? 'Running…' : 'Run Chain'}
+    </Button>
+    
+    {#if result?.traceId}
+      <a href="/t/{result.traceId}" class="text-[0.8125rem] text-(--accent) hover:underline font-mono">
+        View Trace →
+      </a>
+    {/if}
+  </div>
+  
+  {#if result?.ok && result.result}
+    <div class="rounded-(--radius) border border-green-500/30 bg-green-500/5 p-3">
+      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-green-600 mb-1">Result</div>
+      <pre class="font-mono text-xs text-(--text) overflow-x-auto">{JSON.stringify(result.result, null, 2)}</pre>
+    </div>
   {/if}
+  
   {#if error}
-    <pre
-      class="m-0 font-(family-name:--mono) text-xs whitespace-pre-wrap text-(--cap-off-text) bg-(--cap-off-bg) border border-(--cap-off-border) rounded-(--radius) p-3"
-    >{error}</pre>
+    <div class="rounded-(--radius) border border-red-500/30 bg-red-500/5 p-3">
+      <pre class="font-mono text-xs text-red-500 overflow-x-auto">{error}</pre>
+    </div>
   {/if}
 </div>
