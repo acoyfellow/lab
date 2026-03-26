@@ -20,5 +20,5 @@
     "alchemy.run.ts",
     "worker/**/*"
   ],
-  "exclude": ["src/**/*.test.ts"]
+  "exclude": ["src/**/*.test.ts", "worker/**/*.test.ts"]
 }
