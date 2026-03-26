@@ -17,7 +17,7 @@
 <div class="">
   <!-- Full-width hero band (option 2): bg image + gradient scrim, copy overlaid left -->
   <section
-    class="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden border-b border-(--border) min-h-[min(42vh,400px)] "
+    class="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden "
   >
     <div
       aria-hidden="true"
@@ -52,32 +52,28 @@
           Run untrusted JavaScript on Cloudflare workers with <strong class="text-(--text)">least-privilege caps per step</strong>.
           Each run yields a durable <strong class="text-(--text)">trace</strong> you can open and share.
         </p>
-        <p class="text-[0.9375rem] m-0">
-          <Button href="/compose" variant="default">Open Compose</Button>
-          <span class="text-(--text-3)"> — build and run chains</span>
+         <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+      {@html data.codeHtml.install}
+    </div>
+    <p class="text-[0.9375rem] m-0">
+      <Button href="/compose" variant="default">Compose a chain now</Button>
+      <small class="text-(--text-3) pb-3">Or</small>
+      <a href="/tutorial" class="text-[0.8125rem] text-(--accent) hover:underline">Take the tutorial →</a>
         </p>
       </div>
     </header>
   </section>
+
   
   <div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-10">
-  <section class="space-y-3">
-    <div class="flex items-center justify-between">
-      <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">1. Install</h2>
-      <a href="/docs/install" class="text-[0.8125rem] text-(--accent) hover:underline">Full guide →</a>
-    </div>
-    <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
-      {@html data.codeHtml.install}
-    </div>
-  </section>
+  
 
   <section class="space-y-3">
     <div class="flex items-center justify-between">
-      <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">2. Try It</h2>
-      <a href="/tutorial" class="text-[0.8125rem] text-(--accent) hover:underline">Tutorial →</a>
+      <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Try It</h2>
     </div>
     <p class="text-[0.9375rem] text-(--text-2)">
-      Run a 3-step chain on Cloudflare's edge. Edit the code, click Run, see the data flow.
+      Run a 3-step chain on Cloudflare's Workers Loaders. <br/>Edit the code, click Run, see the secure, isolated data flow.
     </p>
     <MiniSandbox />
   </section>

@@ -1,97 +1,58 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import SEO from '$lib/SEO.svelte';
-  import { EditorTabs, ResponsePanel } from '$lib/compose';
+  import { ResponsePanel } from '$lib/compose';
   import { Button } from '$lib/components/ui/button';
   import { Textarea } from '$lib/components/ui/textarea';
   import { runSandbox, runKv, runChain, runSpawn, runGenerate, seedKv } from '../data.remote';
   import type { ChainStep } from '@acoyfellow/lab';
-  import { SIMPLE_CHAIN_STEPS, JSON_HEALER_STEPS, API_RETRY_STEPS, WEBHOOK_VALIDATOR_STEPS, DATA_TRANSFORMER_STEPS, MULTI_SOURCE_AGGREGATOR_STEPS } from '$lib/guest-code-fixtures';
-  import {
-    GUEST_TEMPLATE_DEFAULT,
-    GUEST_TEMPLATE_IDS,
-    type GuestTemplateId,
-  } from '$lib/guest-templates';
+  import { SIMPLE_CHAIN_STEPS } from '$lib/guest-code-fixtures';
+  import { ChainBuilder } from '$lib/compose';
 
-  type Mode = 'sandbox' | 'kv' | 'chain' | 'generate' | 'spawn';
+  type ExecutionMode = 'once' | 'chain' | 'spawn' | 'generate';
 
-  const GUEST_CAP_BASE = [
-    'workersAi',
-    'r2Read',
-    'd1Read',
-    'durableObjectFetch',
-    'containerHttp',
-  ] as const;
-  const GUEST_CAP_IDS = [...GUEST_CAP_BASE, 'kvRead'] as const;
-  type GuestCapId = (typeof GUEST_CAP_IDS)[number];
+  const CAPABILITIES = [
+    { id: 'kvRead', label: 'kvRead' },
+    { id: 'spawn', label: 'spawn' },
+    { id: 'workersAi', label: 'workersAi' },
+    { id: 'r2Read', label: 'r2Read' },
+    { id: 'd1Read', label: 'd1Read' },
+    { id: 'durableObjectFetch', label: 'durableObjectFetch' },
+    { id: 'containerHttp', label: 'containerHttp' },
+  ];
 
-  function defaultGuestCapFlags(): Record<GuestCapId, boolean> {
-    return Object.fromEntries(GUEST_CAP_IDS.map((id) => [id, false])) as Record<GuestCapId, boolean>;
-  }
-
-  let mode = $state<Mode>('chain');
-  let guestTemplate = $state<GuestTemplateId>(GUEST_TEMPLATE_DEFAULT);
+  let mode = $state<ExecutionMode>('once');
+  let inputType = $state<'code' | 'prompt'>('code');
   let code = $state('return { hello: "world" }');
-  let chainJson = $state(JSON.stringify(SIMPLE_CHAIN_STEPS, null, 2));
   let prompt = $state('Return the sum of 1 through 10 as a number.');
+  let chainJson = $state(JSON.stringify(SIMPLE_CHAIN_STEPS, null, 2));
   let depth = $state(2);
-  let guestCapFlags = $state(defaultGuestCapFlags());
+  let capabilities = $state<string[]>([]);
   let loading = $state(false);
   let seedMsg = $state<string | null>(null);
   let lastError = $state<string | null>(null);
   let lastTraceId = $state<string | null>(null);
   let lastResult = $state<unknown>(null);
   let lastSteps = $state<Array<{name: string; status: 'success' | 'error'; ms: number}>>([]);
-  let editorView = $state<'builder' | 'raw'>('builder');
   let chainResetKey = $state(0);
 
-  const EXAMPLE_MAP: Record<string, ChainStep[]> = {
-    'json-healer': JSON_HEALER_STEPS,
-    'api-retry': API_RETRY_STEPS,
-    'webhook-validator': WEBHOOK_VALIDATOR_STEPS,
-    'data-transformer': DATA_TRANSFORMER_STEPS,
-    'multi-source-aggregator': MULTI_SOURCE_AGGREGATOR_STEPS,
-  };
-
   onMount(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const exampleId = urlParams.get('example');
-    const exampleSteps = exampleId ? EXAMPLE_MAP[exampleId] : undefined;
-    if (exampleSteps) {
-      mode = 'chain';
-      chainJson = JSON.stringify(exampleSteps, null, 2);
-      chainResetKey++;
-      window.history.replaceState({}, '', window.location.pathname);
-      return;
-    }
-    
     const raw = sessionStorage.getItem('lab-fork');
     if (!raw) return;
     try {
       const f = JSON.parse(raw) as Record<string, unknown>;
       sessionStorage.removeItem('lab-fork');
-      const m = f.mode;
-      if (m === 'sandbox' || m === 'kv' || m === 'chain' || m === 'generate' || m === 'spawn') {
-        mode = m;
-      }
       if (typeof f.body === 'string') code = f.body;
       else if (typeof f.code === 'string') code = f.code;
-      if (
-        typeof f.template === 'string' &&
-        (GUEST_TEMPLATE_IDS as readonly string[]).includes(f.template)
-      ) {
-        guestTemplate = f.template as GuestTemplateId;
+      if (typeof f.prompt === 'string') {
+        prompt = f.prompt;
+        inputType = 'prompt';
       }
-      if (typeof f.prompt === 'string') prompt = f.prompt;
       if (typeof f.depth === 'number') depth = f.depth;
-      if (Array.isArray(f.capabilities)) {
-        const c = f.capabilities as string[];
-        guestCapFlags = Object.fromEntries(
-          GUEST_CAP_IDS.map((id) => [id, c.includes(id)]),
-        ) as Record<GuestCapId, boolean>;
-      }
+      if (Array.isArray(f.capabilities)) capabilities = f.capabilities as string[];
       if (Array.isArray(f.steps)) {
         chainJson = JSON.stringify(f.steps, null, 2);
+        mode = 'chain';
       }
       chainResetKey++;
     } catch {
@@ -100,17 +61,7 @@
   });
 
   function guestCaps(): string[] {
-    return GUEST_CAP_IDS.filter((id) => guestCapFlags[id]);
-  }
-
-  async function seed() {
-    seedMsg = null;
-    try {
-      const r = await seedKv(undefined);
-      seedMsg = r.ok ? `Seeded ${r.seeded} keys` : 'Seed failed';
-    } catch (e) {
-      seedMsg = e instanceof Error ? e.message : 'Seed failed';
-    }
+    return capabilities;
   }
 
   async function run() {
@@ -121,17 +72,11 @@
     lastSteps = [];
     try {
       let r;
-      if (mode === 'sandbox') {
-        r = await runSandbox({
-          body: code,
+      if (mode === 'generate') {
+        r = await runGenerate({
+          prompt,
           capabilities: guestCaps(),
-          template: guestTemplate,
-        });
-      } else if (mode === 'kv') {
-        r = await runKv({
-          body: code,
-          capabilities: guestCaps(),
-          template: guestTemplate,
+          template: 'guest@v1',
         });
       } else if (mode === 'chain') {
         let steps: ChainStep[];
@@ -144,24 +89,29 @@
           return;
         }
         r = await runChain(steps);
-      } else if (mode === 'generate') {
-        r = await runGenerate({
-          prompt,
-          capabilities: guestCaps(),
-          template: guestTemplate,
-        });
       } else if (mode === 'spawn') {
-        const caps = [...guestCaps(), 'spawn'];
         r = await runSpawn({
           body: code,
-          capabilities: caps,
+          capabilities: [...guestCaps(), 'spawn'],
           depth,
-          template: guestTemplate,
+          template: 'guest@v1',
         });
       } else {
-        lastError = 'Unknown mode';
-        loading = false;
-        return;
+        // once (sandbox/kv)
+        const hasKvRead = capabilities.includes('kvRead');
+        if (hasKvRead) {
+          r = await runKv({
+            body: code,
+            capabilities: guestCaps(),
+            template: 'guest@v1',
+          });
+        } else {
+          r = await runSandbox({
+            body: code,
+            capabilities: guestCaps(),
+            template: 'guest@v1',
+          });
+        }
       }
 
       if (!r.ok) {
@@ -187,45 +137,29 @@
     }
   }
 
+  async function seed() {
+    seedMsg = null;
+    try {
+      const r = await seedKv(undefined);
+      seedMsg = r.ok ? `Seeded ${r.seeded} keys` : 'Seed failed';
+    } catch (e) {
+      seedMsg = e instanceof Error ? e.message : 'Seed failed';
+    }
+  }
+
+  function toggleCapability(capId: string) {
+    if (capabilities.includes(capId)) {
+      capabilities = capabilities.filter(c => c !== capId);
+    } else {
+      capabilities = [...capabilities, capId];
+    }
+  }
+
   function handleKeydown(e: KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !loading) {
       e.preventDefault();
       run();
     }
-  }
-
-  function presetChain() {
-    mode = 'chain';
-    chainJson = JSON.stringify(SIMPLE_CHAIN_STEPS, null, 2);
-    chainResetKey++;
-  }
-
-  function presetSandbox() {
-    mode = 'sandbox';
-    code = 'return { hello: "world" }';
-    guestTemplate = GUEST_TEMPLATE_DEFAULT;
-  }
-
-  function presetKv() {
-    mode = 'kv';
-    code = 'return { hello: "world" }';
-    guestTemplate = GUEST_TEMPLATE_DEFAULT;
-  }
-
-  function presetGenerate() {
-    mode = 'generate';
-    prompt = 'Return the sum of 1 through 10 as a number.';
-  }
-
-  function presetSpawn() {
-    mode = 'spawn';
-    code = 'return { hello: "world" }';
-    guestTemplate = GUEST_TEMPLATE_DEFAULT;
-    depth = 2;
-  }
-
-  function modeClasses(m: Mode) {
-    return mode === m ? 'border-(--accent)/35 bg-(--accent)/5' : 'border-(--border) bg-white';
   }
 </script>
 
@@ -233,7 +167,7 @@
 
 <SEO
   title="Compose — lab"
-  description="Chain isolated steps with explicit capabilities — every run yields a shareable trace."
+  description="Chain isolates with explicit capabilities — every run yields a shareable trace."
   path="/compose"
   type="website"
 />
@@ -242,140 +176,117 @@
   <header class="space-y-1">
     <h1 class="text-lg font-semibold tracking-tight">Compose</h1>
     <p class="text-[0.8125rem] text-(--text-2)">
-      Chain isolates with explicit capabilities — every run yields a shareable trace.
+      Write code, grant capabilities, run on the edge.
     </p>
   </header>
 
-  <section aria-label="Start from a preset">
-    <h2 class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) m-0 mb-3">
-      Start from
-    </h2>
-    <div class="grid gap-2 sm:grid-cols-2">
-      <button
-        type="button"
-        onclick={presetChain}
-        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:bg-(--accent)/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent) {modeClasses('chain')}"
-      >
-        <div class="text-sm font-semibold text-(--text)">Chain</div>
-        <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Multi-step pipeline (recommended)</div>
-      </button>
-      <button
-        type="button"
-        onclick={presetSandbox}
-        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent) {modeClasses('sandbox')}"
-      >
-        <div class="text-sm font-semibold text-(--text)">Sandbox</div>
-        <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Single isolate, one run</div>
-      </button>
-      <button
-        type="button"
-        onclick={presetKv}
-        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent) {modeClasses('kv')}"
-      >
-        <div class="text-sm font-semibold text-(--text)">KV read</div>
-        <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Snapshot + guest kv API</div>
-      </button>
-      <button
-        type="button"
-        onclick={presetGenerate}
-        class="text-left rounded-(--radius) border px-3 py-3 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent) {modeClasses('generate')}"
-      >
-        <div class="text-sm font-semibold text-(--text)">Generate</div>
-        <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Workers AI with caps</div>
-      </button>
-      <button
-        type="button"
-        onclick={presetSpawn}
-        class="text-left rounded-(--radius) border px-3 py-3 sm:col-span-2 transition-colors hover:border-(--text-3) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--accent) {modeClasses('spawn')}"
-      >
-        <div class="text-sm font-semibold text-(--text)">Spawn</div>
-        <div class="text-[0.75rem] text-(--text-2) mt-0.5 leading-snug">Nested isolates with spawn capability</div>
-      </button>
-    </div>
-  </section>
-
-  <div class="space-y-4">
-    {#if mode === 'chain'}
-      <EditorTabs
-        bind:view={editorView}
-        bind:chainJson
-        chainResetKey={chainResetKey}
-        disabled={loading}
-      />
-    {:else if mode === 'generate'}
-      <div class="space-y-4">
-        <div>
-          <label for="gen-prompt" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Prompt</label>
-          <Textarea id="gen-prompt" bind:value={prompt} class="min-h-[100px] font-mono text-xs bg-white" />
-        </div>
-        <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2) bg-white">
-          <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
-            {#each GUEST_CAP_IDS as id (id)}
-              <label class="flex items-center gap-2">
-                <input type="checkbox" bind:checked={guestCapFlags[id]} />
-                <code class="font-mono text-[0.7rem]">{id}</code>
-              </label>
-            {/each}
-          </div>
-        </fieldset>
+  <div class="space-y-2">
+    <div class="flex items-center gap-4">
+      <span class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">
+        Input
+      </span>
+      <div class="flex items-center gap-1 text-[0.75rem]">
+        <button
+          type="button"
+          onclick={() => inputType = 'code'}
+          class="px-2 py-1 rounded transition-colors {inputType === 'code' ? 'bg-(--accent) text-white' : 'text-(--text-2) hover:bg-(--surface-alt)'}"
+        >
+          Code
+        </button>
+        <button
+          type="button"
+          onclick={() => inputType = 'prompt'}
+          class="px-2 py-1 rounded transition-colors {inputType === 'prompt' ? 'bg-(--accent) text-white' : 'text-(--text-2) hover:bg-(--surface-alt)'}"
+        >
+          Prompt (AI)
+        </button>
       </div>
+    </div>
+    
+    {#if inputType === 'code'}
+      <Textarea bind:value={code} class="min-h-[200px] font-mono text-xs bg-white" placeholder={`return { hello: "world" }`} />
     {:else}
-      <div class="space-y-4">
-        <div>
-          <label for="guest-template" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Template</label>
-          <select
-            id="guest-template"
-            bind:value={guestTemplate}
-            class="w-full max-w-xs border border-(--border) rounded-(--radius) bg-white px-3 py-2 text-[0.8125rem] text-(--text) font-mono"
-          >
-            {#each GUEST_TEMPLATE_IDS as tid (tid)}
-              <option value={tid}>{tid}</option>
-            {/each}
-          </select>
-        </div>
-        <fieldset class="border border-(--border) rounded-(--radius) p-3 space-y-1.5 text-[0.8125rem] text-(--text-2) bg-white">
-          <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
-            {#each GUEST_CAP_BASE as id (id)}
-              <label class="flex items-center gap-2">
-                <input type="checkbox" bind:checked={guestCapFlags[id]} />
-                <code class="font-mono text-[0.7rem]">{id}</code>
-              </label>
-            {/each}
-          </div>
-        </fieldset>
-        <div>
-          <label for="guest-code" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Code</label>
-          <Textarea id="guest-code" bind:value={code} class="min-h-[200px] font-mono text-xs bg-white" />
-        </div>
-        {#if mode === 'spawn'}
-          <div>
-            <label for="max-depth" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Max depth</label>
-            <input
-              id="max-depth"
-              type="number"
-              bind:value={depth}
-              min="1"
-              max="8"
-              class="w-24 border border-(--border) rounded-(--radius) bg-white px-3 py-2 text-[0.8125rem]"
-            />
-          </div>
+      <Textarea bind:value={prompt} class="min-h-[100px] font-mono text-xs bg-white" placeholder="Describe what you want the AI to generate..." />
+    {/if}
+  </div>
+
+  <details class="border border-(--border) rounded-(--radius) bg-white group">
+    <summary class="flex items-center justify-between px-3 py-2 cursor-pointer text-[0.8125rem] text-(--text-2) hover:text-(--text) select-none list-none">
+      <span class="text-[0.6875rem] font-semibold uppercase tracking-wider">Capabilities</span>
+      <span class="flex items-center gap-2">
+        {#if capabilities.length > 0}
+          <span class="text-[0.75rem] text-(--text-3)">{capabilities.length} enabled</span>
         {/if}
+        <span class="transition-transform duration-200 group-open:rotate-180">▼</span>
+      </span>
+    </summary>
+    <div class="px-3 pb-3 border-t border-(--border)">
+      <div class="flex flex-wrap gap-2 pt-2">
+        {#each CAPABILITIES as cap}
+          <label class="inline-flex items-center gap-1.5 text-[0.8125rem] text-(--text-2) cursor-pointer rounded px-2 py-1 bg-(--surface-alt) hover:bg-(--border) transition-colors">
+            <input
+              type="checkbox"
+              checked={capabilities.includes(cap.id)}
+              onchange={() => toggleCapability(cap.id)}
+              class="accent-(--accent)"
+            />
+            <code class="font-mono text-[0.7rem]">{cap.label}</code>
+          </label>
+        {/each}
+      </div>
+    </div>
+  </details>
+
+  <div class="space-y-2">
+    <label for="exec-mode" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block">
+      Execution mode
+    </label>
+    <select
+      id="exec-mode"
+      bind:value={mode}
+      class="w-full border border-(--border) rounded-(--radius) bg-white px-3 py-2 text-[0.8125rem]"
+    >
+      <option value="once">Run once</option>
+      <option value="chain">Chain multiple steps</option>
+      <option value="spawn">Spawn nested isolates</option>
+      <option value="generate">Generate with AI</option>
+    </select>
+
+    {#if mode === 'chain'}
+      <div class="pt-2">
+        <ChainBuilder bind:chainJson disabled={loading} />
+      </div>
+    {:else if mode === 'spawn'}
+      <div class="pt-2">
+        <label for="max-depth" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">
+          Max depth
+        </label>
+        <input
+          id="max-depth"
+          type="number"
+          bind:value={depth}
+          min="1"
+          max="8"
+          class="w-24 border border-(--border) rounded-(--radius) bg-white px-3 py-2 text-[0.8125rem]"
+        />
+      </div>
+    {:else if mode === 'generate'}
+      <div class="pt-2 text-[0.75rem] text-(--text-2)">
+        Code will be generated by AI based on your prompt.
       </div>
     {/if}
   </div>
 
-  <div class="flex flex-wrap items-center justify-between gap-4">
+  <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
     <p class="text-[0.75rem] text-(--text-3) m-0">
-      Current: <strong class="text-(--text) font-medium">{mode}</strong>
+      Press <kbd class="px-1.5 py-0.5 rounded bg-(--surface-alt) font-mono text-[0.7rem]">Cmd+Enter</kbd> to run
     </p>
     <Button onclick={run} disabled={loading} class="min-w-[120px]">
       {loading ? 'Running…' : 'Run'}
     </Button>
   </div>
 
-  {#if mode === 'kv'}
+  {#if capabilities.includes('kvRead')}
     <div class="flex items-center gap-3">
       <Button onclick={seed} variant="outline" class="text-xs">
         Seed demo KV

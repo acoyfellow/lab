@@ -33,7 +33,6 @@
   const initial = parseSteps(chainJson);
   let steps = $state<ChainStep[]>(initial.steps);
   let parseError = $state<string | null>(initial.error);
-  let showAdvanced = $state<Record<number, boolean>>({});
 
   function syncToParent() {
     parseError = null;
@@ -53,13 +52,6 @@
 
   function removeStep(index: number) {
     steps = steps.filter((_, i) => i !== index);
-    const next: Record<number, boolean> = {};
-    for (const [k, v] of Object.entries(showAdvanced)) {
-      const i = Number(k);
-      if (i < index) next[i] = v;
-      else if (i > index) next[i - 1] = v;
-    }
-    showAdvanced = next;
     syncToParent();
   }
 
@@ -90,9 +82,6 @@
     updateStep(index, { capabilities: newCaps });
   }
 
-  function toggleAdvanced(index: number) {
-    showAdvanced = { ...showAdvanced, [index]: !showAdvanced[index] };
-  }
 </script>
 
 <div class="h-full flex flex-col">
@@ -106,12 +95,12 @@
     {#each steps as step, index (index)}
       <div class="rounded-(--radius) border border-(--border) bg-(--surface) overflow-hidden">
         <div class="flex items-center gap-2 px-3 py-2 border-b border-(--border)">
-          <span class="text-xs text-(--text-3) font-mono w-5">{index + 1}</span>
+          <span class="text-xs text-(--text-3) font-mono w-5 border-r border-(--border) pr-2">{index + 1}</span>
           <input
             type="text"
             value={step.name || ''}
             oninput={(e) => updateStep(index, { name: e.currentTarget.value })}
-            placeholder="Step name"
+            placeholder="Step {index + 1}"
             {disabled}
             class="flex-1 bg-transparent border-none px-0 py-0 text-sm font-medium text-(--text) placeholder:text-(--text-3) focus:outline-none focus:ring-0"
           />
@@ -120,25 +109,28 @@
               type="button"
               onclick={() => moveStep(index, -1)}
               disabled={disabled || index === 0}
+              aria-label="Move step up"
               class="p-1 rounded text-(--text-3) hover:text-(--text) hover:bg-(--surface-alt) disabled:opacity-25"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
             </button>
             <button
               type="button"
               onclick={() => moveStep(index, 1)}
               disabled={disabled || index === steps.length - 1}
+              aria-label="Move step down"
               class="p-1 rounded text-(--text-3) hover:text-(--text) hover:bg-(--surface-alt) disabled:opacity-25"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <button
               type="button"
               onclick={() => removeStep(index)}
               {disabled}
+              aria-label="Remove step"
               class="p-1 rounded text-(--text-3) hover:text-red-400 hover:bg-red-500/10"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
           </div>
         </div>
@@ -153,41 +145,28 @@
           />
         </div>
 
-        <!-- Advanced: Capabilities -->
-        {#if showAdvanced[index]}
-          <div class="px-3 pb-3 border-t border-(--border)">
-            <div class="pt-2">
-              <span class="text-[0.65rem] font-semibold uppercase tracking-wider text-(--text-3)">Capabilities</span>
-              <div class="flex flex-wrap gap-2 mt-1.5">
-                {#each CAPABILITIES as cap}
-                  <label class="inline-flex items-center gap-1 text-[0.65rem] text-(--text-2) cursor-pointer rounded px-2 py-1 bg-(--surface-alt) hover:bg-(--border)">
-                    <input
-                      type="checkbox"
-                      checked={(step.capabilities || []).includes(cap.id)}
-                      onchange={() => toggleCapability(index, cap.id)}
-                      {disabled}
-                      class="accent-(--accent)"
-                    />
-                    <code class="font-mono">{cap.label}</code>
-                  </label>
-                {/each}
-              </div>
+        <details class="border-t border-(--border) group">
+          <summary class="w-full px-3 py-2 text-left text-[0.65rem] text-(--text-3) hover:text-(--text) cursor-pointer list-none flex items-center justify-between select-none">
+            <span>Capabilities</span>
+            <span class="transition-transform duration-200 group-open:rotate-180">▼</span>
+          </summary>
+          <div class="px-3 pb-3">
+            <div class="flex flex-wrap gap-2">
+              {#each CAPABILITIES as cap}
+                <label class="inline-flex items-center gap-1 text-[0.65rem] text-(--text-2) cursor-pointer rounded px-2 py-1 bg-(--surface-alt) hover:bg-(--border)">
+                  <input
+                    type="checkbox"
+                    checked={(step.capabilities || []).includes(cap.id)}
+                    onchange={() => toggleCapability(index, cap.id)}
+                    {disabled}
+                    class="accent-(--accent)"
+                  />
+                  <code class="font-mono">{cap.label}</code>
+                </label>
+              {/each}
             </div>
           </div>
-        {/if}
-        <button
-          type="button"
-          onclick={() => toggleAdvanced(index)}
-          class="w-full px-3 pb-2 text-left text-[0.65rem] text-(--text-3) hover:text-(--text)"
-        >
-          {#if showAdvanced[index]}
-            Hide ▲
-          {:else if (step.capabilities || []).length > 0}
-            {step.capabilities.length} capability{step.capabilities.length > 1 ? 'ies' : 'y'} enabled ▼
-          {:else}
-            Advanced ▼
-          {/if}
-        </button>
+        </details>
       </div>
     {/each}
 
