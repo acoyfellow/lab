@@ -36,7 +36,7 @@
     ></div>
   </div>
   <header
-    class="border-b border-(--border) bg-(--surface) sticky top-0 z-10"
+    class="border-b border-(--border) bg-(--surface)/90 sticky top-0 z-50 backdrop-blur-sm"
   >
     <div
       class="max-w-3xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-3"

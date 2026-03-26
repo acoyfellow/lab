@@ -126,7 +126,6 @@ JSON for **LLM / tool** discovery: `capabilities` (with `llmHint`), `templates`,
 
 Persisted trace document. Both paths return the same JSON. On the **Worker** (e.g. `http://localhost:1337`), `.json` exists for parity with the SvelteKit route [`/t/[id].json`](https://github.com/acoyfellow/lab/blob/main/src/routes/t/%5Bid%5D.json/%2Bserver.ts). Shape: [Trace schema](/docs/trace-schema).
 
----
 
 <DocFooterNav
   gridClass="sm:grid-cols-2"

@@ -43,7 +43,6 @@ const lab = createLabClient({ baseUrl });
 
 Catalog is public if `/run` is public. Lock down with Cloudflare Access, private Worker URL, or ship catalog only on internal deploys.
 
----
 
 <DocFooterNav
   gridClass="sm:grid-cols-2"

@@ -45,7 +45,6 @@ Methods: `runSandbox`, `runKv`, `runChain`, `runSpawn`, `runGenerate`, `seed`, `
 
 **Smoke:** `LAB_URL=… bun run dogfood:lab` runs [`scripts/dogfood-lab.ts`](https://github.com/acoyfellow/lab/blob/main/scripts/dogfood-lab.ts) (sandbox + chain + `traceId` + `getTrace` + `getTraceJson`). Local: `bun dev` then default `LAB_URL=http://localhost:1337`.
 
----
 
 <DocFooterNav
   gridClass="sm:grid-cols-2"
