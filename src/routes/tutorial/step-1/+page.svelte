@@ -10,34 +10,85 @@
 </script>
 
 <SEO
-  title="Step 1 · First trace — lab"
-  description="One POST → one traceId → inspect it on /t/:id (and .json for raw)."
+  title="Step 1 · Install and First Run — lab"
+  description="Install the TypeScript client, write your first chain, and see the trace output."
   path="/tutorial/step-1"
   type="website"
 />
 
-<h1 class="text-lg font-semibold text-(--text) tracking-tight m-0 mb-1">First trace</h1>
-<p class="text-[0.8125rem] text-(--text-3) m-0 mb-8 max-w-[52ch]">
-  One POST → one <code class="text-[0.75rem]">traceId</code> → inspect on <code class="text-[0.75rem]">/t/:id</code>.
-</p>
+<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-8">
+  <header class="space-y-2">
+    <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      Tutorial • Step 1 of 3
+    </div>
+    <h1 class="text-2xl font-semibold tracking-tight">Install and First Run</h1>
+    <p class="text-[0.9375rem] text-(--text-2)">
+      Install the TypeScript client, write your first chain, and see the trace output.
+    </p>
+  </header>
 
-<ul class="m-0 mb-8 pl-5 space-y-2 text-[0.8125rem] text-(--text-2) list-disc max-w-[52ch]">
-  <li>Guest code runs in a Worker isolate (not your laptop).</li>
-  <li>The trace is the durable artifact: inputs, outputs, errors.</li>
-  <li>Append <code class="text-[0.75rem]">.json</code> for machine-readable output.</li>
-</ul>
+  <!-- Step 1: Install -->
+  <section class="space-y-3">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      1. Install
+    </h2>
+    <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+      {@html data.codeHtml.install}
+    </div>
+  </section>
 
-<MiniSandbox />
+  <!-- Step 2: Write -->
+  <section class="space-y-3">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      2. Write
+    </h2>
+    <p class="text-[0.8125rem] text-(--text-2)">
+      Create a client and run a simple chain. Each step runs in a fresh isolate.
+    </p>
+    <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+      {@html data.codeHtml.client}
+    </div>
+  </section>
 
-<div class="mt-10 space-y-3">
-  <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">Same call with curl</div>
-  <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
-    {@html data.codeHtml.curl}
-  </div>
-  <p class="m-0 text-[0.75rem] text-(--text-3) max-w-[52ch]">
-    Swap the host for your deploy. Full shapes:
-    <AppLink to={paths.docsHttpApi} class="underline underline-offset-2 hover:text-(--text)">HTTP API</AppLink>.
-  </p>
+  <!-- Step 3: Run -->
+  <section class="space-y-3">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      3. Run
+    </h2>
+    <p class="text-[0.8125rem] text-(--text-2)">
+      Try it below. This is a real execution on Cloudflare's edge.
+    </p>
+    <MiniSandbox />
+  </section>
+
+  <!-- Step 4: Inspect -->
+  <section class="space-y-3">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      4. Inspect the Trace
+    </h2>
+    <p class="text-[0.8125rem] text-(--text-2)">
+      Every run returns a <code class="font-mono text-[0.7rem]">traceId</code>. Visit <code class="font-mono text-[0.7rem]">/t/:id</code> to see the full execution trace — inputs, outputs, timing for each step.
+    </p>
+    <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4">
+      <div class="text-[0.75rem] text-(--text-3) mb-2">Example trace output:</div>
+      <pre class="text-[0.75rem] bg-(--code-bg) p-3 rounded font-mono overflow-x-auto">Roll call: Alice, Bob, Carol (3)
+
+Trace: https://lab.coey.dev/t/abc123...</pre>
+    </div>
+  </section>
+
+  <!-- HTTP API Note -->
+  <section class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 space-y-2">
+    <h3 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      Prefer HTTP?
+    </h3>
+    <p class="text-[0.8125rem] text-(--text-2)">
+      You can also call the API directly with curl or any HTTP client. 
+      <AppLink to={paths.docsHttpApi} class="text-(--accent) hover:underline">See HTTP API docs →</AppLink>
+    </p>
+  </section>
+
+  <TutorialPager 
+    next={{ href: paths.tutorialStep2, label: 'Step 2 · Multi-Step Chains' }} 
+  />
 </div>
-
-<TutorialPager next={{ href: paths.tutorialStep2, label: 'Step 2 · Chain a program' }} />

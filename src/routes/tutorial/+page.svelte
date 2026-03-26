@@ -6,39 +6,86 @@
 
 <SEO
   title="Tutorial — lab"
-  description="Three short steps with live runners that hit the real Worker and generate shareable traces."
+  description="Learn Lab step by step. Install the client, run your first chain, and understand traces."
   path="/tutorial"
   type="website"
 />
 
-<h1 class="text-lg font-semibold text-(--text) tracking-tight m-0 mb-4">Tutorial</h1>
-<p class="text-[0.8125rem] text-(--text-2) leading-relaxed m-0 mb-6 max-w-[52ch]">
-  Three short pages. Each has a live runner so you are hitting the real Worker from the lesson, not just reading.
-</p>
-<ul class="m-0 pl-5 space-y-3 text-[0.8125rem] text-(--text-2) list-disc marker:text-(--text-3)">
-  <li>
-    <AppLink to={paths.tutorialStep1} class="font-medium text-(--text) no-underline hover:underline"
-      >Step 1</AppLink
+<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-8">
+  <header class="space-y-2">
+    <h1 class="text-2xl font-semibold tracking-tight">Tutorial</h1>
+    <p class="text-[0.9375rem] text-(--text-2)">
+      Three steps to go from installation to running chains with full observability.
+    </p>
+  </header>
+
+  <div class="space-y-4">
+    <a 
+      href={paths.tutorialStep1}
+      class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
     >
-    — one isolate, one trace.
-  </li>
-  <li>
-    <AppLink to={paths.tutorialStep2} class="font-medium text-(--text) no-underline hover:underline"
-      >Step 2</AppLink
+      <div class="flex items-start gap-4">
+        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-(--accent) text-white flex items-center justify-center font-semibold">
+          1
+        </div>
+        <div class="flex-1">
+          <h2 class="font-semibold text-(--text) group-hover:text-(--accent) mb-1">Install and First Run</h2>
+          <p class="text-[0.8125rem] text-(--text-2)">
+            Install the TypeScript client, write your first chain, and see the trace output.
+          </p>
+        </div>
+      </div>
+    </a>
+
+    <a 
+      href={paths.tutorialStep2}
+      class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
     >
-    — multiple steps, one trace (a tiny program).
-  </li>
-  <li>
-    <AppLink to={paths.tutorialStep3} class="font-medium text-(--text) no-underline hover:underline"
-      >Step 3</AppLink
+      <div class="flex items-start gap-4">
+        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-(--surface-alt) border border-(--border) text-(--text-2) flex items-center justify-center font-semibold">
+          2
+        </div>
+        <div class="flex-1">
+          <h2 class="font-semibold text-(--text) group-hover:text-(--accent) mb-1">Multi-Step Chains</h2>
+          <p class="text-[0.8125rem] text-(--text-2)">
+            Pass data between steps, use capabilities, and understand the trace structure.
+          </p>
+        </div>
+      </div>
+    </a>
+
+    <a 
+      href={paths.tutorialStep3}
+      class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
     >
-    — several terminal agents, same <code class="font-(family-name:--mono) text-[0.7rem]">LAB_URL</code>, traces as handoff.
-  </li>
-</ul>
-<p class="mt-8 mb-0">
-  <AppLink
-    to={paths.tutorialStep1}
-    class="inline-flex items-center min-h-9 font-medium text-[0.8125rem] px-4 py-2 rounded-(--radius) bg-(--accent) text-white border border-(--accent) no-underline hover:bg-(--accent-hover)"
-    >Start step 1</AppLink
-  >
-</p>
+      <div class="flex items-start gap-4">
+        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-(--surface-alt) border border-(--border) text-(--text-2) flex items-center justify-center font-semibold">
+          3
+        </div>
+        <div class="flex-1">
+          <h2 class="font-semibold text-(--text) group-hover:text-(--accent) mb-1">Agents and Handoffs</h2>
+          <p class="text-[0.8125rem] text-(--text-2)">
+            Connect to agents via MCP, use traces as handoff points between sessions.
+          </p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="pt-8 border-t border-(--border)">
+    <div class="flex flex-wrap gap-3">
+      <AppLink
+        to={paths.tutorialStep1}
+        class="inline-flex items-center min-h-10 font-semibold text-[0.875rem] px-5 py-2.5 rounded-(--radius) bg-(--accent) text-white no-underline hover:bg-(--accent-hover)"
+      >
+        Start Step 1
+      </AppLink>
+      <a
+        href="/compose"
+        class="inline-flex items-center min-h-10 font-medium text-[0.875rem] px-5 py-2.5 rounded-(--radius) bg-(--surface) text-(--text-2) border border-(--border) no-underline hover:bg-(--surface-alt)"
+      >
+        Skip to Compose
+      </a>
+    </div>
+  </div>
+</div>

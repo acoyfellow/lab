@@ -1,15 +1,66 @@
 <script lang="ts">
   import type { PageProps } from './$types';
-  import AppLink from '$lib/AppLink.svelte';
   import SEO from '$lib/SEO.svelte';
-  import { paths } from '$lib/paths';
-
+  import { EditorTabs, ResponsePanel } from '$lib/compose';
+  import { Button } from '$lib/components/ui/button';
+  import { runChain } from './data.remote.js';
+  import { JSON_HEALER_STEPS } from '$lib/guest-code-fixtures';
+  
   let { data }: PageProps = $props();
+  
+  // Local state for the playground
+  let chainJson = $state(JSON.stringify(JSON_HEALER_STEPS, null, 2));
+  let editorView = $state<'builder' | 'raw'>('builder');
+  let loading = $state(false);
+  let lastError = $state<string | null>(null);
+  let lastTraceId = $state<string | null>(null);
+  let lastResult = $state<unknown>(null);
+  let lastSteps = $state<Array<{name: string; status: 'success' | 'error'; ms: number}>>([]);
+  
+  async function run() {
+    loading = true;
+    lastError = null;
+    lastTraceId = null;
+    lastResult = null;
+    lastSteps = [];
+    try {
+      const steps = JSON.parse(chainJson);
+      const r = await runChain(steps);
+      
+      if (r.traceId) lastTraceId = r.traceId;
+      if (r.ok) {
+        lastResult = r.result;
+      } else {
+        lastError = JSON.stringify({ error: r.error, reason: r.reason }, null, 2);
+      }
+      
+      if (r.trace && Array.isArray(r.trace)) {
+        lastSteps = r.trace.map((step, i) => ({
+          name: step.name || `Step ${i + 1}`,
+          status: 'success' as const,
+          ms: step.ms || 0
+        }));
+      }
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
+    } finally {
+      loading = false;
+    }
+  }
+  
+  function handleKeydown(e: KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !loading) {
+      e.preventDefault();
+      run();
+    }
+  }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <SEO
   title="Lab — Open source edge compute for agents"
-  description="Open source tool to run JavaScript in Cloudflare isolates with least-privilege capabilities. Self-host on your Cloudflare account. Every execution produces a shareable trace."
+  description="Chain JavaScript steps at the edge. Sandboxed and provable. Every execution produces a shareable trace."
   path="/"
   type="website"
 />
@@ -19,7 +70,7 @@
   <section class="space-y-5" aria-labelledby="hero">
     <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-(--surface) border border-(--border) text-[0.75rem] text-(--text-2)">
       <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-      Open source · Self-hosted on Cloudflare
+      Experimental Open source · Self-hosted on Cloudflare 
     </div>
     
     <h1 id="hero" class="text-[1.65rem] sm:text-[2.25rem] font-semibold tracking-tight leading-[1.15]">
@@ -28,140 +79,125 @@
     </h1>
     
     <p class="text-[1.0625rem] text-(--text-2) leading-relaxed max-w-[60ch]">
-      Lab is an <strong class="text-(--text)">open source</strong> tool that runs JavaScript in Cloudflare isolates with explicit capabilities. Every execution produces a <strong class="text-(--text)">shareable trace</strong> — perfect for agents and orchestrators that need to prove what code ran.
-    </p>
-    
-    <div class="flex flex-wrap gap-3 pt-1">
-      <a
-        href="/compose"
-        class="inline-flex items-center min-h-10 font-semibold text-[0.875rem] px-5 py-2.5 rounded-(--radius) bg-(--accent) text-white border border-(--accent) no-underline hover:bg-(--accent-hover) transition-colors"
-      >Try the demo</a>
-      <a
-        href="/docs"
-        class="inline-flex items-center min-h-10 font-medium text-[0.875rem] px-5 py-2.5 rounded-(--radius) bg-(--surface) text-(--text-2) border border-(--border) no-underline hover:bg-(--surface-alt) transition-colors"
-      >Docs</a>
-    </div>
-    
-    <p class="text-[0.8125rem] text-(--text-3) max-w-[55ch]">
-      This site (lab.coey.dev) is a demo. Deploy to your own Cloudflare account for production use.
+      Lab is an <strong class="text-(--text)">open source</strong> tool that runs JavaScript in Cloudflare isolates with explicit capabilities. Every execution produces a <strong class="text-(--text)">shareable trace</strong>.
     </p>
   </section>
 
-  <!-- How It Works -->
-  <section class="grid gap-4 sm:grid-cols-3" aria-labelledby="how">
-    <h2 id="how" class="sr-only">How it works</h2>
-    
-    <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 space-y-2">
-      <div class="flex items-center gap-2">
-        <span class="w-6 h-6 rounded-full bg-(--accent) text-white flex items-center justify-center text-[0.75rem] font-semibold">1</span>
-        <span class="text-[0.8125rem] font-semibold uppercase tracking-wider text-(--text-3)">Isolates</span>
-      </div>
-      <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
-        Each run executes in a fresh V8 isolate on Cloudflare's edge. Milliseconds to first instruction.
-      </p>
-    </div>
-    
-    <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 space-y-2">
-      <div class="flex items-center gap-2">
-        <span class="w-6 h-6 rounded-full bg-(--accent) text-white flex items-center justify-center text-[0.75rem] font-semibold">2</span>
-        <span class="text-[0.8125rem] font-semibold uppercase tracking-wider text-(--text-3)">Capabilities</span>
-      </div>
-      <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
-        Explicit permissions. Code only gets <code class="text-[0.75rem] font-mono">kvRead</code>, <code class="text-[0.75rem] font-mono">workersAi</code>, <code class="text-[0.75rem] font-mono">spawn</code> if you declare it.
-      </p>
-    </div>
-    
-    <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 space-y-2">
-      <div class="flex items-center gap-2">
-        <span class="w-6 h-6 rounded-full bg-(--accent) text-white flex items-center justify-center text-[0.75rem] font-semibold">3</span>
-        <span class="text-[0.8125rem] font-semibold uppercase tracking-wider text-(--text-3)">Traces</span>
-      </div>
-      <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
-        Every run produces a durable trace. Share <code class="text-[0.75rem] font-mono">/t/:id</code> links. Inspect, fork, rerun.
-      </p>
+  <!-- Step 1: Install -->
+  <section class="space-y-3" aria-labelledby="install">
+    <h2 id="install" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      Step 1 — Install
+    </h2>
+    <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+      {@html data.codeHtml.install}
     </div>
   </section>
 
-  <!-- Code Example -->
-  <section id="from-code" class="space-y-3" aria-labelledby="code-heading">
-    <h2 id="code-heading" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
-      From TypeScript
+  <!-- Step 2: Write -->
+  <section class="space-y-3" aria-labelledby="write">
+    <h2 id="write" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      Step 2 — Write
     </h2>
     <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
       {@html data.codeHtml.client}
     </div>
     <p class="text-[0.8125rem] text-(--text-3)">
-      <code class="font-mono text-[0.75rem]">npm install @acoyfellow/lab</code>. Every run returns a <code class="font-mono text-[0.75rem]">traceId</code>.
+      Each step runs in a fresh isolate. Pass data between steps via <code class="font-mono text-[0.75rem]">input</code>.
     </p>
   </section>
 
-  <!-- Deployment Model -->
-  <section class="rounded-(--radius) border border-(--border) bg-(--surface) p-5 space-y-4" aria-labelledby="deployment">
-    <h2 id="deployment" class="text-[0.8125rem] font-semibold uppercase tracking-wider text-(--text-3)">
-      Deployment
+  <!-- Step 3: See Results -->
+  <section class="space-y-3" aria-labelledby="results">
+    <h2 id="results" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      Step 3 — See Results
     </h2>
-    <div class="grid gap-4 sm:grid-cols-2">
-      <div class="space-y-2">
-        <h3 class="font-semibold text-(--text)">Self-host (recommended)</h3>
-        <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
-          Deploy to your Cloudflare account. You control the bindings (KV, AI, R2, D1), capabilities, and data. No external dependencies.
-        </p>
-        <a
-          href="https://github.com/acoyfellow/lab#self-host"
-          class="inline-flex items-center text-[0.8125rem] text-(--accent) hover:underline"
-        >Self-host guide →</a>
+    <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 space-y-3">
+      <div class="flex items-center gap-2 text-[0.8125rem] text-(--text-2)">
+        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+        Run completed successfully
       </div>
-      <div class="space-y-2">
-        <h3 class="font-semibold text-(--text)">MCP for Agents</h3>
-        <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
-          Connect Lab to Cursor, Claude Desktop, or any MCP host. Two tools: <code class="font-mono text-[0.75rem]">find</code> and <code class="font-mono text-[0.75rem]">execute</code>.
-        </p>
-        <AppLink to={paths.docsAgentIntegration} class="inline-flex items-center text-[0.8125rem] text-(--accent) hover:underline">
-          Agent integration →
-        </AppLink>
-      </div>
+      <pre class="text-[0.75rem] bg-(--code-bg) p-3 rounded font-mono overflow-x-auto">Roll call: Alice, Bob, Carol (3)
+
+Trace: https://lab.coey.dev/t/clu01example00...</pre>
     </div>
+    <p class="text-[0.8125rem] text-(--text-3)">
+      Every run returns a <code class="font-mono text-[0.75rem]">traceId</code>. Share the URL, inspect inputs/outputs, fork and rerun.
+    </p>
   </section>
 
-  <!-- Run Modes -->
-  <section class="space-y-3" aria-labelledby="modes">
-    <h2 id="modes" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
-      Run Modes
+  <!-- Step 4: Try It Live -->
+  <section class="space-y-4" aria-labelledby="playground">
+    <h2 id="playground" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      Step 4 — Try It Live
     </h2>
-    <div class="flex flex-wrap gap-2">
-      {#each [
-        { name: 'Sandbox', desc: 'Single isolate' },
-        { name: 'KV Read', desc: 'With KV snapshot' },
-        { name: 'Chain', desc: 'Multi-step pipeline' },
-        { name: 'Spawn', desc: 'Parallel isolates' },
-        { name: 'Generate', desc: 'AI-generated code' }
-      ] as mode}
-        <div class="rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2">
-          <span class="text-[0.8125rem] font-semibold text-(--accent)">{mode.name}</span>
-          <span class="text-[0.75rem] text-(--text-3) ml-2">{mode.desc}</span>
+    <p class="text-[0.9375rem] text-(--text-2)">
+      Edit the steps below and click Run. This is a real chain executing on Cloudflare's edge.
+    </p>
+    
+    <div class="rounded-(--radius) border border-(--border) bg-(--surface) overflow-hidden">
+      <div class="p-4 border-b border-(--border)">
+        <EditorTabs bind:view={editorView} bind:chainJson disabled={loading} />
+      </div>
+      
+      <div class="p-4 border-b border-(--border) flex items-center justify-between bg-(--surface-alt)">
+        <div class="text-[0.8125rem] text-(--text-2)">
+          Chain mode • {JSON.parse(chainJson).length} steps
         </div>
-      {/each}
+        <Button onclick={run} disabled={loading} size="sm">
+          {loading ? 'Running…' : 'Run'}
+        </Button>
+      </div>
+      
+      <div class="p-4">
+        <ResponsePanel
+          status={loading ? 'loading' : lastError ? 'error' : lastTraceId ? 'success' : 'idle'}
+          traceId={lastTraceId}
+          result={lastResult}
+          steps={lastSteps}
+          error={lastError}
+        />
+      </div>
+    </div>
+    
+    <p class="text-[0.8125rem] text-(--text-3)">
+      Press <kbd class="px-1.5 py-0.5 bg-(--surface-alt) border border-(--border) rounded text-[0.7rem]">Cmd</kbd> + <kbd class="px-1.5 py-0.5 bg-(--surface-alt) border border-(--border) rounded text-[0.7rem]">Enter</kbd> to run. 
+      <a href="/examples" class="text-(--accent) hover:underline">Browse more examples →</a>
+    </p>
+  </section>
+
+  <!-- More to Explore -->
+  <section class="rounded-(--radius) border border-(--border) bg-(--surface) p-6 space-y-4">
+    <h2 class="text-[0.8125rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      More to Explore
+    </h2>
+    <div class="grid gap-4 sm:grid-cols-3">
+      <a href="/tutorial" class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface-alt) hover:border-(--accent) transition-colors no-underline">
+        <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Tutorial</div>
+        <div class="text-[0.9375rem] text-(--text) font-medium mb-1">Step-by-step guide</div>
+        <div class="text-[0.8125rem] text-(--text-2)">Learn the fundamentals with runnable examples</div>
+      </a>
+      <a href="/examples" class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface-alt) hover:border-(--accent) transition-colors no-underline">
+        <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Examples</div>
+        <div class="text-[0.9375rem] text-(--text) font-medium mb-1">Real-world patterns</div>
+        <div class="text-[0.8125rem] text-(--text-2)">API retry, webhooks, data transformation</div>
+      </a>
+      <a href="/docs" class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface-alt) hover:border-(--accent) transition-colors no-underline">
+        <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Documentation</div>
+        <div class="text-[0.9375rem] text-(--text) font-medium mb-1">API reference</div>
+        <div class="text-[0.8125rem] text-(--text-2)">Complete guides and HTTP API</div>
+      </a>
     </div>
   </section>
 
-  <!-- Examples -->
-  <section class="space-y-4" aria-labelledby="examples">
-    <div class="flex items-center justify-between">
-      <h2 id="examples" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
-        Example
-      </h2>
-      <a href="/compose" class="text-[0.8125rem] text-(--accent) hover:underline">Try it →</a>
-    </div>
-    <a 
-      href="/compose?example=json-healer" 
-      class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 hover:border-(--accent)/30 transition-colors group"
-    >
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-xl">✨</span>
-        <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">JSON Healer</h3>
-      </div>
-      <p class="text-[0.8125rem] text-(--text-2)">Fix broken JSON automatically with full audit trail.</p>
-    </a>
+  <!-- Deployment -->
+  <section class="space-y-3" aria-labelledby="deployment">
+    <h2 id="deployment" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      Self-Host
+    </h2>
+    <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
+      Deploy to your own Cloudflare account. You control the data, bindings (KV, AI, R2, D1), and capabilities. 
+      <a href="https://github.com/acoyfellow/lab#self-host" class="text-(--accent) hover:underline">Read the self-host guide →</a>
+    </p>
   </section>
 
 </div>

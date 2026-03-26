@@ -2,7 +2,10 @@ import { CLIENT_SNIPPET } from '$lib/home-snippets';
 import { highlightCode } from '$lib/shiki.server';
 import type { PageServerLoad } from './$types';
 
+const INSTALL_SNIPPET = `npm install @acoyfellow/lab`;
+
 export const load: PageServerLoad = async () => {
 	const client = await highlightCode(CLIENT_SNIPPET, 'typescript');
-	return { codeHtml: { client } };
+	const install = await highlightCode(INSTALL_SNIPPET, 'bash');
+	return { codeHtml: { client, install } };
 };

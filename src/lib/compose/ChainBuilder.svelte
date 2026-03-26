@@ -105,7 +105,7 @@
     </div>
   {/if}
 
-  <div class="flex-1 overflow-y-auto space-y-3 pr-2">
+  <div class="flex-1 space-y-3 pr-2">
     {#each steps as step, index (index)}
       <Card class="border-(--border)">
         <CardHeader class="pb-3">
@@ -151,8 +151,12 @@
         </CardHeader>
         <CardContent class="space-y-3 pt-0">
           <div>
-            <label class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Template</label>
+            <label class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5" 
+            for="step-template-{index}">
+              Template
+            </label>
             <select
+              id="step-template-{index}"
               value={step.template || 'guest@v1'}
               onchange={(e) => updateStepTemplate(index, e.currentTarget.value)}
               {disabled}
@@ -165,7 +169,11 @@
           </div>
 
           <div>
-            <label for="step-body-{index}" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">Code</label>
+            <label 
+              for="step-body-{index}" 
+              class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1.5">
+              Code
+            </label>
             <textarea
               id="step-body-{index}"
               value={step.body || step.code || ''}
@@ -180,7 +188,7 @@
             <legend class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) px-1">Capabilities</legend>
             <div class="grid grid-cols-2 gap-x-3 gap-y-1.5">
               {#each CAPABILITIES as cap}
-                <label class="flex items-center gap-1.5 text-xs text-(--text-2) cursor-pointer">
+                <label class="flex items-center gap-1.5 text-xs text-(--text-2) cursor-pointe p-1.5 hover:bg-(--surface-alt)">
                   <input
                     type="checkbox"
                     checked={(step.capabilities || []).includes(cap.id)}
@@ -188,7 +196,7 @@
                     {disabled}
                     class="accent-(--accent)"
                   />
-                  <code class="font-mono text-[0.65rem]">{cap.label}</code>
+                  <code class="font-mono text-xs">{cap.label}</code>
                 </label>
               {/each}
             </div>

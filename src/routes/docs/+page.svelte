@@ -1,8 +1,80 @@
 <script lang="ts">
   import AppLink from '$lib/AppLink.svelte';
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
   import SEO from '$lib/SEO.svelte';
   import { paths } from '$lib/paths';
+  
+  const navSections = [
+    {
+      title: 'Start',
+      items: [
+        { label: 'Introduction', to: '/docs', active: true },
+        { label: 'How It Works', to: '/docs/how-it-works' },
+        { label: 'Tutorial', to: paths.tutorial },
+      ]
+    },
+    {
+      title: 'Guides',
+      items: [
+        { label: 'HTTP API', to: paths.docsHttpApi },
+        { label: 'TypeScript Client', to: paths.docsTypescript },
+        { label: 'Agent Integration', to: paths.docsAgentIntegration },
+        { label: 'Capabilities', to: paths.docsCapabilities },
+      ]
+    },
+    {
+      title: 'Reference',
+      items: [
+        { label: 'Architecture', to: paths.docsArchitecture },
+        { label: 'Trace Schema', to: paths.docsTraceSchema },
+      ]
+    }
+  ];
+  
+  const mainCards = [
+    {
+      to: paths.docsHttpApi,
+      title: 'HTTP API',
+      description: 'Run modes, endpoints, curl, request/response shapes.',
+      tags: ['REST', 'JSON']
+    },
+    {
+      to: paths.docsAgentIntegration,
+      title: 'Agents',
+      description: 'MCP find + execute, or GET /lab/catalog + HTTP runs.',
+      tags: ['MCP', 'AI']
+    },
+    {
+      to: paths.docsTypescript,
+      title: 'TypeScript Client',
+      description: '@acoyfellow/lab — install, createLabClient, methods.',
+      tags: ['npm', 'TypeScript']
+    },
+    {
+      to: paths.docsArchitecture,
+      title: 'Architecture',
+      description: 'Worker loaders, Effect, KV snapshot, spawn, chains.',
+      tags: ['Cloudflare', 'Effect']
+    },
+    {
+      to: paths.docsCapabilities,
+      title: 'Capabilities',
+      description: 'KV snapshot, spawn, why shims exist.',
+      tags: ['Security']
+    },
+    {
+      to: paths.docsTraceSchema,
+      title: 'Trace JSON',
+      description: 'GET /t/:id document — fields, tables, POST traceId.',
+      tags: ['Schema']
+    }
+  ];
+  
+  const tocItems = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'quick-start', label: 'Quick Start' },
+    { id: 'guides', label: 'Guides' },
+    { id: 'reference', label: 'Reference' },
+  ];
 </script>
 
 <SEO
@@ -12,62 +84,147 @@
   type="website"
 />
 
-<div class="max-w-3xl mx-auto px-5 py-8 pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
-  <h1 class="text-lg font-semibold text-(--text) tracking-tight mb-2">Docs</h1>
-  <p class="mb-8 max-w-[62ch]">
-    HTTP API, architecture, TypeScript client, capabilities, and trace JSON—all served from this app.
-  </p>
+<div class="max-w-[1200px] mx-auto px-6 py-8">
+  <div class="flex gap-8">
+    <!-- Left Sidebar - Navigation -->
+    <aside class="hidden lg:block w-64 flex-shrink-0">
+      <nav class="sticky top-8 space-y-6">
+        {#each navSections as section}
+          <div>
+            <h3 class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2 px-3">
+              {section.title}
+            </h3>
+            <ul class="space-y-0.5">
+              {#each section.items as item}
+                <li>
+                  <a 
+                    href={item.to}
+                    class="block px-3 py-1.5 text-[0.8125rem] rounded-(--radius) no-underline transition-colors {item.active ? 'text-(--accent) bg-(--accent)/5 font-medium' : 'text-(--text-2) hover:text-(--text) hover:bg-(--surface)'}">
+                    {item.label}
+                  </a>
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {/each}
+      </nav>
+    </aside>
 
-  <div class="grid gap-4 sm:grid-cols-2">
-    <AppLink
-      to={paths.docsHttpApi}
-      class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
-    >
-      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">HTTP API</div>
-      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Run modes, endpoints, curl, request/response shapes.</div>
-    </AppLink>
-    <AppLink
-      to={paths.docsAgentIntegration}
-      class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
-    >
-      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Agents</div>
-      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">MCP <code class="font-(family-name:--mono) text-[0.7rem]">find</code> + <code class="text-[0.7rem]">execute</code>, or <code class="text-[0.7rem]">GET /lab/catalog</code> + HTTP runs.</div>
-    </AppLink>
-    <AppLink
-      to={paths.docsTypescript}
-      class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
-    >
-      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">TypeScript client</div>
-      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed"><code class="font-(family-name:--mono) text-[0.7rem]">@acoyfellow/lab</code> — install, <code class="text-[0.7rem]">createLabClient</code>, methods.</div>
-    </AppLink>
-    <AppLink
-      to={paths.docsArchitecture}
-      class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
-    >
-      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Architecture</div>
-      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">Worker loaders, Effect, KV snapshot, spawn, chains — full write-up.</div>
-    </AppLink>
-    <AppLink
-      to={paths.docsCapabilities}
-      class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
-    >
-      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Capabilities</div>
-      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed">KV snapshot, spawn, why shims exist.</div>
-    </AppLink>
-    <AppLink
-      to={paths.docsTraceSchema}
-      class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)"
-    >
-      <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Trace JSON</div>
-      <div class="text-[0.8125rem] text-(--text-2) leading-relaxed"><code class="font-(family-name:--mono) text-[0.7rem]">GET /t/:id</code> document — fields, tables, POST <code class="text-[0.7rem]">traceId</code>.</div>
-    </AppLink>
+    <!-- Main Content -->
+    <main class="flex-1 min-w-0">
+      <div class="space-y-8">
+        <header id="overview" class="space-y-2">
+          <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Documentation</h1>
+          <p class="text-[0.9375rem] text-(--text-2) max-w-2xl">
+            Everything you need to run JavaScript in Cloudflare isolates. 
+            From quick starts to deep dives on architecture and the HTTP API.
+          </p>
+        </header>
+
+        <!-- Quick Start Section -->
+        <section id="quick-start" class="space-y-4">
+          <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+            Quick Start
+          </h2>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <a 
+              href={paths.tutorial}
+              class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
+            >
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-lg">🎓</span>
+                <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Tutorial</h3>
+              </div>
+              <p class="text-[0.8125rem] text-(--text-2)">
+                Three short steps with live runners. Learn the fundamentals by doing.
+              </p>
+            </a>
+            <a 
+              href="/compose"
+              class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
+            >
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-lg">▶️</span>
+                <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Compose</h3>
+              </div>
+              <p class="text-[0.8125rem] text-(--text-2)">
+                Skip the docs and start building. Run chains, sandbox, spawn modes in the browser.
+              </p>
+            </a>
+          </div>
+        </section>
+
+        <!-- Guides Section -->
+        <section id="guides" class="space-y-4">
+          <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+            Guides
+          </h2>
+          <div class="grid gap-4 sm:grid-cols-2">
+            {#each mainCards.slice(0, 4) as card}
+              <AppLink
+                to={card.to}
+                class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:bg-(--surface-alt) no-underline group"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">{card.title}</h3>
+                  <div class="flex gap-1">
+                    {#each card.tags as tag}
+                      <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3)">{tag}</span>
+                    {/each}
+                  </div>
+                </div>
+                <p class="text-[0.8125rem] text-(--text-2)">{card.description}</p>
+              </AppLink>
+            {/each}
+          </div>
+        </section>
+
+        <!-- Reference Section -->
+        <section id="reference" class="space-y-4">
+          <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+            Reference
+          </h2>
+          <div class="grid gap-4 sm:grid-cols-2">
+            {#each mainCards.slice(4) as card}
+              <AppLink
+                to={card.to}
+                class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:bg-(--surface-alt) no-underline group"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">{card.title}</h3>
+                  <div class="flex gap-1">
+                    {#each card.tags as tag}
+                      <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3)">{tag}</span>
+                    {/each}
+                  </div>
+                </div>
+                <p class="text-[0.8125rem] text-(--text-2)">{card.description}</p>
+              </AppLink>
+            {/each}
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Right Sidebar - TOC -->
+    <aside class="hidden xl:block w-48 flex-shrink-0">
+      <nav class="sticky top-8">
+        <h3 class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-3">
+          On this page
+        </h3>
+        <ul class="space-y-1 border-l border-(--border)">
+          {#each tocItems as item}
+            <li>
+              <a 
+                href="#{item.id}"
+                class="block pl-3 py-1 text-[0.8125rem] text-(--text-2) hover:text-(--text) no-underline border-l-2 border-transparent hover:border-(--text-3) transition-colors"
+              >
+                {item.label}
+              </a>
+            </li>
+          {/each}
+        </ul>
+      </nav>
+    </aside>
   </div>
-
-  <DocFooterNav
-    gridClass="sm:grid-cols-2"
-    links={[
-      { label: 'Tutorial', to: paths.tutorial, description: 'Three steps with inline runners.' },
-      { label: 'Compose', to: '/compose', description: 'Run modes in the browser.' },
-    ]}
-  />
 </div>

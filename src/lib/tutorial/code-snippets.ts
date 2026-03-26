@@ -1,5 +1,20 @@
 /** Raw source for Shiki — tutorial steps (+page.server.ts). */
 
+export const TUTORIAL_STEP1_CODE = `import { createLabClient } from "@acoyfellow/lab";
+
+const lab = createLabClient({ baseUrl: process.env.LAB_URL! });
+
+const out = await lab.runSandbox({
+  body: "return 2 + 2",
+  capabilities: [],
+});
+
+console.log(out.result); // 4
+console.log(out.traceId); // clu01abc...
+
+// View the trace at:
+// https://lab.coey.dev/t/\${out.traceId}`;
+
 export const TUTORIAL_STEP1_CURL = `curl -X POST https://lab.coey.dev/run \\
   -H 'Content-Type: application/json' \\
   -d '{"body":"return 2 + 2","capabilities":[]}'`;

@@ -33,7 +33,7 @@
   let lastTraceId = $state<string | null>(null);
   let lastResult = $state<unknown>(null);
   let lastSteps = $state<Array<{name: string; status: 'success' | 'error'; ms: number}>>([]);
-  let editorView = $state<'builder' | 'raw'>('raw');
+  let editorView = $state<'builder' | 'raw'>('builder');
 
   onMount(() => {
     const urlParams = new URLSearchParams(window.location.search);
