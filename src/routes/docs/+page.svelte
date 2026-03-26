@@ -18,6 +18,7 @@
     {
       title: 'Guides',
       items: [
+        { label: 'When to use Lab', to: paths.docsWhenToUse },
         { label: 'HTTP API', to: paths.docsHttpApi },
         { label: 'TypeScript Client', to: paths.docsTypescript },
         { label: 'Agent Integration', to: paths.docsAgentIntegration },
@@ -27,6 +28,9 @@
     {
       title: 'Reference',
       items: [
+        { label: 'Limits', to: paths.docsLimits },
+        { label: 'Security', to: paths.docsSecurity },
+        { label: 'Failures & traces', to: paths.docsFailures },
         { label: 'Architecture', to: paths.docsArchitecture },
         { label: 'Trace Schema', to: paths.docsTraceSchema },
       ]
@@ -59,6 +63,12 @@
       tags: ['npm', 'TypeScript']
     },
     {
+      to: paths.docsWhenToUse,
+      title: 'When to use Lab',
+      description: 'Good fit vs poor fit; relationship to plain Workers.',
+      tags: ['Product']
+    },
+    {
       to: paths.docsArchitecture,
       title: 'Architecture',
       description: 'Worker loaders, Effect, KV snapshot, spawn, chains.',
@@ -75,6 +85,24 @@
       title: 'Trace JSON',
       description: 'GET /t/:id document — fields, tables, POST traceId.',
       tags: ['Schema']
+    },
+    {
+      to: paths.docsLimits,
+      title: 'Limits',
+      description: 'Repo-enforced caps, chains, R2 invoke, platform limits.',
+      tags: ['Reference']
+    },
+    {
+      to: paths.docsSecurity,
+      title: 'Security model',
+      description: 'Untrusted guest code, capabilities, operators.',
+      tags: ['Reference']
+    },
+    {
+      to: paths.docsFailures,
+      title: 'Failures & traces',
+      description: 'Chain errors, empty trace on failure, isolate reasons.',
+      tags: ['Reference']
     }
   ];
   
@@ -88,7 +116,7 @@
 
 <SEO
   title="Docs — lab"
-  description="HTTP API, architecture, TypeScript client, capabilities, and trace JSON."
+  description="HTTP API, architecture, limits, security, failures, TypeScript client, capabilities, and trace JSON."
   path="/docs"
   type="website"
 />
@@ -180,7 +208,7 @@
             Guides
           </h2>
           <div class="grid gap-4 sm:grid-cols-2">
-            {#each mainCards.slice(0, 4) as card}
+            {#each mainCards.slice(0, 5) as card}
               <AppLink
                 to={card.to}
                 class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:bg-(--surface-alt) no-underline group"
@@ -205,7 +233,7 @@
             Reference
           </h2>
           <div class="grid gap-4 sm:grid-cols-2">
-            {#each mainCards.slice(4) as card}
+            {#each mainCards.slice(5) as card}
               <AppLink
                 to={card.to}
                 class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:bg-(--surface-alt) no-underline group"

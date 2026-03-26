@@ -46,6 +46,12 @@ Each step has its own capability set. The first step might have KV read. The sec
 
 The input is serialized as JSON and injected into the isolate's wrapper code, same as KV data. It's included in the isolate's hash key so cached isolates don't return stale results from a previous chain run.
 
+## Isolate identity, cache, and cold starts
+
+The Loader derives an isolate **id** from a hash of **template**, guest **body**, capability material, and serialized **input** (see [`worker/Loader.ts`](https://github.com/acoyfellow/lab/blob/main/worker/Loader.ts)). **Different guest body ⇒ different id** — a chain whose steps all use **distinct** code strings creates **many** distinct isolates (the intended stress in “cold boot”-style demos).
+
+When the same body + same hash inputs repeat, the platform may **reuse** a compiled isolate; wall-clock **`ms`** in traces can still **vary** run-to-run (scheduling, cache, load). Do not treat a single trace’s timings as a universal SLA.
+
 ## How code generation works
 
 The `/run/generate` endpoint takes a natural language prompt and a capability list. It builds a system prompt from [`worker/capabilities/registry.ts`](https://github.com/acoyfellow/lab/blob/main/worker/capabilities/registry.ts) **`llmHint`** lines (plus pure-compute fallback), then runs the model. The generated **guest body** gets normalized:
