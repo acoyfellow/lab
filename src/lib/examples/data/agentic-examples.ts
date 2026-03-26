@@ -677,6 +677,7 @@ const passed = results.filter(r => r.meetsMin).length;
 return {
   candidate: 'A',
   method: 'trigram overlap',
+  cases: input.cases,
   results,
   passed,
   total: results.length,
@@ -703,23 +704,8 @@ function levenshtein(a, b) {
   }
   return 1 - dp[m][n] / Math.max(m, n);
 }
-// Reconstruct test cases from candidate A's output
-const cases = input.results.map(r => ({
-  a: r.a, b: r.b, minScore: r.meetsMin ? 0 : r.score + 0.1,
-}));
-// Re-derive from original — we need the original minScores
-// Chain limitation: we only see step N-1. Pass through what we need.
-const origCases = [
-  { a: 'kitten', b: 'sitting', minScore: 0.5 },
-  { a: 'saturday', b: 'sunday', minScore: 0.4 },
-  { a: 'hello', b: 'hello', minScore: 1.0 },
-  { a: 'abc', b: 'xyz', minScore: 0.0 },
-  { a: '', b: 'something', minScore: 0.0 },
-  { a: 'foo', b: 'foo', minScore: 1.0 },
-  { a: 'bar', b: 'baz', minScore: 0.3 },
-  { a: 'abcdef', b: 'azced', minScore: 0.3 },
-];
-const results = origCases.map(tc => {
+// Use the same test cases propagated from Candidate A
+const results = input.cases.map(tc => {
   const score = levenshtein(tc.a, tc.b);
   return {
     a: tc.a, b: tc.b,

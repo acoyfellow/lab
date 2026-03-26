@@ -118,9 +118,17 @@ const route = (args: string[]) => {
 		case 'chain':
 			if (!arg) return Effect.fail(new CliError({ message: 'lab chain <stepsJson>' }));
 			return chain(arg);
-		case 'spawn':
+		case 'spawn': {
 			if (!arg) return Effect.fail(new CliError({ message: 'lab spawn <code> [depth]' }));
-			return spawn(arg, args[2] ? parseInt(args[2], 10) : 2);
+			let depth = 2;
+			if (args[2]) {
+				depth = parseInt(args[2], 10);
+				if (!Number.isInteger(depth) || depth < 1) {
+					return Effect.fail(new CliError({ message: `Invalid depth: "${args[2]}". Must be a positive integer.` }));
+				}
+			}
+			return spawn(arg, depth);
+		}
 		case 'generate':
 			if (!arg) return Effect.fail(new CliError({ message: 'lab generate <prompt>' }));
 			return generate(arg);
