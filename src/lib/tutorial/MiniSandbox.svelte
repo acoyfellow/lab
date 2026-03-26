@@ -3,6 +3,7 @@
   import { runChain } from '../../routes/data.remote';
   import { Textarea } from '$lib/components/ui/textarea';
   import { Button } from '$lib/components/ui/button';
+  import { goto } from '$app/navigation';
 
   let steps = $state([
     {
@@ -42,6 +43,14 @@
       loading = false;
     }
   }
+
+  function openInCompose() {
+    sessionStorage.setItem('lab-fork', JSON.stringify({
+      mode: 'chain',
+      steps: steps
+    }));
+    goto('/compose');
+  }
 </script>
 
 <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-5 space-y-4">
@@ -49,7 +58,7 @@
     <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">
       Try It · 3-Step Chain
     </div>
-    <a href="/compose" class="text-[0.8125rem] text-(--accent) hover:underline">Open in Compose →</a>
+    <button onclick={openInCompose} class="text-[0.8125rem] text-(--accent) hover:underline bg-transparent border-none cursor-pointer">Open in Compose →</button>
   </div>
   
   <div class="space-y-3">
