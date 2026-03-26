@@ -43,7 +43,7 @@
     >
       <AppLink to="/" class="flex items-center gap-2 shrink-0 no-underline">
         <Logo />
-        <code class="text-[0.6rem] text-(--text-3) tracking-tight">v.0.0.1</code>
+        <code class="text-[0.6rem] text-(--text-3) tracking-tight">v0.0.1</code>
       </AppLink>
       <nav
         class="flex flex-wrap items-center gap-x-4 gap-y-1 justify-end text-[0.8125rem]"
@@ -80,24 +80,7 @@
 
   <footer class="border-t border-(--border) mt-auto py-8 bg-(--bg)">
     <div class="max-w-3xl mx-auto px-5">
-      <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 text-[0.8125rem]">
-        <div class="space-y-2">
-          <div class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
-            Lab
-          </div>
-          <div class="flex flex-col gap-1.5">
-            <AppLink to="/" class="text-(--text-2) no-underline hover:text-(--text)">Home</AppLink>
-            <a
-              href="https://github.com/acoyfellow/lab"
-              class="text-(--text-2) no-underline hover:text-(--text)"
-            >GitHub</a>
-            <a
-              href="https://github.com/acoyfellow/lab#self-host"
-              class="text-(--text-2) no-underline hover:text-(--text)"
-            >Self-host</a>
-          </div>
-        </div>
-
+      <div class="grid gap-8 sm:grid-cols-3 text-[0.8125rem]">
         <div class="space-y-2">
           <div class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
             Product
@@ -106,7 +89,6 @@
             <AppLink to="/compose" class="text-(--text-2) no-underline hover:text-(--text)">Compose</AppLink>
             <AppLink to="/examples" class="text-(--text-2) no-underline hover:text-(--text)">Examples</AppLink>
             <AppLink to={paths.tutorial} class="text-(--text-2) no-underline hover:text-(--text)">Tutorial</AppLink>
-            <AppLink to="/guides" class="text-(--text-2) no-underline hover:text-(--text)">Guides</AppLink>
           </div>
         </div>
 
@@ -115,21 +97,24 @@
             Docs
           </div>
           <div class="flex flex-col gap-1.5">
-            <AppLink to={paths.docs} class="text-(--text-2) no-underline hover:text-(--text)">Docs hub</AppLink>
             <AppLink to={paths.docsHttpApi} class="text-(--text-2) no-underline hover:text-(--text)">HTTP API</AppLink>
             <AppLink to={paths.docsTypescript} class="text-(--text-2) no-underline hover:text-(--text)">TypeScript client</AppLink>
-            <AppLink to={paths.docsAgentIntegration} class="text-(--text-2) no-underline hover:text-(--text)">Agent integration</AppLink>
+            <AppLink to={paths.docsCapabilities} class="text-(--text-2) no-underline hover:text-(--text)">Capabilities</AppLink>
+            <AppLink to={paths.docsTraceSchema} class="text-(--text-2) no-underline hover:text-(--text)">Trace schema</AppLink>
           </div>
         </div>
 
         <div class="space-y-2">
           <div class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
-            Reference
+            Project
           </div>
           <div class="flex flex-col gap-1.5">
-            <AppLink to={paths.docsCapabilities} class="text-(--text-2) no-underline hover:text-(--text)">Capabilities</AppLink>
-            <AppLink to={paths.docsArchitecture} class="text-(--text-2) no-underline hover:text-(--text)">Architecture</AppLink>
-            <AppLink to={paths.docsTraceSchema} class="text-(--text-2) no-underline hover:text-(--text)">Trace schema</AppLink>
+            <a
+              href="https://github.com/acoyfellow/lab"
+              class="text-(--text-2) no-underline hover:text-(--text)"
+            >GitHub</a>
+            <AppLink to="/docs/self-host" class="text-(--text-2) no-underline hover:text-(--text)">Self-host</AppLink>
+            <AppLink to={paths.docsAgentIntegration} class="text-(--text-2) no-underline hover:text-(--text)">MCP / Agents</AppLink>
           </div>
         </div>
       </div>
