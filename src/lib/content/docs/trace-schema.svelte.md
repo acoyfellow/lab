@@ -55,7 +55,6 @@ Successful run endpoints include `traceId` in the JSON response alongside mode-s
 
 `POST /seed` does not create a trace.
 
----
 
 <DocFooterNav
   gridClass="sm:grid-cols-2 lg:grid-cols-3"

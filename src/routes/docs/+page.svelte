@@ -8,6 +8,7 @@
       title: 'Start',
       items: [
         { label: 'Introduction', to: '/docs', active: true },
+        { label: 'Installation', to: '/docs/install' },
         { label: 'How It Works', to: '/docs/how-it-works' },
         { label: 'Tutorial', to: paths.tutorial },
       ]
@@ -121,12 +122,23 @@
           </p>
         </header>
 
-        <!-- Quick Start Section -->
         <section id="quick-start" class="space-y-4">
           <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
             Quick Start
           </h2>
-          <div class="grid gap-4 sm:grid-cols-2">
+          <div class="grid gap-4 sm:grid-cols-3">
+            <a 
+              href="/docs/install"
+              class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
+            >
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-lg">⚡</span>
+                <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Install</h3>
+              </div>
+              <p class="text-[0.8125rem] text-(--text-2)">
+                Deploy to Cloudflare. D1, R2, KV setup included.
+              </p>
+            </a>
             <a 
               href={paths.tutorial}
               class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
@@ -136,7 +148,7 @@
                 <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Tutorial</h3>
               </div>
               <p class="text-[0.8125rem] text-(--text-2)">
-                Three short steps with live runners. Learn the fundamentals by doing.
+                Three short steps with live runners. Learn by doing.
               </p>
             </a>
             <a 
@@ -148,7 +160,7 @@
                 <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Compose</h3>
               </div>
               <p class="text-[0.8125rem] text-(--text-2)">
-                Skip the docs and start building. Run chains, sandbox, spawn modes in the browser.
+                Skip ahead and start building in the browser.
               </p>
             </a>
           </div>

@@ -1,62 +1,9 @@
 <script lang="ts">
   import type { PageProps } from './$types';
   import SEO from '$lib/SEO.svelte';
-  import { EditorTabs, ResponsePanel } from '$lib/compose';
-  import { Button } from '$lib/components/ui/button';
-  import { runChain } from './data.remote.js';
-  import { JSON_HEALER_STEPS } from '$lib/guest-code-fixtures';
   
   let { data }: PageProps = $props();
-  
-  // Local state for the playground
-  let chainJson = $state(JSON.stringify(JSON_HEALER_STEPS, null, 2));
-  let editorView = $state<'builder' | 'raw'>('builder');
-  let loading = $state(false);
-  let lastError = $state<string | null>(null);
-  let lastTraceId = $state<string | null>(null);
-  let lastResult = $state<unknown>(null);
-  let lastSteps = $state<Array<{name: string; status: 'success' | 'error'; ms: number}>>([]);
-  
-  async function run() {
-    loading = true;
-    lastError = null;
-    lastTraceId = null;
-    lastResult = null;
-    lastSteps = [];
-    try {
-      const steps = JSON.parse(chainJson);
-      const r = await runChain(steps);
-      
-      if (r.traceId) lastTraceId = r.traceId;
-      if (r.ok) {
-        lastResult = r.result;
-      } else {
-        lastError = JSON.stringify({ error: r.error, reason: r.reason }, null, 2);
-      }
-      
-      if (r.trace && Array.isArray(r.trace)) {
-        lastSteps = r.trace.map((step, i) => ({
-          name: step.name || `Step ${i + 1}`,
-          status: 'success' as const,
-          ms: step.ms || 0
-        }));
-      }
-    } catch (e) {
-      lastError = e instanceof Error ? e.message : String(e);
-    } finally {
-      loading = false;
-    }
-  }
-  
-  function handleKeydown(e: KeyboardEvent) {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !loading) {
-      e.preventDefault();
-      run();
-    }
-  }
 </script>
-
-<svelte:window onkeydown={handleKeydown} />
 
 <SEO
   title="Lab — Open source edge compute for agents"
@@ -125,42 +72,71 @@ Trace: https://lab.coey.dev/t/clu01example00...</pre>
     </p>
   </section>
 
-  <!-- Step 4: Try It Live -->
-  <section class="space-y-4" aria-labelledby="playground">
-    <h2 id="playground" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
-      Step 4 — Try It Live
+  <!-- Step 4: Example -->
+  <section class="space-y-4" aria-labelledby="example">
+    <h2 id="example" class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+      Example — JSON Healer
     </h2>
     <p class="text-[0.9375rem] text-(--text-2)">
-      Edit the steps below and click Run. This is a real chain executing on Cloudflare's edge.
+      A 4-step chain that parses broken JSON, attempts repair, and validates the result.
     </p>
     
     <div class="rounded-(--radius) border border-(--border) bg-(--surface) overflow-hidden">
       <div class="p-4 border-b border-(--border)">
-        <EditorTabs bind:view={editorView} bind:chainJson disabled={loading} />
-      </div>
-      
-      <div class="p-4 border-b border-(--border) flex items-center justify-between bg-(--surface-alt)">
-        <div class="text-[0.8125rem] text-(--text-2)">
-          Chain mode • {JSON.parse(chainJson).length} steps
+        <div class="flex items-center gap-2 mb-4">
+          <div class="flex gap-1">
+            <button class="px-3 py-1.5 text-[0.8125rem] font-medium rounded-(--radius) bg-(--accent) text-white">Builder</button>
+            <button class="px-3 py-1.5 text-[0.8125rem] font-medium rounded-(--radius) text-(--text-2) hover:bg-(--surface-alt)">Raw JSON</button>
+          </div>
         </div>
-        <Button onclick={run} disabled={loading} size="sm">
-          {loading ? 'Running…' : 'Run'}
-        </Button>
+        
+        <div class="space-y-3">
+          <div class="rounded-(--radius) border border-(--border) bg-(--surface-alt) p-3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs text-(--text-3) font-mono">Step 1</span>
+              <span class="text-sm font-medium">Load Broken JSON</span>
+            </div>
+            <p class="text-[0.8125rem] text-(--text-2)">Receive malformed JSON with trailing commas</p>
+          </div>
+          
+          <div class="rounded-(--radius) border border-(--border) bg-(--surface-alt) p-3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs text-(--text-3) font-mono">Step 2</span>
+              <span class="text-sm font-medium">Parse Attempt</span>
+            </div>
+            <p class="text-[0.8125rem] text-(--text-2)">Try parsing — fails with SyntaxError</p>
+          </div>
+          
+          <div class="rounded-(--radius) border border-(--border) bg-(--surface-alt) p-3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs text-(--text-3) font-mono">Step 3</span>
+              <span class="text-sm font-medium">Auto-Heal</span>
+            </div>
+            <p class="text-[0.8125rem] text-(--text-2)">Remove trailing commas, retry parsing</p>
+          </div>
+          
+          <div class="rounded-(--radius) border border-(--border) bg-(--surface-alt) p-3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs text-(--text-3) font-mono">Step 4</span>
+              <span class="text-sm font-medium">Validate</span>
+            </div>
+            <p class="text-[0.8125rem] text-(--text-2)">Return healed data with fix diagnosis</p>
+          </div>
+        </div>
       </div>
       
-      <div class="p-4">
-        <ResponsePanel
-          status={loading ? 'loading' : lastError ? 'error' : lastTraceId ? 'success' : 'idle'}
-          traceId={lastTraceId}
-          result={lastResult}
-          steps={lastSteps}
-          error={lastError}
-        />
+      <div class="p-4 bg-(--surface-alt)">
+        <a 
+          href="/compose?example=json-healer"
+          class="inline-flex items-center justify-center w-full py-2.5 rounded-(--radius) bg-(--accent) text-white font-medium hover:bg-(--accent-hover) transition-colors no-underline"
+        >
+          Try It in Compose
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
       </div>
     </div>
     
     <p class="text-[0.8125rem] text-(--text-3)">
-      Press <kbd class="px-1.5 py-0.5 bg-(--surface-alt) border border-(--border) rounded text-[0.7rem]">Cmd</kbd> + <kbd class="px-1.5 py-0.5 bg-(--surface-alt) border border-(--border) rounded text-[0.7rem]">Enter</kbd> to run. 
       <a href="/examples" class="text-(--accent) hover:underline">Browse more examples →</a>
     </p>
   </section>
