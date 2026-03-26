@@ -3,8 +3,11 @@ import {
 	CANARY_RUN_STEPS,
 	COLD_BOOT_SPRINT_STEPS,
 	COMPUTE_OFFLOAD_STEPS,
+	ITERATIVE_REPAIR_STEPS,
 	PREFLIGHT_CHECK_STEPS,
 	PROOF_OF_CORRECTNESS_STEPS,
+	SELF_IMPROVING_LOOP_STEPS,
+	TRACE_HANDOFF_STEPS,
 	ZERO_BLEED_STEPS
 } from './data/agentic-examples';
 import {
@@ -48,7 +51,10 @@ const COMPOSE_FORK_STEPS_INTERNAL = {
 	'zero-bleed': ZERO_BLEED_STEPS,
 	'compute-offload': COMPUTE_OFFLOAD_STEPS,
 	'preflight-check': PREFLIGHT_CHECK_STEPS,
-	'cold-boot-sprint': COLD_BOOT_SPRINT_STEPS
+	'cold-boot-sprint': COLD_BOOT_SPRINT_STEPS,
+	'trace-handoff': TRACE_HANDOFF_STEPS,
+	'iterative-repair': ITERATIVE_REPAIR_STEPS,
+	'self-improving-loop': SELF_IMPROVING_LOOP_STEPS
 } as const;
 
 export type RunnableExampleId = keyof typeof COMPOSE_FORK_STEPS_INTERNAL;

@@ -24,6 +24,7 @@
     {
       title: 'Guides',
       items: [
+        { label: 'Agent Patterns', to: paths.docsPatterns },
         { label: 'When to use Lab', to: paths.docsWhenToUse },
         { label: 'HTTP API', to: paths.docsHttpApi },
         { label: 'TypeScript Client', to: paths.docsTypescript },

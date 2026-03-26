@@ -175,6 +175,8 @@ export function allCanonicalGuestBodies(): string[] {
 		...bodiesFromSteps([...CHAIN_STEPS_FOR_CURL]),
 		...bodiesFromSteps(API_RETRY_STEPS),
 		...bodiesFromSteps(WEBHOOK_VALIDATOR_STEPS),
+		...bodiesFromSteps(DATA_TRANSFORMER_STEPS),
+		...bodiesFromSteps(MULTI_SOURCE_AGGREGATOR_STEPS),
 		'return { ok: true, sum: 1 + 2 }',
 		'return input.map((n) => n * n)',
 		'return await d1.query("SELECT id, note FROM lab_demo WHERE id = 1")',
@@ -194,7 +196,7 @@ function detectFormat(data) {
     JSON.parse(data);
     return { format: 'json', data };
   } catch {
-    if (data.includes(',') && data.includes('\n')) {
+    if (data.includes(',') && data.includes('\\n')) {
       return { format: 'csv', data };
     }
     return { format: 'unknown', data };

@@ -1,8 +1,8 @@
 # `@acoyfellow/lab`
 
-**Published version tracks lab 0.0.1 (early feedback).**
+Typed HTTP client for the [Lab](https://github.com/acoyfellow/lab) Worker API — sandboxed isolates, capability chains, traces.
 
-Typed HTTP client for the [lab](https://github.com/acoyfellow/lab) Worker API: sandboxed isolates, capability chains, KV read, spawn, generate, seed, and trace retrieval.
+> **0.0.1** — early feedback. API may change.
 
 ## Install
 
@@ -10,59 +10,56 @@ Typed HTTP client for the [lab](https://github.com/acoyfellow/lab) Worker API: s
 npm install @acoyfellow/lab
 ```
 
-Requires **Node 18+** (global `fetch`) or any runtime that provides `fetch` (Cloudflare Workers, Deno, Bun).
+Requires Node 18+ or any runtime with global `fetch` (Cloudflare Workers, Deno, Bun).
 
 ## Usage
-
-`baseUrl` must be the HTTP **origin** that serves **`POST /run/*`**, **`GET /lab/catalog`**, **`GET /t/:id`** (or **`GET /t/:id.json`**, same JSON), **`POST /seed`** — almost always **your own** deployed lab (see [Self-host](https://github.com/acoyfellow/lab#self-host) in the main repo). It is **not** a Cloudflare API key. If the Worker is served under the same public hostname as the UI, use that URL; otherwise use the Worker’s public origin.
-
-**Agents:** `import { fetchLabCatalog } from "@acoyfellow/lab"` then `fetchLabCatalog({ baseUrl })` for capability hints and execute paths (see main repo **`/docs/agent-integration`**).
 
 ```ts
 import { createLabClient } from "@acoyfellow/lab";
 
-const lab = createLabClient({ baseUrl: "https://your-lab-origin.example" });
+const lab = createLabClient({
+  baseUrl: "https://your-lab.workers.dev",
+});
 
-const r = await lab.runSandbox({ body: "return { hello: \"world\" }" });
+const r = await lab.runChain([
+  { body: "return [1, 2, 3]", capabilities: [] },
+  { body: "return input.map(n => n * 2)", capabilities: [] },
+]);
+
+console.log(r.result);  // [2, 4, 6]
 ```
 
-### API
+`baseUrl` is the origin serving the Lab Worker — either the public hostname or your own deploy. See [Self-host](https://github.com/acoyfellow/lab#self-host).
 
-| Method | HTTP |
+## API
+
+| Method | HTTP route |
 |--------|------|
-| `fetchLabCatalog({ baseUrl, fetch? })` | `GET /lab/catalog` |
-| `runSandbox({ body?, code?, template?, capabilities? })` | `POST /run` |
-| `runKv({ … })` | `POST /run/kv` |
+| `runSandbox({ body, capabilities? })` | `POST /run` |
+| `runKv({ body, capabilities? })` | `POST /run/kv` |
 | `runChain(steps)` | `POST /run/chain` |
-| `runSpawn({ body?, code?, template?, capabilities, depth? })` | `POST /run/spawn` |
-| `runGenerate({ prompt, capabilities, template? })` | `POST /run/generate` |
+| `runSpawn({ body, capabilities, depth? })` | `POST /run/spawn` |
+| `runGenerate({ prompt, capabilities })` | `POST /run/generate` |
 | `seed()` | `POST /seed` |
 | `getTrace(id)` | `GET /t/:id` |
-| `getTraceJson(id)` | `GET /t/:id.json` (same document) |
 
-Use **`body`** for guest JavaScript; **`code`** is a legacy alias. Optional **`template`**: `guest@v1` (default).
+Use `body` for guest JavaScript. `code` is a legacy alias. Default template: `guest@v1`.
 
-Optional `fetch` in `createLabClient({ baseUrl, fetch })` for tests or custom runtimes.
+**Effect client:** `import { createLabEffectClient } from "@acoyfellow/lab/effect"` — same methods, returns `Effect` instead of `Promise`. Peer dependency: `effect@4.0.0-beta.40`.
 
-**Effect:** `import { createLabEffectClient, fetchLabCatalogEffect, HttpError } from "@acoyfellow/lab/effect"` (peer dependency `effect@4.0.0-beta.40`). Same run/trace methods as `createLabClient`, plus `fetchLabCatalogEffect` for `GET /lab/catalog`—each returns `Effect` (failures → `HttpError`).
+**Agent discovery:** `import { fetchLabCatalog } from "@acoyfellow/lab"` for capability hints and execute paths.
 
-### Errors
+## Errors
 
-Non-2xx responses with a **JSON body** are parsed and returned (not thrown), matching the SvelteKit app’s worker proxy. Only non-JSON bodies throw.
+Non-2xx responses with JSON bodies are parsed and returned (not thrown). Only non-JSON responses throw.
 
-## Local dev (monorepo)
+## Local dev
 
-From the [lab](https://github.com/acoyfellow/lab) repo, with `bun dev` running, the Worker listens on **`http://localhost:1337`**. Use:
+With `bun dev` running in the [Lab](https://github.com/acoyfellow/lab) repo:
 
 ```ts
-createLabClient({ baseUrl: process.env.LAB_URL ?? "http://localhost:1337" });
+createLabClient({ baseUrl: "http://localhost:1337" });
 ```
-
-Smoke from the monorepo: `LAB_URL` = your origin, then `bun run dogfood:lab` (sandbox + chain, `traceId`, `getTrace`, `getTraceJson`; see main README **Tests and CI**).
-
-## Full docs
-
-Endpoint details and curl: [github.com/acoyfellow/lab](https://github.com/acoyfellow/lab). Capability matrix (bindings, tradeoffs): README **Capabilities** section and **`/docs/capabilities`** on a running deploy.
 
 ## License
 

@@ -47,6 +47,13 @@ export const docsHubCards: DocsHubCard[] = [
 	},
 	{
 		group: 'guides',
+		to: paths.docsPatterns,
+		title: 'Agent Patterns',
+		description: 'Prove it, self-heal, handoff, canary — traces as the protocol.',
+		tags: ['Agent', 'Patterns']
+	},
+	{
+		group: 'guides',
 		to: paths.docsWhenToUse,
 		title: 'When to use Lab',
 		description: 'Good fit vs poor fit; relationship to plain Workers.',

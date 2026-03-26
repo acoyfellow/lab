@@ -50,8 +50,8 @@
   {#if status === 'idle'}
     <Card class="h-full flex items-center justify-center border-dashed border-(--border) bg-(--surface-alt)/30">
       <CardContent class="text-center py-10 px-4">
-        <p class="text-(--text-3) text-sm">Run to get a <strong class="text-(--text-2)">trace</strong></p>
-        <p class="text-(--text-3) text-xs mt-2">Cmd+Enter</p>
+        <p class="text-(--text-3) text-sm m-0">Hit <strong class="text-(--text-2)">Run</strong> to execute and get a trace</p>
+        <p class="text-(--text-3) text-xs mt-1.5 m-0"><kbd class="px-1.5 py-0.5 rounded bg-(--surface) font-mono text-[0.7rem]">Cmd+Enter</kbd></p>
       </CardContent>
     </Card>
   {:else if status === 'loading'}
@@ -97,9 +97,9 @@
     <Card class="border-emerald-500/25 bg-white shadow-sm shadow-emerald-500/20">
       <CardHeader class="pb-2 space-y-2">
         <div class="flex items-center justify-between gap-2 flex-wrap">
-          <CardTitle class="text-sm text-emerald-400 flex items-center gap-2 m-0">
+          <CardTitle class="text-sm text-emerald-500 flex items-center gap-2 m-0">
             <Check class="w-4 h-4 shrink-0" />
-            Last run
+            Success
           </CardTitle>
           {#if traceId}
             <div class="flex flex-wrap gap-2">

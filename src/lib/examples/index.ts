@@ -26,4 +26,7 @@ export {
 	computeOffload, COMPUTE_OFFLOAD_STEPS,
 	preflightCheck, PREFLIGHT_CHECK_STEPS,
 	coldBootSprint, COLD_BOOT_SPRINT_STEPS,
+	traceHandoff, TRACE_HANDOFF_STEPS,
+	iterativeRepair, ITERATIVE_REPAIR_STEPS,
+	selfImprovingLoop, SELF_IMPROVING_LOOP_STEPS,
 } from './data/agentic-examples';

@@ -22,7 +22,10 @@
     zeroBleed,
     computeOffload,
     preflightCheck,
-    coldBootSprint
+    coldBootSprint,
+    traceHandoff,
+    iterativeRepair,
+    selfImprovingLoop
   } from '$lib/examples';
   import { COMPOSE_FORK_STEPS, type RunnableExampleId } from '$lib/examples/compose-fork-steps';
   import type { ExampleData } from '$lib/examples/types';
@@ -58,6 +61,9 @@
     {
       label: 'Agentic',
       examples: [
+        selfImprovingLoop,
+        traceHandoff,
+        iterativeRepair,
         proofOfCorrectness,
         canaryRun,
         zeroBleed,
@@ -82,7 +88,7 @@
 
 <SEO
   title="Examples — lab"
-  description="Real-world examples of Lab in action."
+  description="Agent workflows, self-healing pipelines, and proof-of-work patterns — all runnable with traces."
   path="/examples"
   type="website"
 />
@@ -93,7 +99,7 @@
       Examples
     </h1>
     <p class="text-[1.0625rem] text-(--text-2) max-w-[60ch]">
-      Real-world demos showing Lab's capabilities. Each example includes working code and execution traces.
+      Patterns agents use with Lab. Each example is a runnable chain — click Run to execute it and get a trace showing the full story.
     </p>
   </header>
 

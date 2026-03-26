@@ -15,7 +15,7 @@
   <header class="space-y-2">
     <h1 class="text-2xl font-semibold tracking-tight">Tutorial</h1>
     <p class="text-[0.9375rem] text-(--text-2)">
-      Three steps to go from installation to running chains with full observability.
+      Install the client, chain some isolates, read a trace. Takes about five minutes.
     </p>
   </header>
 
@@ -29,9 +29,9 @@
           1
         </div>
         <div class="flex-1">
-          <h2 class="font-semibold text-(--text) group-hover:text-(--accent) mb-1">Install and First Run</h2>
+          <h2 class="font-semibold text-(--text) group-hover:text-(--accent) mb-1">Install and first run</h2>
           <p class="text-[0.8125rem] text-(--text-2)">
-            Install the TypeScript client, write your first chain, and see the trace output.
+            Install the client, run a chain, get your first trace URL.
           </p>
         </div>
       </div>
@@ -46,9 +46,9 @@
           2
         </div>
         <div class="flex-1">
-          <h2 class="font-semibold text-(--text) group-hover:text-(--accent) mb-1">Multi-Step Chains</h2>
+          <h2 class="font-semibold text-(--text) group-hover:text-(--accent) mb-1">Chains and capabilities</h2>
           <p class="text-[0.8125rem] text-(--text-2)">
-            Pass data between steps, use capabilities, and understand the trace structure.
+            Pass data between steps, grant capabilities, read the trace.
           </p>
         </div>
       </div>
@@ -63,9 +63,9 @@
           3
         </div>
         <div class="flex-1">
-          <h2 class="font-semibold text-(--text) group-hover:text-(--accent) mb-1">Agents and Handoffs</h2>
+          <h2 class="font-semibold text-(--text) group-hover:text-(--accent) mb-1">Agents and MCP</h2>
           <p class="text-[0.8125rem] text-(--text-2)">
-            Connect to agents via MCP, use traces as handoff points between sessions.
+            Connect AI agents via MCP, use traces as handoff artifacts.
           </p>
         </div>
       </div>

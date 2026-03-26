@@ -178,8 +178,8 @@
 </script>
 
 <SEO
-  title={`Run ${trace.id} — lab`}
-  description="A shareable execution trace: inputs, outputs, errors, and timing across isolates."
+  title={`Trace ${trace.id} — lab`}
+  description="Execution trace — the full story of what ran, what returned, and how long it took. Inspect, fork, or share."
   path={page.url.pathname}
   type="website"
 />
@@ -188,25 +188,27 @@
   <!-- Header -->
   <header class="flex justify-between items-start gap-4 mb-6 max-sm:flex-col">
     <div>
-      <h1 class="text-lg font-semibold tracking-tight text-(--text)">Trace</h1>
-      <p class="text-(--text-2) text-[0.8125rem] mt-1 mb-0 max-w-[52ch] leading-relaxed">
-        <strong class="text-(--text) font-medium">{trace.type}</strong> —
+      <div class="flex items-center gap-2">
+        <h1 class="text-lg font-semibold tracking-tight text-(--text) m-0">Trace</h1>
+        <span class="text-[0.6875rem] font-mono text-(--text-3) bg-(--surface-alt) px-2 py-0.5 rounded">{trace.id}</span>
+      </div>
+      <p class="text-(--text-2) text-[0.8125rem] mt-1.5 mb-0 max-w-[52ch] leading-relaxed">
         {#if trace.type === 'chain'}
-          {trace.trace?.length || 0} isolates ran in sequence
+          {trace.trace?.length || 0}-step chain
         {:else if trace.type === 'spawn'}
-          nested isolate execution with spawn
+          Nested spawn execution
+        {:else if trace.type === 'generate'}
+          AI-generated run
         {:else}
-          single isolate execution
+          Single isolate run
         {/if}
+        <span class="text-(--text-3)">· {trace.createdAt}</span>
       </p>
-      <div class="text-(--text-3) text-[0.75rem] mt-2 font-mono">{trace.id}</div>
-      <div class="text-(--text-3) text-[0.8125rem] mt-0.5">{trace.createdAt}</div>
     </div>
-    <div class="flex gap-3 flex-wrap text-[0.8125rem]">
-      <a href="/compose" class="text-(--text-2) no-underline bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 hover:text-(--text)">Compose</a>
-      <button type="button" onclick={goFork} class="text-(--text-2) bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 cursor-pointer hover:text-(--text) text-[0.8125rem]">Fork</button>
-      <a href="/t/{trace.id}.json" class="text-(--text-2) no-underline bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 hover:text-(--text)">JSON</a>
-      <button type="button" onclick={copyUrl} class="text-(--text-2) bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 cursor-pointer hover:text-(--text) text-[0.8125rem]">Copy URL</button>
+    <div class="flex gap-2 flex-wrap text-[0.8125rem]">
+      <button type="button" onclick={goFork} class="text-(--text-2) bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 cursor-pointer hover:text-(--text) hover:border-(--accent)/30 text-[0.8125rem]">Fork</button>
+      <a href="/t/{trace.id}.json" class="text-(--text-2) no-underline bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 hover:text-(--text) hover:border-(--accent)/30">JSON</a>
+      <button type="button" onclick={copyUrl} class="text-(--text-2) bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 cursor-pointer hover:text-(--text) hover:border-(--accent)/30 text-[0.8125rem]">Copy URL</button>
     </div>
   </header>
 
@@ -245,7 +247,7 @@
         <div>
           <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">Step-by-step</div>
           <p class="text-[0.75rem] text-(--text-3) m-0 mt-1">
-            Click a step to inspect input, output, and timing. Expand to see code.
+            Click a step to inspect its data. Expand to see code.
           </p>
         </div>
         

@@ -456,6 +456,326 @@ return [...prev, { isolate: ${i + 1}, primes: primes.length, ms: Date.now() % 10
 	capabilities: [],
 }));
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 7. TRACE HANDOFF — Agent A produces work, Agent B picks it up via trace
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const TRACE_HANDOFF_STEPS: ChainStep[] = [
+	{
+		name: 'Agent A: Research',
+		body: `// Agent A gathers and structures data
+const findings = {
+  topic: 'Edge isolate performance',
+  sources: [
+    { name: 'CF docs', claim: 'sub-millisecond cold starts', confidence: 'high' },
+    { name: 'Benchmark', claim: '< 5ms for prime sieve to 10k', confidence: 'measured' },
+    { name: 'Community', claim: 'isolates share nothing', confidence: 'verified' },
+  ],
+  summary: '3 sources checked, all consistent.',
+  handoff: 'Ready for Agent B to synthesize.',
+};
+return findings;`,
+		capabilities: [],
+	},
+	{
+		name: 'Agent B: Synthesize',
+		body: `// Agent B receives Agent A's findings via the chain
+const { sources, topic } = input;
+const highConfidence = sources.filter(s => s.confidence !== 'low');
+const synthesis = {
+  topic,
+  conclusion: highConfidence.length + '/' + sources.length + ' sources are high-confidence.',
+  claims: highConfidence.map(s => s.claim),
+  recommendation: 'Sufficient evidence to proceed.',
+};
+return synthesis;`,
+		capabilities: [],
+	},
+	{
+		name: 'Agent C: Draft',
+		body: `// Agent C takes the synthesis and produces a deliverable
+const { topic, conclusion, claims, recommendation } = input;
+return {
+  draft: topic + ': ' + claims.join('. ') + '.',
+  status: 'ready_for_review',
+  conclusion,
+  recommendation,
+  agentsInvolved: 3,
+  note: 'Each agent ran in a separate isolate. The trace shows the full handoff chain.',
+};`,
+		capabilities: [],
+	},
+];
+
+export const traceHandoff: ExampleData = {
+	id: 'trace-handoff',
+	title: 'Trace Handoff',
+	description: 'Three agents in a relay. Each picks up where the last left off. The trace is the handoff protocol.',
+	problem: 'How do agents share work? Custom APIs? Shared databases? Message queues?',
+	solution: 'Agent A → isolate → trace. Agent B reads the trace, continues in a new isolate. Repeat.',
+	result: '3 agents, 3 isolates, 1 trace URL. The trace IS the coordination layer.',
+	icon: 'arrow-right-left',
+	tags: ['handoff', 'multi-agent', 'coordination', 'trace', 'relay'],
+	steps: [
+		{ name: 'Agent A: Research', description: 'Gather and structure findings', code: '{ sources: 3, summary: "All consistent" }', input: {}, output: { sources: 3, handoff: 'Ready for Agent B' }, capabilities: [], ms: 2 },
+		{ name: 'Agent B: Synthesize', description: 'Filter and conclude', code: '{ conclusion: "3/3 high-confidence" }', input: { sources: '...' }, output: { recommendation: 'Proceed' }, capabilities: [], ms: 1 },
+		{ name: 'Agent C: Draft', description: 'Produce deliverable', code: '{ status: "ready_for_review" }', input: { synthesis: '...' }, output: { agentsInvolved: 3 }, capabilities: [], ms: 1 },
+	],
+};
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 8. ITERATIVE REPAIR — Agent tries, fails, reads the error, fixes, retries
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const ITERATIVE_REPAIR_STEPS: ChainStep[] = [
+	{
+		name: 'Attempt 1: Naive parse',
+		body: `const raw = '{ name: "Alice", age: 30 }';  // not valid JSON (unquoted keys)
+try {
+  return { ok: true, data: JSON.parse(raw), attempt: 1 };
+} catch (e) {
+  return { ok: false, error: e.message, raw, attempt: 1 };
+}`,
+		capabilities: [],
+	},
+	{
+		name: 'Diagnose failure',
+		body: `if (input.ok) return { ...input, diagnosis: 'No repair needed' };
+// Agent reads the error and raw data from the trace
+const diagnosis = [];
+if (input.raw.match(/\\b\\w+:/)) diagnosis.push('unquoted_keys');
+if (input.raw.match(/'/)) diagnosis.push('single_quotes');
+if (input.raw.match(/,\\s*[}\\]]/)) diagnosis.push('trailing_commas');
+return {
+  ok: false,
+  raw: input.raw,
+  attempt: input.attempt,
+  error: input.error,
+  diagnosis,
+  strategy: diagnosis.includes('unquoted_keys')
+    ? 'Quote all keys with regex before re-parse'
+    : 'Unknown pattern — escalate',
+};`,
+		capabilities: [],
+	},
+	{
+		name: 'Attempt 2: Apply fix',
+		body: `if (input.ok) return input;
+let fixed = input.raw;
+// Apply the strategy from diagnosis
+if (input.diagnosis.includes('unquoted_keys')) {
+  fixed = fixed.replace(/(\\s*)([a-zA-Z_]\\w*)\\s*:/g, '$1"$2":');
+}
+if (input.diagnosis.includes('trailing_commas')) {
+  fixed = fixed.replace(/,\\s*([}\\]])/g, '$1');
+}
+try {
+  return { ok: true, data: JSON.parse(fixed), attempt: input.attempt + 1, fixed: true, appliedFixes: input.diagnosis };
+} catch (e) {
+  return { ok: false, error: e.message, raw: fixed, attempt: input.attempt + 1, diagnosis: input.diagnosis };
+}`,
+		capabilities: [],
+	},
+	{
+		name: 'Report',
+		body: `return {
+  success: input.ok,
+  attempts: input.attempt,
+  fixed: !!input.fixed,
+  appliedFixes: input.appliedFixes || [],
+  data: input.data,
+  narrative: input.fixed
+    ? 'Attempt 1 failed. Diagnosed ' + (input.appliedFixes || []).join(', ') + '. Attempt 2 succeeded.'
+    : input.ok ? 'Parsed on first try.' : 'All attempts failed.',
+};`,
+		capabilities: [],
+	},
+];
+
+export const iterativeRepair: ExampleData = {
+	id: 'iterative-repair',
+	title: 'Iterative Repair',
+	description: 'Agent tries to parse, fails, reads the error, diagnoses the problem, applies a fix, retries. The trace shows the thinking.',
+	problem: 'Data is broken in unpredictable ways. A single-shot parser either works or crashes.',
+	solution: 'Try → fail → diagnose from the error → apply targeted fix → retry. Each step in its own isolate.',
+	result: 'Attempt 1 failed (unquoted keys). Diagnosed. Attempt 2 succeeded. The trace shows the full reasoning chain.',
+	icon: 'refresh-cw',
+	tags: ['self-healing', 'repair', 'iterative', 'diagnosis', 'agent'],
+	steps: [
+		{ name: 'Attempt 1', description: 'Naive JSON.parse', code: 'JSON.parse(raw) → throws', input: {}, output: { ok: false, error: 'Unexpected token' }, capabilities: [], ms: 1 },
+		{ name: 'Diagnose', description: 'Read error + raw data', code: '{ diagnosis: ["unquoted_keys"] }', input: { error: '...' }, output: { strategy: 'Quote all keys' }, capabilities: [], ms: 1 },
+		{ name: 'Attempt 2', description: 'Apply regex fix + re-parse', code: 'fixed.replace(/(\\w+):/g, \'"$1":\')', input: { diagnosis: '...' }, output: { ok: true, fixed: true }, capabilities: [], ms: 1 },
+		{ name: 'Report', description: 'Summarize the repair narrative', code: '{ narrative: "Attempt 1 failed. Diagnosed. Attempt 2 succeeded." }', input: { ok: true }, output: { attempts: 2, success: true }, capabilities: [], ms: 1 },
+	],
+};
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 9. SELF-IMPROVING LOOP — generate variants, evaluate, select winner
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Self-Improving Loop (one generation)
+ *
+ * The HyperAgents pattern: generate variants → evaluate → select winner.
+ * This chain runs one cycle. An outer loop would call Lab repeatedly,
+ * feeding the winner back as the parent for the next generation.
+ *
+ * Task: implement a fuzzy string matcher.
+ * Two candidates take different approaches.
+ * Same test cases. Same scoring. Best score wins.
+ * The trace is the lab notebook for this experiment.
+ */
+export const SELF_IMPROVING_LOOP_STEPS: ChainStep[] = [
+	{
+		name: 'Test Cases',
+		body: `// The evaluation harness — same for every candidate.
+// An agent or meta-agent would generate these from the task spec.
+return {
+  task: 'fuzzy string match — return similarity 0..1',
+  cases: [
+    { a: 'kitten',    b: 'sitting',   minScore: 0.5  },
+    { a: 'saturday',  b: 'sunday',    minScore: 0.4  },
+    { a: 'hello',     b: 'hello',     minScore: 1.0  },
+    { a: 'abc',       b: 'xyz',       minScore: 0.0  },
+    { a: '',          b: 'something', minScore: 0.0  },
+    { a: 'foo',       b: 'foo',       minScore: 1.0  },
+    { a: 'bar',       b: 'baz',       minScore: 0.3  },
+    { a: 'abcdef',    b: 'azced',     minScore: 0.3  },
+  ],
+};`,
+		capabilities: [],
+	},
+	{
+		name: 'Candidate A — Trigram',
+		body: `// Approach: trigram overlap (fast, approximate)
+function trigramSimilarity(a, b) {
+  if (a === b) return 1;
+  if (!a || !b) return 0;
+  const trigrams = s => {
+    const t = new Set();
+    const padded = '  ' + s + ' ';
+    for (let i = 0; i < padded.length - 2; i++) t.add(padded.slice(i, i + 3));
+    return t;
+  };
+  const tA = trigrams(a.toLowerCase());
+  const tB = trigrams(b.toLowerCase());
+  let intersection = 0;
+  for (const t of tA) if (tB.has(t)) intersection++;
+  return intersection / Math.max(tA.size, tB.size);
+}
+const results = input.cases.map(tc => {
+  const score = trigramSimilarity(tc.a, tc.b);
+  return {
+    a: tc.a, b: tc.b,
+    score: Math.round(score * 1000) / 1000,
+    meetsMin: score >= tc.minScore,
+  };
+});
+const passed = results.filter(r => r.meetsMin).length;
+return {
+  candidate: 'A',
+  method: 'trigram overlap',
+  cases: input.cases,
+  results,
+  passed,
+  total: results.length,
+  fitness: Math.round((passed / results.length) * 100),
+};`,
+		capabilities: [],
+	},
+	{
+		name: 'Candidate B — Levenshtein',
+		body: `// Approach: normalized Levenshtein distance (exact, slower)
+function levenshtein(a, b) {
+  if (a === b) return 1;
+  if (!a || !b) return 0;
+  const la = a.toLowerCase(), lb = b.toLowerCase();
+  const m = la.length, n = lb.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = la[i - 1] === lb[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i-1][j] + 1, dp[i][j-1] + 1, dp[i-1][j-1] + cost);
+    }
+  }
+  return 1 - dp[m][n] / Math.max(m, n);
+}
+// Use the same test cases propagated from Candidate A
+const results = input.cases.map(tc => {
+  const score = levenshtein(tc.a, tc.b);
+  return {
+    a: tc.a, b: tc.b,
+    score: Math.round(score * 1000) / 1000,
+    meetsMin: score >= tc.minScore,
+  };
+});
+const passed = results.filter(r => r.meetsMin).length;
+return {
+  candidateA: {
+    method: input.method,
+    fitness: input.fitness,
+    passed: input.passed,
+    total: input.total,
+  },
+  candidate: 'B',
+  method: 'normalized Levenshtein',
+  results,
+  passed,
+  total: results.length,
+  fitness: Math.round((passed / results.length) * 100),
+};`,
+		capabilities: [],
+	},
+	{
+		name: 'Select Winner',
+		body: `const a = input.candidateA;
+const b = { method: input.method, fitness: input.fitness, passed: input.passed, total: input.total };
+const winner = a.fitness >= b.fitness ? 'A' : 'B';
+const winnerData = winner === 'A' ? a : b;
+const loserData = winner === 'A' ? b : a;
+return {
+  generation: 1,
+  winner,
+  selected: {
+    method: winnerData.method,
+    fitness: winnerData.fitness,
+    score: winnerData.passed + '/' + winnerData.total,
+  },
+  defeated: {
+    method: loserData.method,
+    fitness: loserData.fitness,
+    score: loserData.passed + '/' + loserData.total,
+  },
+  delta: Math.abs(a.fitness - b.fitness) + '% fitness difference',
+  next: 'Feed the winner as parent to the next generation. Mutate and repeat.',
+  note: 'This is one cycle. An outer loop calls Lab repeatedly — each generation is a chain, each chain is a trace.',
+};`,
+		capabilities: [],
+	},
+];
+
+export const selfImprovingLoop: ExampleData = {
+	id: 'self-improving-loop',
+	title: 'Self-Improving Loop',
+	description: 'Two candidate implementations, same test cases, winner selected by fitness. One generation of an evolutionary agent loop.',
+	problem: 'Self-improving agents need to generate code, evaluate it safely, and pick the best variant. That requires isolated execution with verifiable results.',
+	solution: 'Each generation is a Lab chain: define test cases → run candidate A → run candidate B → select winner. The trace is the lab notebook.',
+	result: 'Levenshtein beats Trigram 100% vs 63%. Winner feeds into the next generation. Trace records the full experiment.',
+	icon: 'repeat',
+	tags: ['agent', 'self-improving', 'evolution', 'evaluation', 'meta'],
+	steps: [
+		{ name: 'Test Cases', description: '8 string pairs with minimum similarity thresholds', code: '{ a: "kitten", b: "sitting", minScore: 0.5 }', input: {}, output: { cases: 8 }, capabilities: [], ms: 1 },
+		{ name: 'Candidate A', description: 'Trigram overlap — fast, approximate', code: 'trigramSimilarity("kitten", "sitting")', input: { cases: '...' }, output: { fitness: 63, passed: '5/8' }, capabilities: [], ms: 2 },
+		{ name: 'Candidate B', description: 'Normalized Levenshtein — exact, slower', code: 'levenshtein("kitten", "sitting")', input: { cases: '...' }, output: { fitness: 100, passed: '8/8' }, capabilities: [], ms: 3 },
+		{ name: 'Select Winner', description: 'Best fitness wins, feed to next generation', code: '{ winner: "B", method: "Levenshtein" }', input: { a: '...', b: '...' }, output: { winner: 'B', delta: '37%' }, capabilities: [], ms: 1 },
+	],
+};
+
+
 export const coldBootSprint: ExampleData = {
 	id: 'cold-boot-sprint',
 	title: 'Cold Boot Sprint',
