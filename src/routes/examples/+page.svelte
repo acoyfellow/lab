@@ -1,6 +1,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import SEO from '$lib/SEO.svelte';
+  import * as Table from '$lib/components/ui/table';
+  import { Button } from '$lib/components/ui/button';
   import {
     jsonHealer,
     apiRetry,
@@ -29,8 +31,9 @@
   } from '$lib/examples';
   import { COMPOSE_FORK_STEPS, type RunnableExampleId } from '$lib/examples/compose-fork-steps';
   import type { ExampleData } from '$lib/examples/types';
-  import * as Table from '$lib/components/ui/table';
-  import { Button } from '$lib/components/ui/button';
+
+  let query = $state('');
+  const normalizedQuery = $derived(() => query.trim().toLowerCase());
 
   const allExamples = [
     jsonHealer,
@@ -59,55 +62,71 @@
     selfImprovingLoop
   ];
 
-  const startHereExamples = allExamples.filter((example) => example.startHere).slice(0, 3);
-  const featuredExamples = allExamples.filter((example) => example.featured);
+  type SortKey = 'score' | 'title' | 'steps';
+  let sortKey = $state<SortKey>('score');
+  let sortDir = $state<'asc' | 'desc'>('desc');
 
-  const exampleSections: { label: string; examples: ExampleData[] }[] = [
-    {
-      label: 'Trace-first workflows',
-      examples: [
-        jsonHealer,
-        iterativeRepair,
-        traceHandoff,
-        proofOfCorrectness,
-        canaryRun,
-        preflightCheck,
-        zeroBleed,
-        apiRetry,
-        webhookValidator,
-        dataTransformer,
-        multiSourceAggregator
+  function exampleScore(ex: ExampleData): number {
+    const steps = ex.steps.length;
+    const agenticBoost = ex.complexity === 'agentic' ? 50 : 0;
+    const featuredBoost = ex.featured ? 40 : 0;
+    const startHereBoost = ex.startHere ? 15 : 0;
+    const traceBoost = ex.traceValue ? 8 : 0;
+    return agenticBoost + featuredBoost + startHereBoost + traceBoost + steps;
+  }
+
+  const filteredAll = $derived(() => {
+    const q = normalizedQuery();
+    if (!q) return allExamples;
+    return allExamples.filter((ex) => {
+      const hay = [
+        ex.title,
+        ex.description,
+        ex.problem,
+        ex.result,
+        ex.traceValue,
+        ...(ex.tags ?? [])
       ]
-    },
-    {
-      label: 'Deterministic primitives',
-      examples: [
-        sort,
-        dedupe,
-        regexTest,
-        dateMath,
-        hash,
-        validateJson,
-        wordFrequency,
-        mapFilterReduce,
-        generateUuids,
-        transformStrings
-      ]
-    },
-    {
-      label: 'Agentic patterns',
-      examples: [
-        selfImprovingLoop,
-        computeOffload,
-        coldBootSprint
-      ]
-    }
-  ];
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  });
+
+  const top6 = $derived(() =>
+    [...filteredAll()]
+      .sort((a, b) => exampleScore(b) - exampleScore(a))
+      .slice(0, 6)
+  );
+
+  const restRows = $derived(() => {
+    const topIds = new Set(top6().map((e) => e.id));
+    const rows = filteredAll().filter((e) => !topIds.has(e.id));
+
+    const dir = sortDir === 'asc' ? 1 : -1;
+    const cmp = (a: ExampleData, b: ExampleData) => {
+      if (sortKey === 'title') return a.title.localeCompare(b.title) * dir;
+      if (sortKey === 'steps') return (a.steps.length - b.steps.length) * dir;
+      return (exampleScore(a) - exampleScore(b)) * dir;
+    };
+
+    return [...rows].sort(cmp);
+  });
 
   function complexityLabel(ex: ExampleData): string {
     if (ex.complexity === 'simple') return '1 isolate';
     if (ex.complexity === 'agentic') return `${ex.steps.length} steps · agent pattern`;
     return `${ex.steps.length} steps · workflow`;
+  }
+
+  function toggleSort(nextKey: SortKey) {
+    if (sortKey === nextKey) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      return;
+    }
+    sortKey = nextKey;
+    sortDir = nextKey === 'title' ? 'asc' : 'desc';
   }
 
   function openExample(ex: ExampleData) {
@@ -124,7 +143,7 @@
 
 <SEO
   title="Examples — lab"
-  description="Agent workflows, self-healing pipelines, and proof-of-work patterns — all runnable with traces."
+  description="Runnable workflows for trace-first agents: open in Compose, run a chain, and share the trace as the proof."
   path="/examples"
   type="website"
 />
@@ -135,137 +154,153 @@
       Examples
     </h1>
     <p class="text-[1.0625rem] text-(--text-2) max-w-[60ch]">
-      Start with a trace-first workflow, open it in Compose, run it, then inspect the trace URL. The strongest examples show why the trace is the product.
+      Pick a workflow, open it in Compose, run it, and share the trace. These examples are written so the trace reads like a receipt: what ran, what changed, what you can trust next time.
     </p>
+    <div class="mt-6">
+      <input
+        class="w-full rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2 text-[0.9375rem] text-(--text) placeholder:text-(--text-3) focus:outline-none focus:border-(--accent)"
+        placeholder="Search by title or description…"
+        bind:value={query}
+      />
+      {#if normalizedQuery()}
+        <div class="mt-2 text-[0.75rem] text-(--text-3)">
+          Showing matches for “{query.trim()}”.
+        </div>
+      {/if}
+    </div>
   </header>
 
   <section class="mb-12 space-y-4">
-    <div class="flex items-center justify-between gap-3 flex-wrap">
+    <div class="flex items-end justify-between gap-3 flex-wrap">
       <div>
-        <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Start here</h2>
-        <p class="text-[0.875rem] text-(--text-2) mt-2 mb-0 max-w-[60ch]">
-          These three examples explain the product fastest: repair something broken, hand work off with a trace, and prove the result.
+        <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+          Signature workflows
+        </h2>
+        <p class="text-[0.875rem] text-(--text-2) mt-2 mb-0 max-w-[70ch]">
+          Six patterns that show Lab at its best: multi-step pipelines, handoffs, safety checks, and proof artifacts. Open one, run it, and follow the trace URL like a story.
         </p>
       </div>
       <div class="text-[0.75rem] text-(--text-3)">
-        Opens in Compose, then run for a trace URL.
+        Curated from featured + agentic + step count.
       </div>
     </div>
 
-    <div class="grid gap-3 md:grid-cols-3">
-      {#each startHereExamples as ex (ex.id)}
+    <div class="grid gap-3 md:grid-cols-2">
+      {#each top6() as ex (ex.id)}
         <button
           type="button"
           class="text-left rounded-(--radius) border border-(--border) bg-(--surface) p-4 hover:border-(--accent) transition-colors"
           onclick={() => openExample(ex)}
         >
-          <div class="flex items-center justify-between gap-2">
-            <div class="font-semibold text-(--text) text-[0.9375rem]">{ex.title}</div>
-            <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">Start here</span>
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="font-semibold text-(--text)">{ex.title}</div>
+              <div class="text-[0.8125rem] text-(--text-2) mt-2">
+                {ex.problem ?? ex.description}
+              </div>
+            </div>
+            <div class="shrink-0 text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">
+              {complexityLabel(ex)}
+            </div>
           </div>
-          <p class="text-[0.8125rem] text-(--text-2) mt-2 mb-0">{ex.description}</p>
           <div class="flex flex-wrap gap-1 mt-3">
-            <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">{complexityLabel(ex)}</span>
-            {#if ex.traceValue}
-              <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">trace-first</span>
+            {#if ex.featured}
+              <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">
+                Featured
+              </span>
+            {/if}
+            {#if ex.startHere}
+              <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">
+                Start here
+              </span>
             {/if}
           </div>
-          <p class="text-[0.75rem] text-(--text-2) mt-3 mb-0">{ex.traceValue}</p>
+          <div class="text-[0.75rem] text-(--text-3) mt-3">
+            {ex.traceValue ?? ex.result}
+          </div>
           <div class="mt-4 text-[0.75rem] text-(--accent)">Open in Compose →</div>
         </button>
       {/each}
     </div>
   </section>
 
-  <section class="mb-12 space-y-4">
-    <div class="flex items-center justify-between gap-3 flex-wrap">
+  <section class="mb-0 space-y-4">
+    <div class="flex items-end justify-between gap-3 flex-wrap">
       <div>
-        <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Featured trace patterns</h2>
-        <p class="text-[0.875rem] text-(--text-2) mt-2 mb-0 max-w-[60ch]">
-          Pick a workflow where the trace changes the outcome: approval artifact, handoff layer, safety check, or debugging narrative.
+        <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+          All examples
+        </h2>
+        <p class="text-[0.875rem] text-(--text-2) mt-2 mb-0 max-w-[70ch]">
+          The full catalog. Search filters this list; use the sort controls to scan by score, step count, or title.
         </p>
       </div>
+      <div class="flex items-center gap-2">
+        <Button size="sm" variant="outline" onclick={() => toggleSort('score')}>
+          Sort: Score {sortKey === 'score' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+        </Button>
+        <Button size="sm" variant="outline" onclick={() => toggleSort('steps')}>
+          Sort: Steps {sortKey === 'steps' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+        </Button>
+        <Button size="sm" variant="outline" onclick={() => toggleSort('title')}>
+          Sort: Title {sortKey === 'title' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+        </Button>
+      </div>
     </div>
-    <div class="grid gap-3 md:grid-cols-2">
-      {#each featuredExamples as ex (ex.id)}
-        <button
-          type="button"
-          class="text-left rounded-(--radius) border border-(--border) bg-(--surface) p-4 hover:border-(--accent) transition-colors"
-          onclick={() => openExample(ex)}
-        >
-          <div class="flex items-center justify-between gap-2">
-            <div class="font-semibold text-(--text)">{ex.title}</div>
-            <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">{complexityLabel(ex)}</span>
-          </div>
-          <p class="text-[0.8125rem] text-(--text-2) mt-2 mb-0">{ex.problem}</p>
-          <p class="text-[0.75rem] text-(--text-2) mt-3 mb-0">{ex.traceValue ?? ex.result}</p>
-          <div class="mt-4 text-[0.75rem] text-(--accent)">Open in Compose →</div>
-        </button>
-      {/each}
+
+    <div class="rounded-(--radius) border border-(--border) bg-(--surface) overflow-hidden">
+      <Table.Root>
+        <Table.Header>
+          <Table.Row>
+            <Table.Head class="w-[38%]">Example</Table.Head>
+            <Table.Head class="hidden sm:table-cell w-[18%]">Complexity</Table.Head>
+            <Table.Head class="hidden md:table-cell">Notes</Table.Head>
+            <Table.Head class="text-end w-[1%] whitespace-nowrap">Open</Table.Head>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {#each restRows() as ex (ex.id)}
+            <Table.Row class="hover:bg-(--surface-alt)">
+              <Table.Cell class="align-top">
+                <div class="space-y-1">
+                  <div class="font-medium text-(--text)">{ex.title}</div>
+                  <div class="text-[0.8125rem] text-(--text-2)">
+                    {ex.description}
+                  </div>
+                  <div class="text-[0.75rem] text-(--text-3)">
+                    {ex.traceValue ?? ex.result}
+                  </div>
+                </div>
+              </Table.Cell>
+              <Table.Cell class="hidden sm:table-cell align-top text-(--text-2)">
+                {complexityLabel(ex)}
+              </Table.Cell>
+              <Table.Cell class="hidden md:table-cell align-top">
+                <div class="flex flex-wrap gap-1">
+                  {#if ex.featured}
+                    <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">Featured</span>
+                  {/if}
+                  {#if ex.startHere}
+                    <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">Start</span>
+                  {/if}
+                </div>
+              </Table.Cell>
+              <Table.Cell class="text-end align-top">
+                <Button size="sm" onclick={() => openExample(ex)}>
+                  Compose
+                </Button>
+              </Table.Cell>
+            </Table.Row>
+          {:else}
+            <Table.Row>
+              <Table.Cell class="h-20 text-(--text-2)">No matches.</Table.Cell>
+              <Table.Cell class="hidden sm:table-cell" />
+              <Table.Cell class="hidden md:table-cell" />
+              <Table.Cell />
+            </Table.Row>
+          {/each}
+        </Table.Body>
+      </Table.Root>
     </div>
   </section>
-
-  {#each exampleSections as { label, examples }}
-    <section class="mb-12 last:mb-0">
-      <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) mb-4">
-        {label}
-      </h2>
-      <div class="rounded-(--radius) border border-(--border) bg-(--surface)">
-        <Table.Root>
-          <Table.Header>
-            <Table.Row>
-              <Table.Head>Example</Table.Head>
-              <Table.Head class="hidden sm:table-cell">Description</Table.Head>
-              <Table.Head class="text-end">Open</Table.Head>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {#each examples as ex (ex.id)}
-              <Table.Row class="hover:bg-(--surface-alt)">
-                <Table.Cell class="font-medium cursor-pointer" onclick={() => openExample(ex)}>
-                  <div class="space-y-1">
-                    <div class="flex flex-wrap items-center gap-2">
-                      <div class="text-(--text)">{ex.title}</div>
-                      {#if ex.startHere}
-                        <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">Start here</span>
-                      {/if}
-                    </div>
-                    <div class="sm:hidden space-y-1">
-                      <div class="text-[0.8125rem] text-(--text-2)">{ex.description}</div>
-                      <div class="flex flex-wrap gap-1">
-                        <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">{complexityLabel(ex)}</span>
-                        {#each ex.tags.slice(0, 4) as tag (tag)}
-                          <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">{tag}</span>
-                        {/each}
-                      </div>
-                    </div>
-                  </div>
-                </Table.Cell>
-                <Table.Cell class="hidden sm:table-cell text-(--text-2) cursor-pointer"
-                onclick={() => openExample(ex)}
-                >
-                  <div class="space-y-1">
-                    <div>{ex.description}</div>
-                    <div class="text-[0.75rem] text-(--text-3)">{ex.traceValue ?? ex.result}</div>
-                    <div class="flex flex-wrap gap-1">
-                      <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">{complexityLabel(ex)}</span>
-                      {#each ex.tags.slice(0, 5) as tag (tag)}
-                        <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">{tag}</span>
-                      {/each}
-                    </div>
-                  </div>
-                </Table.Cell>
-                <Table.Cell class="text-end">
-                  <Button size="lg" onclick={() => openExample(ex)}>
-                    Open in Compose
-                  </Button>
-                </Table.Cell>
-              </Table.Row>
-            {/each}
-          </Table.Body>
-        </Table.Root>
-      </div>
-    </section>
-  {/each}
 
 </div>
