@@ -196,7 +196,7 @@ function detectFormat(data) {
     JSON.parse(data);
     return { format: 'json', data };
   } catch {
-    if (data.includes(',') && data.includes('\n')) {
+    if (data.includes(',') && data.includes('\\n')) {
       return { format: 'csv', data };
     }
     return { format: 'unknown', data };
