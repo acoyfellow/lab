@@ -40,6 +40,7 @@
   let lastGenerated = $state('');
   let showCode = $state(false);
   let loopCount = $state(0);
+  let runToken = $state(0);
   let simulation: d3.Simulation<PlantNode, GardenLink> | null = null;
   let svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
   let width = 800;
@@ -282,8 +283,22 @@ Write only the JavaScript body. No markdown. No explanation. Just code that retu
       });
   }
 
+  // --- Validate the shape of generated state ---
+  function isValidGardenResult(v: unknown): v is { nodes: PlantNode[]; links: GardenLink[]; tick: number; season: string; narration: string } {
+    if (typeof v !== 'object' || v === null) return false;
+    const o = v as Record<string, unknown>;
+    if (!Array.isArray(o.nodes) || !Array.isArray(o.links)) return false;
+    if (typeof o.tick !== 'number' || typeof o.season !== 'string') return false;
+    // Spot-check first node has required fields
+    if (o.nodes.length > 0) {
+      const n = o.nodes[0] as Record<string, unknown>;
+      if (typeof n.id !== 'string' || typeof n.type !== 'string' || typeof n.energy !== 'number') return false;
+    }
+    return true;
+  }
+
   // --- The agentic loop ---
-  async function tendOnce() {
+  async function tendOnce(token: number) {
     const gardenJson = serializeForPrompt(garden);
     const prompt = buildPrompt(gardenJson);
 
@@ -291,6 +306,9 @@ Write only the JavaScript body. No markdown. No explanation. Just code that retu
       prompt,
       capabilities: [],
     });
+
+    // Stale result — user paused or reset while we were waiting
+    if (token !== runToken) return;
 
     if (result.traceId) {
       traceIds = [...traceIds, { id: result.traceId, generated: result.generated }];
@@ -300,25 +318,21 @@ Write only the JavaScript body. No markdown. No explanation. Just code that retu
       lastGenerated = result.generated;
     }
 
-    if (result.ok && result.result) {
-      const next = result.result as {
-        nodes: PlantNode[];
-        links: GardenLink[];
-        tick: number;
-        season: string;
-        narration: string;
-      };
-      currentNarration = next.narration ?? '';
-      garden = applyResult(garden, next);
+    if (result.ok && isValidGardenResult(result.result)) {
+      currentNarration = result.result.narration ?? '';
+      garden = applyResult(garden, result.result);
       loopCount++;
       renderGarden(garden);
     } else {
-      currentNarration = result.error ?? 'The agent wrote code that broke.';
+      const reason = !result.ok
+        ? (result.error ?? 'unknown')
+        : 'agent returned invalid shape';
+      currentNarration = reason;
       lastGenerated = result.generated ?? '';
       garden = {
         ...garden,
         tick: garden.tick + 1,
-        log: [...garden.log.slice(-29), `[${garden.tick + 1}] (code failed: ${result.error ?? 'unknown'})`],
+        log: [...garden.log.slice(-29), `[${garden.tick + 1}] (code failed: ${reason})`],
       };
     }
   }
@@ -326,8 +340,10 @@ Write only the JavaScript body. No markdown. No explanation. Just code that retu
   async function runLoop() {
     running = true;
     paused = false;
-    while (running && !paused) {
-      await tendOnce();
+    const token = ++runToken;
+    while (running && !paused && token === runToken) {
+      await tendOnce(token);
+      if (token !== runToken) break;
       await new Promise((r) => setTimeout(r, 2000));
     }
   }
@@ -347,6 +363,7 @@ Write only the JavaScript body. No markdown. No explanation. Just code that retu
 
   function handleReset() {
     handlePause();
+    runToken++;
     garden = seedGarden();
     traceIds = [];
     loopCount = 0;
@@ -360,6 +377,16 @@ Write only the JavaScript body. No markdown. No explanation. Just code that retu
     initD3();
     garden = seedGarden();
     renderGarden(garden);
+
+    return () => {
+      running = false;
+      paused = true;
+      runToken++;
+      if (simulation) {
+        simulation.stop();
+        simulation = null;
+      }
+    };
   });
 </script>
 
