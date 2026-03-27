@@ -63,9 +63,9 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRegistryEntry[] = [
   {
     id: "durableObjectFetch",
     binding: "LAB_DO",
-    summary: "Fetch a stub Durable Object by name/path via POST /invoke/do.",
+    summary: "RPC into a Durable Object via POST /invoke/do (method/path/body).",
     denyGuestMessage: "DurableObjectFetch capability not granted",
-    llmHint: "`labDo.fetch(name, path)` — async stub Durable Object JSON.",
+    llmHint: "`labDo.fetch(name, { method, path, body })` — async Durable Object JSON.",
   },
   {
     id: "containerHttp",

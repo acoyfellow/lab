@@ -251,9 +251,8 @@
       <Table.Root>
         <Table.Header>
           <Table.Row>
-            <Table.Head class="w-[38%]">Example</Table.Head>
+            <Table.Head class="w-[42%]">Example</Table.Head>
             <Table.Head class="hidden sm:table-cell w-[18%]">Complexity</Table.Head>
-            <Table.Head class="hidden md:table-cell">Notes</Table.Head>
             <Table.Head class="text-end w-[1%] whitespace-nowrap">Open</Table.Head>
           </Table.Row>
         </Table.Header>
@@ -274,16 +273,6 @@
               <Table.Cell class="hidden sm:table-cell align-top text-(--text-2)">
                 {complexityLabel(ex)}
               </Table.Cell>
-              <Table.Cell class="hidden md:table-cell align-top">
-                <div class="flex flex-wrap gap-1">
-                  {#if ex.featured}
-                    <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">Featured</span>
-                  {/if}
-                  {#if ex.startHere}
-                    <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3) border border-(--border)">Start</span>
-                  {/if}
-                </div>
-              </Table.Cell>
               <Table.Cell class="text-end align-top">
                 <Button size="sm" onclick={() => openExample(ex)}>
                   Compose
@@ -294,7 +283,6 @@
             <Table.Row>
               <Table.Cell class="h-20 text-(--text-2)">No matches.</Table.Cell>
               <Table.Cell class="hidden sm:table-cell" />
-              <Table.Cell class="hidden md:table-cell" />
               <Table.Cell />
             </Table.Row>
           {/each}

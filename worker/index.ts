@@ -265,17 +265,49 @@ const defaultExport = {
       if (!env.LAB_DO) {
         return withCors(Response.json({ ok: false, error: "LAB_DO binding not configured" }, { status: 503 }))
       }
-      const body = (await req.json()) as { name?: string; path?: string }
+      const body = (await req.json()) as { name?: string; method?: string; path?: string; body?: unknown }
       if (typeof body.name !== "string" || !body.name) {
         return withCors(Response.json({ ok: false, error: "name required" }, { status: 400 }))
       }
-      const path = typeof body.path === "string" ? body.path : "/"
       try {
+        const method = typeof body.method === "string" && body.method.trim() ? body.method.trim().toUpperCase() : null
+        if (!method) {
+          return withCors(Response.json({ ok: false, error: "method required" }, { status: 400 }))
+        }
+
+        const rawPath = typeof body.path === "string" ? body.path : "/"
+        const path = rawPath.trim() ? (rawPath.startsWith("/") ? rawPath : `/${rawPath}`) : "/"
+
         const id = env.LAB_DO.idFromName(body.name)
         const stub = env.LAB_DO.get(id)
-        const r = await stub.fetch(`https://internal${path.startsWith("/") ? path : `/${path}`}`)
-        const j = (await r.json()) as Record<string, unknown>
-        return withCors(Response.json({ ok: true, result: j }))
+
+        const requestUrl = `https://internal${path}`
+        const hasGuestBody = body.body !== undefined
+
+        const headers = new Headers()
+        const requestInit: RequestInit = { method, headers }
+        if (hasGuestBody) {
+          headers.set("content-type", "application/json")
+          requestInit.body = JSON.stringify(body.body)
+        }
+
+        const r = await stub.fetch(new Request(requestUrl, requestInit))
+
+        let j: unknown
+        try {
+          j = await r.json()
+        } catch {
+          return withCors(Response.json({ ok: false, error: "durable object returned non-json" }, { status: 502 }))
+        }
+
+        if (!r.ok) {
+          const err = j && typeof j === "object" && "error" in j && typeof (j as Record<string, unknown>).error === "string"
+            ? (j as Record<string, unknown>).error
+            : `durable object failed with status ${r.status}`
+          return withCors(Response.json({ ok: false, error: err }, { status: r.status }))
+        }
+
+        return withCors(Response.json({ ok: true, result: j as Record<string, unknown> }))
       } catch (e) {
         return withCors(Response.json({ ok: false, error: getErrorMessage(e) }, { status: 500 }))
       }

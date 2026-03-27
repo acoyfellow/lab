@@ -151,11 +151,13 @@ export function composeGuestModule(
   const doShim = caps?.durableObjectFetch
     ? `
     const labDo = {
-      async fetch(name, path) {
+      async fetch(name, rpc) {
+        const method = rpc?.method;
+        const path = (typeof rpc?.path === "string" && rpc.path.trim()) ? rpc.path : "/";
         const res = await fetch("http://internal/invoke/do", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ name, path: path ?? "/" }),
+          body: JSON.stringify({ name, method, path, body: rpc?.body }),
         });
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || "invoke do failed");

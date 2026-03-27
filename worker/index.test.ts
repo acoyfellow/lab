@@ -7,7 +7,7 @@ let workerAvailable = false;
 describe("Lab Worker", () => {
   beforeAll(async () => {
     try {
-      const res = await fetch(`${baseUrl}`, { signal: AbortSignal.timeout(1000) });
+      const res = await fetch(`${baseUrl}/lab/catalog`, { signal: AbortSignal.timeout(1000) });
       workerAvailable = res.ok;
     } catch {
       workerAvailable = false;
@@ -29,14 +29,14 @@ describe("Lab Worker", () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        body: "return typeof fetch",
+        body: "return await fetch('http://example.com')",
         capabilities: [],
       }),
     });
     const data = (await res.json()) as { ok: boolean; error?: string; reason?: string };
     
     expect(data.ok).toBe(false);
-    expect(data.error || data.reason).toContain("not defined");
+    expect(data.error || data.reason).toContain("not permitted");
   });
 
   test("kv access denied without capability", async () => {
@@ -185,7 +185,7 @@ describe("Lab Worker", () => {
     };
     
     expect(data.ok).toBe(false);
-    expect(data.error || data.reason).toContain("error");
+    expect(data.error || data.reason).toContain("Intentional failure");
     expect(data.traceId).toBeDefined();
   });
 
@@ -203,9 +203,9 @@ describe("Lab Worker", () => {
         depth: 2,
       }),
     });
-    const data = (await res.json()) as { ok: boolean; error?: string };
+    const data = (await res.json()) as { ok?: boolean; error?: string };
     
-    expect(data.ok).toBe(false);
+    expect(res.status).toBe(400);
     expect(data.error).toContain("spawn capability required");
   });
 
@@ -234,6 +234,24 @@ describe("Lab Worker", () => {
       expect(data.ok).toBe(true);
       expect(data.result).toEqual(tc.expected);
     }
+  });
+
+  test("durableObjectFetch supports JSON RPC", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const res = await fetch(`${baseUrl}/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        body: `const name="do-test-1"; await labDo.fetch(name, { method: "POST", path: "/x", body: { n: 1 } }); return await labDo.fetch(name, { method: "GET", path: "/x" });`,
+        capabilities: ["durableObjectFetch"],
+      }),
+    });
+    const data = (await res.json()) as { ok: boolean; result?: { value?: { n?: number } } };
+    expect(data.ok).toBe(true);
+    expect(data.result?.value?.n).toBe(1);
   });
 
   test("catalog endpoint returns capabilities list", async () => {
