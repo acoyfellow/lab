@@ -2,8 +2,7 @@
   import { onMount } from 'svelte';
   import * as d3 from 'd3';
   import SEO from '$lib/SEO.svelte';
-  import { runChain } from '../data.remote';
-  import type { ChainStep } from '@acoyfellow/lab';
+  import { runGenerate } from '../data.remote';
 
   // --- Types ---
   type PlantNode = d3.SimulationNodeDatum & {
@@ -29,31 +28,17 @@
     log: string[];
   };
 
-  type TendingAction = {
-    narration: string;
-    mutations: {
-      addNodes?: Omit<PlantNode, 'x' | 'y' | 'vx' | 'vy' | 'index'>[];
-      removeNodeIds?: string[];
-      updateNodes?: { id: string; [key: string]: unknown }[];
-      addLinks?: { source: string; target: string; type: string; strength: number }[];
-      removeLinkIndices?: number[];
-      season?: string;
-    };
-  };
-
   // --- State ---
   let container: HTMLDivElement | undefined = $state(undefined);
   let garden = $state<GardenState>({
-    nodes: [],
-    links: [],
-    tick: 0,
-    season: 'spring',
-    log: [],
+    nodes: [], links: [], tick: 0, season: 'spring', log: [],
   });
   let running = $state(false);
   let paused = $state(false);
-  let traceIds = $state<string[]>([]);
+  let traceIds = $state<{ id: string; generated?: string }[]>([]);
   let currentNarration = $state('');
+  let lastGenerated = $state('');
+  let showCode = $state(false);
   let loopCount = $state(0);
   let simulation: d3.Simulation<PlantNode, GardenLink> | null = null;
   let svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
@@ -77,220 +62,72 @@
     return { nodes, links, tick: 0, season: 'spring', log: ['Garden planted.'] };
   }
 
-  // --- Serialize garden state for the rooms ---
-  function serializeGarden(g: GardenState): string {
+  // --- Serialize garden for the prompt ---
+  function serializeForPrompt(g: GardenState): string {
     const nodes = g.nodes.map((n) => ({
       id: n.id, type: n.type, age: n.age,
       energy: Math.round(n.energy * 100) / 100,
       color: n.color, size: n.size, label: n.label,
     }));
-    const links = g.links.map((l, i) => ({
-      index: i,
-      source: typeof l.source === 'object' ? (l.source as PlantNode).id : l.source,
-      target: typeof l.target === 'object' ? (l.target as PlantNode).id : l.target,
+    const links = g.links.map((l) => ({
+      source: typeof l.source === 'object' ? (l.source as PlantNode).id : String(l.source),
+      target: typeof l.target === 'object' ? (l.target as PlantNode).id : String(l.target),
       type: l.type, strength: l.strength,
     }));
     return JSON.stringify({ nodes, links, tick: g.tick, season: g.season }, null, 2);
   }
 
   // ---------------------------------------------------------------
-  // Three chain steps per tick. Each runs in a fresh isolate.
+  // The agent writes code. Lab runs it. The trace proves what happened.
   //
-  //   Step 1  "Read the garden"    — walk the graph, produce a reading
-  //   Step 2  "Decide"             — AI sees the reading, picks one action
-  //   Step 3  "Apply"              — validate + apply mutations, return new state
+  // Each tick:
+  //   1. Serialize the garden into a prompt
+  //   2. runGenerate — the LLM writes JavaScript
+  //   3. Lab runs that code in a fresh isolate
+  //   4. Result = new garden state, applied to D3
+  //   5. Trace captures: the prompt, the generated code, the result
   //
-  // The trace captures all three steps — what was seen, what was
-  // decided, what changed. That's the feedback loop. The next tick
-  // reads the result of this one. An agent grinding toward an
-  // objective, with receipts.
+  // No hand-written chain steps. No JSON schema for the agent to
+  // fill in. The agent writes the code. That's the experiment.
   // ---------------------------------------------------------------
 
-  function buildTendingChain(gardenJson: string): ChainStep[] {
-    return [
-      // --- Step 1: Read the garden ---
-      {
-        name: 'Read the garden',
-        body: `
-const g = ${gardenJson};
+  function buildPrompt(gardenJson: string): string {
+    return `You are tending a living garden represented as a force-directed graph.
 
-// Walk the graph. What do we see?
-const byType = {};
-for (const n of g.nodes) {
-  byType[n.type] = (byType[n.type] || 0) + 1;
+Here is the current garden state:
+${gardenJson}
+
+Write JavaScript that reads this state, makes one small tending action, and returns the new state.
+
+Your code receives nothing — the garden state above is your context. Reconstruct it as a variable and work with it directly.
+
+Rules of the garden:
+- Nodes are plants with: id, type (seed|sprout|bloom|tree|fallen), age, energy (0-1), color (#hex), size (3-40), label
+- Links are relationships with: source (id), target (id), type (roots|pollination|shade|nutrients), strength (0.1-1)
+- Seeds sprout near nutrients/shade. Sprouts become blooms. Blooms become trees. This takes many ticks.
+- Low-energy plants become "fallen". Fallen plants get removed.
+- New seeds can appear naturally. Not every tick.
+- Connections: pollination (bloom↔bloom), shade (tree→smaller), roots (any), nutrients (any)
+- Seasons rotate every ~4 ticks: spring→summer→autumn→winter→spring
+- Spring: +energy, new seeds. Summer: peak energy. Autumn: -energy, things fall. Winter: dormancy, death.
+- Isolated plants (no connections) lose energy faster.
+
+Be restrained — one or two small changes per tick. Let the garden evolve slowly.
+
+Your code MUST return an object with this exact shape:
+{
+  nodes: [...],     // the full updated nodes array
+  links: [...],     // the full updated links array (source/target as string ids)
+  tick: <number>,   // current tick + 1
+  season: <string>, // current or next season
+  narration: <string> // a short poetic sentence about what you did
 }
 
-const weakest = g.nodes.reduce((w, n) => n.energy < w.energy ? n : w, g.nodes[0]);
-const strongest = g.nodes.reduce((s, n) => n.energy > s.energy ? n : s, g.nodes[0]);
-
-const connectedIds = new Set();
-for (const l of g.links) {
-  connectedIds.add(l.source);
-  connectedIds.add(l.target);
-}
-const isolated = g.nodes.filter(n => !connectedIds.has(n.id));
-
-// Compose a reading — what the next room will see
-return {
-  garden: g,
-  reading: {
-    tick: g.tick,
-    season: g.season,
-    census: byType,
-    population: g.nodes.length,
-    connections: g.links.length,
-    weakest: { id: weakest.id, label: weakest.label, energy: weakest.energy, type: weakest.type },
-    strongest: { id: strongest.id, label: strongest.label, energy: strongest.energy, type: strongest.type },
-    isolated: isolated.map(n => n.id),
-    nodes: g.nodes.map(n => n.id + " (" + n.type + ", energy:" + n.energy + ", age:" + n.age + ', "' + n.label + '")').join("\\n"),
-    links: g.links.map((l, i) => "[" + i + "] " + l.source + " --[" + l.type + ", str:" + l.strength + "]--> " + l.target).join("\\n"),
-  }
-};
-        `,
-        capabilities: [],
-      },
-
-      // --- Step 2: The gardener decides ---
-      {
-        name: 'Decide',
-        body: `
-const { reading } = input;
-
-const prompt = "You are a gardener tending a living graph. Each node is a plant. Each link is an ecological relationship. You are in a room with this reading pinned to the wall:\\n\\n" +
-  "Tick: " + reading.tick + "\\n" +
-  "Season: " + reading.season + "\\n" +
-  "Census: " + JSON.stringify(reading.census) + "\\n" +
-  "Population: " + reading.population + ", Connections: " + reading.connections + "\\n" +
-  "Weakest: " + reading.weakest.label + " (" + reading.weakest.id + ", energy:" + reading.weakest.energy + ", " + reading.weakest.type + ")\\n" +
-  "Strongest: " + reading.strongest.label + " (" + reading.strongest.id + ", energy:" + reading.strongest.energy + ", " + reading.strongest.type + ")\\n" +
-  "Isolated (no connections): " + (reading.isolated.length ? reading.isolated.join(", ") : "none") + "\\n\\n" +
-  "All nodes:\\n" + reading.nodes + "\\n\\n" +
-  "All links:\\n" + (reading.links || "none") + "\\n\\n" +
-  "Rules of the garden:\\n" +
-  "- Seeds sprout near nutrients/shade. Sprouts become blooms. Blooms become trees. This takes many ticks.\\n" +
-  "- Low-energy plants become 'fallen'. Fallen plants get removed next cycle.\\n" +
-  "- New seeds drift in naturally. Not every tick.\\n" +
-  "- Connections: pollination (bloom<->bloom), shade (tree->smaller), roots (any), nutrients (any).\\n" +
-  "- Seasons rotate every ~4 ticks: spring->summer->autumn->winter->spring.\\n" +
-  "- Spring: +energy, new seeds. Summer: peak. Autumn: -energy, things fall. Winter: dormancy, death.\\n" +
-  "- Isolated plants lose energy faster.\\n\\n" +
-  "Decide ONE small tending action. Be restrained. Let the garden breathe.\\n\\n" +
-  "Respond with ONLY valid JSON (no markdown, no wrapping):\\n" +
-  '{\\n' +
-  '  "narration": "A short poetic sentence about what happened",\\n' +
-  '  "mutations": {\\n' +
-  '    "addNodes": [{"id": "unique-id", "type": "seed", "age": 0, "energy": 0.5, "color": "#hex", "size": 8, "label": "Name"}],\\n' +
-  '    "removeNodeIds": ["id-to-remove"],\\n' +
-  '    "updateNodes": [{"id": "existing-id", "energy": 0.6}],\\n' +
-  '    "addLinks": [{"source": "id", "target": "id", "type": "roots", "strength": 0.5}],\\n' +
-  '    "removeLinkIndices": [0],\\n' +
-  '    "season": "summer"\\n' +
-  '  }\\n' +
-  '}\\n' +
-  "Only include mutation keys you actually use.";
-
-const response = await ai.run(prompt);
-
-// Parse what the gardener said
-let action;
-try {
-  const cleaned = response.replace(/\`\`\`json?\\n?/g, '').replace(/\`\`\`/g, '').trim();
-  action = JSON.parse(cleaned);
-} catch (e) {
-  action = { narration: "The gardener pauses, listening to the wind.", mutations: {} };
-}
-
-// Hand the garden and the decision to the next room
-return { garden: input.garden, action };
-        `,
-        capabilities: ['workersAi'],
-      },
-
-      // --- Step 3: Apply ---
-      {
-        name: 'Apply',
-        body: `
-const { garden: g, action } = input;
-const m = action.mutations || {};
-let nodes = [...g.nodes];
-let links = [...g.links];
-
-// Remove dead plants and their connections
-if (m.removeNodeIds && m.removeNodeIds.length) {
-  const gone = new Set(m.removeNodeIds);
-  nodes = nodes.filter(n => !gone.has(n.id));
-  links = links.filter(l => !gone.has(l.source) && !gone.has(l.target));
-}
-
-// Update existing plants
-if (m.updateNodes && m.updateNodes.length) {
-  for (const upd of m.updateNodes) {
-    const node = nodes.find(n => n.id === upd.id);
-    if (!node) continue;
-    if (upd.energy !== undefined) node.energy = Math.max(0, Math.min(1, upd.energy));
-    if (upd.age !== undefined) node.age = upd.age;
-    if (upd.type !== undefined) node.type = upd.type;
-    if (upd.color !== undefined) node.color = upd.color;
-    if (upd.size !== undefined) node.size = Math.max(3, Math.min(40, upd.size));
-    if (upd.label !== undefined) node.label = upd.label;
-  }
-}
-
-// Plant new seeds/plants
-if (m.addNodes && m.addNodes.length) {
-  for (const add of m.addNodes) {
-    if (nodes.find(n => n.id === add.id)) continue;
-    nodes.push({
-      id: add.id,
-      type: add.type || "seed",
-      age: add.age || 0,
-      energy: Math.max(0, Math.min(1, add.energy || 0.5)),
-      color: add.color || "#8b6914",
-      size: Math.max(3, Math.min(40, add.size || 6)),
-      label: add.label || add.id,
-    });
-  }
-}
-
-// Prune connections
-if (m.removeLinkIndices && m.removeLinkIndices.length) {
-  const toRemove = new Set(m.removeLinkIndices);
-  links = links.filter((_, i) => !toRemove.has(i));
-}
-
-// Form new connections (only between existing nodes)
-if (m.addLinks && m.addLinks.length) {
-  const nodeIds = new Set(nodes.map(n => n.id));
-  for (const add of m.addLinks) {
-    if (nodeIds.has(add.source) && nodeIds.has(add.target)) {
-      links.push({
-        source: add.source,
-        target: add.target,
-        type: add.type || "roots",
-        strength: Math.max(0.1, Math.min(1, add.strength || 0.3)),
-      });
-    }
-  }
-}
-
-const season = m.season || g.season;
-
-return {
-  nodes,
-  links,
-  tick: g.tick + 1,
-  season,
-  narration: action.narration || "Silence in the garden.",
-};
-        `,
-        capabilities: [],
-      },
-    ];
+Write only the JavaScript body. No markdown. No explanation. Just code that returns the new state.`;
   }
 
-  // --- Apply the result from Room 3 back to the page ---
+  // --- Apply generate result back to the garden ---
   function applyResult(g: GardenState, result: { nodes: PlantNode[]; links: GardenLink[]; tick: number; season: string; narration: string }): GardenState {
-    // Preserve D3 simulation positions for nodes that survived
     const posMap = new Map<string, { x?: number; y?: number }>();
     for (const n of g.nodes) {
       if (n.x !== undefined) posMap.set(n.id, { x: n.x, y: n.y });
@@ -370,7 +207,6 @@ return {
         .on('end', (_event, d) => { simulation!.alphaTarget(0); d.fx = null; d.fy = null; })
       );
 
-    // Glow filter for energy
     nodeEnter.append('circle').attr('class', 'glow');
     nodeEnter.append('circle').attr('class', 'core');
     nodeEnter.append('text')
@@ -383,7 +219,6 @@ return {
 
     const merged = nodeSel.merge(nodeEnter);
 
-    // Outer glow — energy halo
     merged.select('.glow')
       .transition().duration(600)
       .attr('r', (d: PlantNode) => d.size + 4 + d.energy * 6)
@@ -392,7 +227,6 @@ return {
       .attr('stroke-width', (d: PlantNode) => d.energy * 2)
       .attr('opacity', (d: PlantNode) => d.type === 'fallen' ? 0 : d.energy * 0.25);
 
-    // Core circle
     merged.select('.core')
       .transition().duration(600)
       .attr('r', (d: PlantNode) => d.size)
@@ -405,7 +239,6 @@ return {
       .text((d: PlantNode) => d.label ?? d.id)
       .attr('dy', (d: PlantNode) => d.size + 14);
 
-    // Restart simulation
     simulation.nodes(g.nodes);
     (simulation.force('link') as d3.ForceLink<PlantNode, GardenLink>).links(g.links);
     simulation.alpha(0.3).restart();
@@ -451,32 +284,41 @@ return {
 
   // --- The agentic loop ---
   async function tendOnce() {
-    const gardenJson = serializeGarden(garden);
-    const steps = buildTendingChain(gardenJson);
-    const result = await runChain(steps);
+    const gardenJson = serializeForPrompt(garden);
+    const prompt = buildPrompt(gardenJson);
+
+    const result = await runGenerate({
+      prompt,
+      capabilities: [],
+    });
 
     if (result.traceId) {
-      traceIds = [...traceIds, result.traceId];
+      traceIds = [...traceIds, { id: result.traceId, generated: result.generated }];
+    }
+
+    if (result.generated) {
+      lastGenerated = result.generated;
     }
 
     if (result.ok && result.result) {
-      const soilResult = result.result as {
+      const next = result.result as {
         nodes: PlantNode[];
         links: GardenLink[];
         tick: number;
         season: string;
         narration: string;
       };
-      currentNarration = soilResult.narration;
-      garden = applyResult(garden, soilResult);
+      currentNarration = next.narration ?? '';
+      garden = applyResult(garden, next);
       loopCount++;
       renderGarden(garden);
     } else {
-      currentNarration = result.error ?? 'Chain failed.';
+      currentNarration = result.error ?? 'The agent wrote code that broke.';
+      lastGenerated = result.generated ?? '';
       garden = {
         ...garden,
         tick: garden.tick + 1,
-        log: [...garden.log.slice(-29), `[${garden.tick + 1}] (the gardener couldn't reach the garden)`],
+        log: [...garden.log.slice(-29), `[${garden.tick + 1}] (code failed: ${result.error ?? 'unknown'})`],
       };
     }
   }
@@ -509,6 +351,8 @@ return {
     traceIds = [];
     loopCount = 0;
     currentNarration = '';
+    lastGenerated = '';
+    showCode = false;
     renderGarden(garden);
   }
 
@@ -521,7 +365,7 @@ return {
 
 <SEO
   title="Garden — Lab"
-  description="An agent loops over a D3 force graph, tending it one tick at a time. Each cycle is a traced chain: read, decide, apply. The trace is the feedback loop."
+  description="An agent writes JavaScript to tend a living graph. Lab runs the code in a fresh isolate each tick. The trace shows what code was written and what it did."
   path="/garden"
 />
 
@@ -529,7 +373,7 @@ return {
   <header class="space-y-2">
     <h1 class="text-2xl font-semibold text-(--text)">Garden</h1>
     <p class="text-sm text-(--text-3) max-w-xl leading-relaxed">
-      An agent in a loop, tending a force-directed graph. Each tick runs a three-step <a href="/docs/trace-schema" class="underline text-(--accent)">chain</a>: read the state, let AI decide one action, apply it. The trace captures every step — what was seen, what was decided, what changed. That's the feedback loop that lets the next tick be smarter.
+      Each tick, an agent sees the garden and writes JavaScript to tend it. Lab runs that code in a fresh isolate. The <a href="/docs/trace-schema" class="underline text-(--accent)">trace</a> captures the prompt, the generated code, and the result. No hand-written logic — the agent writes the code.
     </p>
   </header>
 
@@ -557,6 +401,15 @@ return {
       Reset
     </button>
 
+    {#if lastGenerated}
+      <button
+        onclick={() => showCode = !showCode}
+        class="px-3 py-2 rounded-lg bg-(--code-bg) text-(--text-3) text-xs border border-(--border) hover:opacity-90 transition-opacity cursor-pointer"
+      >
+        {showCode ? 'Hide code' : 'Show code'}
+      </button>
+    {/if}
+
     <span class="text-xs text-(--text-3) ml-auto tabular-nums">
       tick {garden.tick} &middot; {garden.season} &middot; {garden.nodes.length} plants &middot; {garden.links.length} connections
     </span>
@@ -566,6 +419,16 @@ return {
   {#if currentNarration}
     <div class="px-4 py-3 rounded-lg bg-(--code-bg) border border-(--border) text-sm text-(--text-2) italic">
       "{currentNarration}"
+    </div>
+  {/if}
+
+  <!-- Generated code viewer -->
+  {#if showCode && lastGenerated}
+    <div class="rounded-lg bg-(--code-bg) border border-(--border) overflow-hidden">
+      <div class="px-3 py-2 border-b border-(--border) flex items-center justify-between">
+        <span class="text-xs text-(--text-3)">Agent-generated code (tick {garden.tick})</span>
+      </div>
+      <pre class="p-3 text-xs text-(--text-2) overflow-x-auto max-h-80 overflow-y-auto leading-relaxed"><code>{lastGenerated}</code></pre>
     </div>
   {/if}
 
@@ -593,9 +456,9 @@ return {
     <div class="space-y-2">
       <h2 class="text-sm font-medium text-(--text-2)">Traces</h2>
       <div class="bg-(--code-bg) border border-(--border) rounded-lg p-3 max-h-60 overflow-y-auto">
-        {#each traceIds as tid, i}
-          <a href="/t/{tid}" class="block text-xs text-(--accent) underline leading-relaxed hover:opacity-80">
-            Tick {i + 1} &rarr; /t/{tid}
+        {#each traceIds as trace, i}
+          <a href="/t/{trace.id}" class="block text-xs text-(--accent) underline leading-relaxed hover:opacity-80">
+            Tick {i + 1} &rarr; /t/{trace.id}
           </a>
         {/each}
         {#if traceIds.length === 0}
