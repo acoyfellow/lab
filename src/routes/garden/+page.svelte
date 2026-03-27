@@ -77,160 +77,238 @@
     return { nodes, links, tick: 0, season: 'spring', log: ['Garden planted.'] };
   }
 
-  // --- Serialize garden state for the LLM ---
+  // --- Serialize garden state for the rooms ---
   function serializeGarden(g: GardenState): string {
     const nodes = g.nodes.map((n) => ({
-      id: n.id,
-      type: n.type,
-      age: n.age,
+      id: n.id, type: n.type, age: n.age,
       energy: Math.round(n.energy * 100) / 100,
-      color: n.color,
-      size: n.size,
-      label: n.label,
+      color: n.color, size: n.size, label: n.label,
     }));
     const links = g.links.map((l, i) => ({
       index: i,
       source: typeof l.source === 'object' ? (l.source as PlantNode).id : l.source,
       target: typeof l.target === 'object' ? (l.target as PlantNode).id : l.target,
-      type: l.type,
-      strength: l.strength,
+      type: l.type, strength: l.strength,
     }));
     return JSON.stringify({ nodes, links, tick: g.tick, season: g.season }, null, 2);
   }
 
-  // --- Build the chain steps for one tending cycle ---
+  // ---------------------------------------------------------------
+  // Three chain steps per tick. Each runs in a fresh isolate.
+  //
+  //   Step 1  "Read the garden"    — walk the graph, produce a reading
+  //   Step 2  "Decide"             — AI sees the reading, picks one action
+  //   Step 3  "Apply"              — validate + apply mutations, return new state
+  //
+  // The trace captures all three steps — what was seen, what was
+  // decided, what changed. That's the feedback loop. The next tick
+  // reads the result of this one. An agent grinding toward an
+  // objective, with receipts.
+  // ---------------------------------------------------------------
+
   function buildTendingChain(gardenJson: string): ChainStep[] {
     return [
+      // --- Step 1: Read the garden ---
       {
-        name: 'Observe',
+        name: 'Read the garden',
         body: `
-          const garden = ${gardenJson};
-          return { garden, observation: "Tick " + garden.tick + ", season: " + garden.season + ", plants: " + garden.nodes.length + ", connections: " + garden.links.length };
+const g = ${gardenJson};
+
+// Walk the graph. What do we see?
+const byType = {};
+for (const n of g.nodes) {
+  byType[n.type] = (byType[n.type] || 0) + 1;
+}
+
+const weakest = g.nodes.reduce((w, n) => n.energy < w.energy ? n : w, g.nodes[0]);
+const strongest = g.nodes.reduce((s, n) => n.energy > s.energy ? n : s, g.nodes[0]);
+
+const connectedIds = new Set();
+for (const l of g.links) {
+  connectedIds.add(l.source);
+  connectedIds.add(l.target);
+}
+const isolated = g.nodes.filter(n => !connectedIds.has(n.id));
+
+// Compose a reading — what the next room will see
+return {
+  garden: g,
+  reading: {
+    tick: g.tick,
+    season: g.season,
+    census: byType,
+    population: g.nodes.length,
+    connections: g.links.length,
+    weakest: { id: weakest.id, label: weakest.label, energy: weakest.energy, type: weakest.type },
+    strongest: { id: strongest.id, label: strongest.label, energy: strongest.energy, type: strongest.type },
+    isolated: isolated.map(n => n.id),
+    nodes: g.nodes.map(n => n.id + " (" + n.type + ", energy:" + n.energy + ", age:" + n.age + ', "' + n.label + '")').join("\\n"),
+    links: g.links.map((l, i) => "[" + i + "] " + l.source + " --[" + l.type + ", str:" + l.strength + "]--> " + l.target).join("\\n"),
+  }
+};
         `,
         capabilities: [],
       },
+
+      // --- Step 2: The gardener decides ---
       {
-        name: 'Tend',
+        name: 'Decide',
         body: `
-          const observation = input;
-          const garden = observation.garden;
+const { reading } = input;
 
-          const prompt = \`You are a gardener tending a living garden. The garden is a force-directed graph where nodes are plants and links are ecological relationships.
+const prompt = "You are a gardener tending a living graph. Each node is a plant. Each link is an ecological relationship. You are in a room with this reading pinned to the wall:\\n\\n" +
+  "Tick: " + reading.tick + "\\n" +
+  "Season: " + reading.season + "\\n" +
+  "Census: " + JSON.stringify(reading.census) + "\\n" +
+  "Population: " + reading.population + ", Connections: " + reading.connections + "\\n" +
+  "Weakest: " + reading.weakest.label + " (" + reading.weakest.id + ", energy:" + reading.weakest.energy + ", " + reading.weakest.type + ")\\n" +
+  "Strongest: " + reading.strongest.label + " (" + reading.strongest.id + ", energy:" + reading.strongest.energy + ", " + reading.strongest.type + ")\\n" +
+  "Isolated (no connections): " + (reading.isolated.length ? reading.isolated.join(", ") : "none") + "\\n\\n" +
+  "All nodes:\\n" + reading.nodes + "\\n\\n" +
+  "All links:\\n" + (reading.links || "none") + "\\n\\n" +
+  "Rules of the garden:\\n" +
+  "- Seeds sprout near nutrients/shade. Sprouts become blooms. Blooms become trees. This takes many ticks.\\n" +
+  "- Low-energy plants become 'fallen'. Fallen plants get removed next cycle.\\n" +
+  "- New seeds drift in naturally. Not every tick.\\n" +
+  "- Connections: pollination (bloom<->bloom), shade (tree->smaller), roots (any), nutrients (any).\\n" +
+  "- Seasons rotate every ~4 ticks: spring->summer->autumn->winter->spring.\\n" +
+  "- Spring: +energy, new seeds. Summer: peak. Autumn: -energy, things fall. Winter: dormancy, death.\\n" +
+  "- Isolated plants lose energy faster.\\n\\n" +
+  "Decide ONE small tending action. Be restrained. Let the garden breathe.\\n\\n" +
+  "Respond with ONLY valid JSON (no markdown, no wrapping):\\n" +
+  '{\\n' +
+  '  "narration": "A short poetic sentence about what happened",\\n' +
+  '  "mutations": {\\n' +
+  '    "addNodes": [{"id": "unique-id", "type": "seed", "age": 0, "energy": 0.5, "color": "#hex", "size": 8, "label": "Name"}],\\n' +
+  '    "removeNodeIds": ["id-to-remove"],\\n' +
+  '    "updateNodes": [{"id": "existing-id", "energy": 0.6}],\\n' +
+  '    "addLinks": [{"source": "id", "target": "id", "type": "roots", "strength": 0.5}],\\n' +
+  '    "removeLinkIndices": [0],\\n' +
+  '    "season": "summer"\\n' +
+  '  }\\n' +
+  '}\\n' +
+  "Only include mutation keys you actually use.";
 
-Current garden state (tick \${garden.tick}, \${garden.season}):
+const response = await ai.run(prompt);
 
-Nodes:
-\${garden.nodes.map(n => \`  - \${n.id} (\${n.type}, age:\${n.age}, energy:\${n.energy}, "\${n.label}")\`).join("\\n")}
+// Parse what the gardener said
+let action;
+try {
+  const cleaned = response.replace(/\`\`\`json?\\n?/g, '').replace(/\`\`\`/g, '').trim();
+  action = JSON.parse(cleaned);
+} catch (e) {
+  action = { narration: "The gardener pauses, listening to the wind.", mutations: {} };
+}
 
-Links:
-\${garden.links.map((l, i) => \`  - [\${i}] \${l.source} --[\${l.type}, str:\${l.strength}]--> \${l.target}\`).join("\\n")}
+// Hand the garden and the decision to the next room
+return { garden: input.garden, action };
+        `,
+        capabilities: ['workersAi'],
+      },
 
-As the gardener, decide ONE small tending action for this tick. Think ecologically:
-- Seeds may sprout if conditions are right (nearby nutrients/shade links)
-- Sprouts grow into blooms, blooms into trees over many ticks
-- Low-energy plants may become "fallen" and eventually be removed
-- New seeds can appear naturally
-- Connections form and dissolve (pollination between blooms, shade from trees, nutrient sharing via roots)
-- Seasons cycle: spring->summer->autumn->winter->spring (change every ~4 ticks)
-- Spring: new growth. Summer: peak energy. Autumn: energy drops, leaves fall. Winter: dormancy, some plants die.
+      // --- Step 3: Apply ---
+      {
+        name: 'Apply',
+        body: `
+const { garden: g, action } = input;
+const m = action.mutations || {};
+let nodes = [...g.nodes];
+let links = [...g.links];
 
-Respond with ONLY valid JSON (no markdown, no explanation outside the JSON):
-{
-  "narration": "A short poetic sentence about what you did",
-  "mutations": {
-    "addNodes": [{"id": "unique-id", "type": "seed|sprout|bloom|tree|fallen", "age": 0, "energy": 0.5, "color": "#hex", "size": 8, "label": "Name"}],
-    "removeNodeIds": ["id-to-remove"],
-    "updateNodes": [{"id": "existing-id", "energy": 0.6, "age": 4, "type": "bloom", "color": "#hex", "size": 14}],
-    "addLinks": [{"source": "id", "target": "id", "type": "roots|pollination|shade|nutrients", "strength": 0.5}],
-    "removeLinkIndices": [0],
-    "season": "summer"
+// Remove dead plants and their connections
+if (m.removeNodeIds && m.removeNodeIds.length) {
+  const gone = new Set(m.removeNodeIds);
+  nodes = nodes.filter(n => !gone.has(n.id));
+  links = links.filter(l => !gone.has(l.source) && !gone.has(l.target));
+}
+
+// Update existing plants
+if (m.updateNodes && m.updateNodes.length) {
+  for (const upd of m.updateNodes) {
+    const node = nodes.find(n => n.id === upd.id);
+    if (!node) continue;
+    if (upd.energy !== undefined) node.energy = Math.max(0, Math.min(1, upd.energy));
+    if (upd.age !== undefined) node.age = upd.age;
+    if (upd.type !== undefined) node.type = upd.type;
+    if (upd.color !== undefined) node.color = upd.color;
+    if (upd.size !== undefined) node.size = Math.max(3, Math.min(40, upd.size));
+    if (upd.label !== undefined) node.label = upd.label;
   }
 }
 
-Only include mutation keys you actually use. Be restrained — one or two small changes per tick. Let the garden evolve slowly.\`;
+// Plant new seeds/plants
+if (m.addNodes && m.addNodes.length) {
+  for (const add of m.addNodes) {
+    if (nodes.find(n => n.id === add.id)) continue;
+    nodes.push({
+      id: add.id,
+      type: add.type || "seed",
+      age: add.age || 0,
+      energy: Math.max(0, Math.min(1, add.energy || 0.5)),
+      color: add.color || "#8b6914",
+      size: Math.max(3, Math.min(40, add.size || 6)),
+      label: add.label || add.id,
+    });
+  }
+}
 
-          const response = await ai.run(prompt);
-          try {
-            const cleaned = response.replace(/\`\`\`json?\\n?/g, '').replace(/\`\`\`/g, '').trim();
-            return JSON.parse(cleaned);
-          } catch (e) {
-            return { narration: "The gardener pauses, watching.", mutations: {} };
-          }
+// Prune connections
+if (m.removeLinkIndices && m.removeLinkIndices.length) {
+  const toRemove = new Set(m.removeLinkIndices);
+  links = links.filter((_, i) => !toRemove.has(i));
+}
+
+// Form new connections (only between existing nodes)
+if (m.addLinks && m.addLinks.length) {
+  const nodeIds = new Set(nodes.map(n => n.id));
+  for (const add of m.addLinks) {
+    if (nodeIds.has(add.source) && nodeIds.has(add.target)) {
+      links.push({
+        source: add.source,
+        target: add.target,
+        type: add.type || "roots",
+        strength: Math.max(0.1, Math.min(1, add.strength || 0.3)),
+      });
+    }
+  }
+}
+
+const season = m.season || g.season;
+
+return {
+  nodes,
+  links,
+  tick: g.tick + 1,
+  season,
+  narration: action.narration || "Silence in the garden.",
+};
         `,
-        capabilities: ['workersAi'],
+        capabilities: [],
       },
     ];
   }
 
-  // --- Apply mutations from the LLM back to the garden ---
-  function applyMutations(g: GardenState, action: TendingAction): GardenState {
-    const m = action.mutations;
-    let nodes = [...g.nodes];
-    let links = [...g.links];
-
-    // Remove nodes
-    if (m.removeNodeIds?.length) {
-      const removeSet = new Set(m.removeNodeIds);
-      nodes = nodes.filter((n) => !removeSet.has(n.id));
-      links = links.filter((l) => {
-        const src = typeof l.source === 'object' ? (l.source as PlantNode).id : String(l.source);
-        const tgt = typeof l.target === 'object' ? (l.target as PlantNode).id : String(l.target);
-        return !removeSet.has(src) && !removeSet.has(tgt);
-      });
+  // --- Apply the result from Room 3 back to the page ---
+  function applyResult(g: GardenState, result: { nodes: PlantNode[]; links: GardenLink[]; tick: number; season: string; narration: string }): GardenState {
+    // Preserve D3 simulation positions for nodes that survived
+    const posMap = new Map<string, { x?: number; y?: number }>();
+    for (const n of g.nodes) {
+      if (n.x !== undefined) posMap.set(n.id, { x: n.x, y: n.y });
     }
 
-    // Update nodes
-    if (m.updateNodes?.length) {
-      for (const upd of m.updateNodes) {
-        const node = nodes.find((n) => n.id === upd.id);
-        if (node) {
-          if (upd.energy !== undefined) node.energy = upd.energy as number;
-          if (upd.age !== undefined) node.age = upd.age as number;
-          if (upd.type !== undefined) node.type = upd.type as PlantNode['type'];
-          if (upd.color !== undefined) node.color = upd.color as string;
-          if (upd.size !== undefined) node.size = upd.size as number;
-          if (upd.label !== undefined) node.label = upd.label as string;
-        }
-      }
-    }
-
-    // Add nodes
-    if (m.addNodes?.length) {
-      for (const add of m.addNodes) {
-        if (!nodes.find((n) => n.id === add.id)) {
-          nodes.push({ ...add, x: width / 2 + (Math.random() - 0.5) * 100, y: height / 2 + (Math.random() - 0.5) * 100 });
-        }
-      }
-    }
-
-    // Remove links by index (descending to preserve indices)
-    if (m.removeLinkIndices?.length) {
-      const sorted = [...m.removeLinkIndices].sort((a, b) => b - a);
-      for (const idx of sorted) {
-        if (idx >= 0 && idx < links.length) links.splice(idx, 1);
-      }
-    }
-
-    // Add links
-    if (m.addLinks?.length) {
-      for (const add of m.addLinks) {
-        links.push({
-          source: add.source,
-          target: add.target,
-          type: add.type as GardenLink['type'],
-          strength: add.strength,
-        });
-      }
-    }
-
-    const season = m.season ?? g.season;
+    const nodes = result.nodes.map((n) => {
+      const pos = posMap.get(n.id);
+      return pos
+        ? { ...n, x: pos.x, y: pos.y }
+        : { ...n, x: width / 2 + (Math.random() - 0.5) * 120, y: height / 2 + (Math.random() - 0.5) * 120 };
+    });
 
     return {
       nodes,
-      links,
-      tick: g.tick + 1,
-      season,
-      log: [...g.log.slice(-19), `[${g.tick + 1}] ${action.narration}`],
+      links: result.links,
+      tick: result.tick,
+      season: result.season,
+      log: [...g.log.slice(-29), `[${result.tick}] ${result.narration}`],
     };
   }
 
@@ -252,7 +330,6 @@ Only include mutation keys you actually use. Be restrained — one or two small 
   function renderGarden(g: GardenState) {
     if (!svg || !simulation) return;
 
-    // Season background
     svg.select('.bg-rect')
       .transition()
       .duration(800)
@@ -277,41 +354,58 @@ Only include mutation keys you actually use. Be restrained — one or two small 
 
     // Nodes
     const nodeSel = svg.select('.nodes').selectAll<SVGGElement, PlantNode>('g.plant').data(g.nodes, (d: PlantNode) => d.id);
-    nodeSel.exit().transition().duration(500).attr('opacity', 0).attr('transform', 'scale(0)').remove();
+    nodeSel.exit()
+      .transition().duration(600)
+      .style('opacity', '0')
+      .remove();
 
     const nodeEnter = nodeSel
       .enter()
       .append('g')
       .attr('class', 'plant')
-      .attr('opacity', 0)
+      .style('opacity', '0')
       .call(d3.drag<SVGGElement, PlantNode>()
         .on('start', (_event, d) => { simulation!.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
         .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
         .on('end', (_event, d) => { simulation!.alphaTarget(0); d.fx = null; d.fy = null; })
       );
 
-    nodeEnter.append('circle');
+    // Glow filter for energy
+    nodeEnter.append('circle').attr('class', 'glow');
+    nodeEnter.append('circle').attr('class', 'core');
     nodeEnter.append('text')
-      .attr('dy', (d: PlantNode) => d.size + 12)
       .attr('text-anchor', 'middle')
       .attr('fill', 'var(--text-3)')
-      .attr('font-size', '10px');
+      .attr('font-size', '9px')
+      .attr('pointer-events', 'none');
 
-    nodeEnter.transition().duration(600).attr('opacity', 1);
+    nodeEnter.transition().duration(800).style('opacity', '1');
 
     const merged = nodeSel.merge(nodeEnter);
-    merged.select('circle')
-      .transition()
-      .duration(600)
+
+    // Outer glow — energy halo
+    merged.select('.glow')
+      .transition().duration(600)
+      .attr('r', (d: PlantNode) => d.size + 4 + d.energy * 6)
+      .attr('fill', 'none')
+      .attr('stroke', (d: PlantNode) => d.color)
+      .attr('stroke-width', (d: PlantNode) => d.energy * 2)
+      .attr('opacity', (d: PlantNode) => d.type === 'fallen' ? 0 : d.energy * 0.25);
+
+    // Core circle
+    merged.select('.core')
+      .transition().duration(600)
       .attr('r', (d: PlantNode) => d.size)
       .attr('fill', (d: PlantNode) => d.color)
       .attr('stroke', (d: PlantNode) => d.type === 'fallen' ? '#5a3a1a' : d3.color(d.color)?.brighter(0.8)?.toString() ?? '#fff')
       .attr('stroke-width', (d: PlantNode) => d.type === 'tree' ? 2.5 : 1.5)
-      .attr('opacity', (d: PlantNode) => d.type === 'fallen' ? 0.4 : 0.7 + d.energy * 0.3);
+      .attr('opacity', (d: PlantNode) => d.type === 'fallen' ? 0.3 : 0.7 + d.energy * 0.3);
 
-    merged.select('text').text((d: PlantNode) => d.label ?? d.id);
+    merged.select('text')
+      .text((d: PlantNode) => d.label ?? d.id)
+      .attr('dy', (d: PlantNode) => d.size + 14);
 
-    // Restart simulation with new data
+    // Restart simulation
     simulation.nodes(g.nodes);
     (simulation.force('link') as d3.ForceLink<PlantNode, GardenLink>).links(g.links);
     simulation.alpha(0.3).restart();
@@ -340,17 +434,16 @@ Only include mutation keys you actually use. Be restrained — one or two small 
     svg.append('g').attr('class', 'nodes');
 
     simulation = d3.forceSimulation<PlantNode, GardenLink>()
-      .force('link', d3.forceLink<PlantNode, GardenLink>().id((d) => d.id).distance(80).strength((d) => d.strength * 0.5))
-      .force('charge', d3.forceManyBody().strength(-120))
+      .force('link', d3.forceLink<PlantNode, GardenLink>().id((d) => d.id).distance(90).strength((d) => d.strength * 0.4))
+      .force('charge', d3.forceManyBody().strength(-150))
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide<PlantNode>().radius((d) => d.size + 6))
+      .force('collision', d3.forceCollide<PlantNode>().radius((d) => d.size + 8))
       .on('tick', () => {
         svg!.select('.links').selectAll<SVGLineElement, GardenLink>('line')
           .attr('x1', (d) => (d.source as PlantNode).x ?? 0)
           .attr('y1', (d) => (d.source as PlantNode).y ?? 0)
           .attr('x2', (d) => (d.target as PlantNode).x ?? 0)
           .attr('y2', (d) => (d.target as PlantNode).y ?? 0);
-
         svg!.select('.nodes').selectAll<SVGGElement, PlantNode>('g.plant')
           .attr('transform', (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
       });
@@ -360,7 +453,6 @@ Only include mutation keys you actually use. Be restrained — one or two small 
   async function tendOnce() {
     const gardenJson = serializeGarden(garden);
     const steps = buildTendingChain(gardenJson);
-
     const result = await runChain(steps);
 
     if (result.traceId) {
@@ -368,17 +460,23 @@ Only include mutation keys you actually use. Be restrained — one or two small 
     }
 
     if (result.ok && result.result) {
-      const action = result.result as TendingAction;
-      currentNarration = action.narration ?? '';
-      garden = applyMutations(garden, action);
+      const soilResult = result.result as {
+        nodes: PlantNode[];
+        links: GardenLink[];
+        tick: number;
+        season: string;
+        narration: string;
+      };
+      currentNarration = soilResult.narration;
+      garden = applyResult(garden, soilResult);
       loopCount++;
       renderGarden(garden);
     } else {
-      currentNarration = `Error: ${result.error ?? 'unknown'}`;
+      currentNarration = result.error ?? 'Chain failed.';
       garden = {
         ...garden,
         tick: garden.tick + 1,
-        log: [...garden.log.slice(-19), `[${garden.tick + 1}] (gardener couldn't reach the garden)`],
+        log: [...garden.log.slice(-29), `[${garden.tick + 1}] (the gardener couldn't reach the garden)`],
       };
     }
   }
@@ -388,7 +486,6 @@ Only include mutation keys you actually use. Be restrained — one or two small 
     paused = false;
     while (running && !paused) {
       await tendOnce();
-      // Breathe between ticks
       await new Promise((r) => setTimeout(r, 2000));
     }
   }
@@ -424,15 +521,15 @@ Only include mutation keys you actually use. Be restrained — one or two small 
 
 <SEO
   title="Garden — Lab"
-  description="An agentic D3 loop that tends a living garden. Each tick is a traced action."
+  description="An agent loops over a D3 force graph, tending it one tick at a time. Each cycle is a traced chain: read, decide, apply. The trace is the feedback loop."
   path="/garden"
 />
 
 <div class="max-w-5xl mx-auto px-5 py-8 space-y-6">
   <header class="space-y-2">
     <h1 class="text-2xl font-semibold text-(--text)">Garden</h1>
-    <p class="text-sm text-(--text-3)">
-      An agentic loop living inside D3. The graph <em>is</em> the state. The LLM tends it. Every tick is a <a href="/docs/trace-schema" class="underline text-(--accent)">trace</a>.
+    <p class="text-sm text-(--text-3) max-w-xl leading-relaxed">
+      An agent in a loop, tending a force-directed graph. Each tick runs a three-step <a href="/docs/trace-schema" class="underline text-(--accent)">chain</a>: read the state, let AI decide one action, apply it. The trace captures every step — what was seen, what was decided, what changed. That's the feedback loop that lets the next tick be smarter.
     </p>
   </header>
 
@@ -481,7 +578,6 @@ Only include mutation keys you actually use. Be restrained — one or two small 
 
   <!-- Log + Traces -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <!-- Garden Log -->
     <div class="space-y-2">
       <h2 class="text-sm font-medium text-(--text-2)">Garden Log</h2>
       <div class="bg-(--code-bg) border border-(--border) rounded-lg p-3 max-h-60 overflow-y-auto">
@@ -494,7 +590,6 @@ Only include mutation keys you actually use. Be restrained — one or two small 
       </div>
     </div>
 
-    <!-- Traces -->
     <div class="space-y-2">
       <h2 class="text-sm font-medium text-(--text-2)">Traces</h2>
       <div class="bg-(--code-bg) border border-(--border) rounded-lg p-3 max-h-60 overflow-y-auto">
