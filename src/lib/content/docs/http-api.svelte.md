@@ -22,6 +22,7 @@ Guest **`body`** strings are plain **JavaScript** (inserted into template `guest
 
 | Method | Path | Body (JSON) |
 |--------|------|-------------|
+| GET | `/health` | — health check |
 | POST | `/run` | `{ body, template?, capabilities? }` or `{ code, … }` |
 | POST | `/run/kv` | same as `/run` |
 | POST | `/run/chain` | `{ steps: [{ body, template?, capabilities, name?, props?, input? }] }` |

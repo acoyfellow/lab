@@ -77,7 +77,7 @@ Each step runs in its own V8 isolate. Step 2's output flows to Step 3's `input`.
 | `r2Read` | `r2.list()` / `r2.getText(key)` — R2 object storage |
 | `d1Read` | `d1.query(sql)` — read-only D1 queries |
 | `spawn` | `spawn(code, caps)` — nested child isolates with depth budget |
-| `durableObjectFetch` | `labDo.fetch(name, path)` — stub Durable Object |
+| `durableObjectFetch` | `labDo.fetch(name, { method, path, body })` — Durable Object RPC |
 | `containerHttp` | `labContainer.get(path)` — bound container service |
 
 No capabilities = pure compute, no I/O. Denied capabilities produce clear errors recorded in the trace.

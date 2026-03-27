@@ -25,7 +25,7 @@ Capabilities control what code can do inside an isolate. They are implemented as
 | `workersAi` | `AI` | `ai.run(prompt)` → `/invoke/ai` | `WorkersAi capability not granted` |
 | `r2Read` | `R2` | `r2.list` / `r2.getText` → `/invoke/r2` | `R2Read capability not granted`; **503** if R2 unbound |
 | `d1Read` | `ENGINE_D1` | `d1.query(sql)` read-only → `/invoke/d1` | `D1Read capability not granted`; **503** if D1 unbound |
-| `durableObjectFetch` | `LAB_DO` | `labDo.fetch(name, path)` → `/invoke/do` | `DurableObjectFetch capability not granted`; **503** if DO unbound |
+| `durableObjectFetch` | `LAB_DO` | `labDo.fetch(name, { method, path, body })` → `/invoke/do` | `DurableObjectFetch capability not granted`; **503** if DO unbound |
 | `containerHttp` | `LAB_CONTAINER` (optional) | `labContainer.get(path)` → `/invoke/container` | `ContainerHttp capability not granted`; **503** if unbound |
 
 Denied-capability errors and per-step I/O show up on **`/t/:id`**.
@@ -39,7 +39,7 @@ Denied-capability errors and per-step I/O show up on **`/t/:id`**.
 | **`workersAi`** | `AI` | Guest `ai.run(prompt)`; host runs Workers AI on **`POST /invoke/ai`** (`SELF` outbound). | Keys stay on the host; guest never sees provider secrets. | **Cost / quota**; latency per call; policy is yours (prompts, limits). |
 | **`r2Read`** | `R2` | Guest `r2.list` / `r2.getText`; host **`POST /invoke/r2`**. | Reads object storage without R2 credentials in guest code. | Read-focused API; **503** if R2 unbound; large listings can be slow. |
 | **`d1Read`** | `ENGINE_D1` | Guest `d1.query(sql)` **read-only**; host **`POST /invoke/d1`**. | SQL from guest without a raw D1 binding in the Loader. | Read-only; **503** if D1 unbound; expose only SQL you trust (injection / heavy queries). |
-| **`durableObjectFetch`** | `LAB_DO` | Guest calls into a **named stub DO** via host **`POST /invoke/do`**. | RPC-style DO access without handing guest the real binding. | **503** if unconfigured; semantics depend on your stub class. |
+| **`durableObjectFetch`** | `LAB_DO` | Guest calls into the bound Durable Object via host **`POST /invoke/do`** (method/path/body). | RPC-style DO access without handing guest the real binding. | **503** if unconfigured; in the default DO: `GET` reads storage by `path`, `POST|PUT|PATCH` stores JSON at `path`, `DELETE` removes. |
 | **`containerHttp`** | `LAB_CONTAINER` (optional) | Guest **`POST /invoke/container`** for HTTP GET-style access to a bound **container** service. | Same leash model for heavier or non-Worker workloads. | Often **503** until you bind `LAB_CONTAINER`; more moving parts than Workers-only caps. |
 
 <DocFooterNav

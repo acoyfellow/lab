@@ -30,6 +30,26 @@ This has tradeoffs. The snapshot is a point-in-time copy. If KV changes between 
 
 Some capabilities (`workersAi`, `r2Read`, `d1Read`, `durableObjectFetch`, `containerHttp`) cannot inject raw bindings into the Loader child. Those shims use the same **`SELF` `globalOutbound`** as spawn: the isolate calls `fetch("http://internal/invoke/…")`, the parent Worker handles `POST /invoke/*` with the real `AI`, `R2`, `ENGINE_D1`, `LAB_DO`, or `LAB_CONTAINER` bindings, and returns JSON the shim unwraps. Denied or unconfigured bindings surface as isolate errors or **503** on the host route. This is **not** arbitrary RPC: each path is tied to a declared capability and closed request/response shapes. See [Guest module shape](#guest-module-shape-guestv1-vs-workerentrypoint) for when **not** to add invoke routes.
 
+## Practical guidance: direct binding vs shim
+
+Worker Loaders can pass `env` bindings into a child isolate. That does **not** make shims obsolete; they solve different problems.
+
+- **Direct child binding (`env`)**: lower overhead and fewer hops, but guest code gets the raw API shape and you lose a central policy choke point unless you wrap everything anyway.
+- **Shim + host invoke (`/invoke/*`)**: one extra hop, but stronger capability boundaries, request validation, stable guest API contracts, and consistent trace/error envelopes.
+
+Use this decision rule:
+
+1. Use **direct binding** only if the raw binding is safe to expose to untrusted guest code, does not need host-side policy, and materially benefits from lower hop cost.
+2. Use **shims** when you need host-controlled validation, narrowed operations, or stable contracts across capability versions.
+
+Current repo stance (intentional):
+
+- **`kvRead`** uses a **snapshot shim** (not direct KV binding) because Loader-child serialization and snapshot semantics are part of the contract.
+- **`workersAi`, `r2Read`, `d1Read`, `durableObjectFetch`, `containerHttp`** use **`/invoke/*` shims** so the parent Worker owns privileged access and guardrails.
+- **`spawn`** uses **SELF outbound** + `/spawn/child` because child isolates never receive `LOADER` directly.
+
+So: direct binding support is available, but this repo defaults to shims when capability control and traceability matter more than raw-call convenience.
+
 ## How spawn works
 
 An isolate can't create other isolates directly — it doesn't have the `LOADER` binding. Instead, it makes a fetch request that routes back to the parent worker.

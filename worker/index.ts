@@ -152,6 +152,10 @@ const defaultExport = {
       return res
     }
 
+    if (req.method === "GET" && url.pathname === "/health") {
+      return withCors(Response.json({ ok: true }))
+    }
+
     const kvReadService = {
       get: (key: string) => Effect.promise((_signal) => env.KV.get(key)),
       list: (prefix?: string) =>
@@ -611,7 +615,7 @@ const defaultExport = {
       const { body, template } = parsed
       const caps = Array.isArray(json.capabilities) ? (json.capabilities as string[]) : []
       if (!caps.includes("spawn")) {
-        return withCors(Response.json({ error: "spawn capability required" }, { status: 400 }))
+        return withCors(Response.json({ ok: false, error: "spawn capability required" }, { status: 400 }))
       }
       const spawnDepth = typeof json.depth === "number" ? json.depth : 2
       const other = caps.filter((cap) => cap !== "spawn")

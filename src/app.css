@@ -390,12 +390,11 @@ textarea{
   @apply bg-white;
 }
 
-@media screen and (max-width: 767px) {
-  input[type="text"],
-  input[type="number"],
-  input[type="email"],
-  input[type="tel"],
-  input[type="password"] {
-    font-size: 16px!important;
+/* Prevent iOS Safari focus-zoom on form controls. */
+@media screen and (max-width: 767px) and (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
   }
 }

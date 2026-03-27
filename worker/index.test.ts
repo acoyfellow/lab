@@ -1,13 +1,19 @@
 import { describe, test, expect, beforeAll } from "bun:test";
 
-const baseUrl = process.env.LAB_TEST_URL || "http://localhost:1337";
+const baseUrl = process.env.LAB_TEST_URL;
 
 let workerAvailable = false;
 
 describe("Lab Worker", () => {
   beforeAll(async () => {
+    if (!baseUrl) {
+      workerAvailable = false;
+      console.log(`\n⚠️  LAB_TEST_URL not set`);
+      console.log(`   Skipping integration tests. Set LAB_TEST_URL to a running instance.\n`);
+      return;
+    }
     try {
-      const res = await fetch(`${baseUrl}/lab/catalog`, { signal: AbortSignal.timeout(1000) });
+      const res = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(1000) });
       workerAvailable = res.ok;
     } catch {
       workerAvailable = false;
