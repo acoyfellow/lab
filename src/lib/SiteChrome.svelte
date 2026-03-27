@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import AppLink from '$lib/AppLink.svelte';
+  import CommandPalette from "$lib/CommandPalette.svelte";
   import Logo from '$lib/Logo.svelte';
   import { paths } from '$lib/paths';
 
@@ -21,13 +22,14 @@
 </script>
 
 <div class="min-h-dvh flex flex-col">
+  <CommandPalette />
   <div
     class="fixed inset-0 -z-1 pointer-events-none opacity-[0.035] mix-blend-multiply"
     style="background-image: url(&quot;data:image/svg+xml,%3Csvg%20viewBox%3D%270%200%20200%20200%27%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.7%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27/%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270.33%200.33%200.33%200%200%200.33%200.33%200.33%200%200%200.33%200.33%200.33%200%200%200%200%200%201%200%27/%3E%3C/filter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url(%2523n)%27%20opacity%3D%270.55%27/%3E%3C/svg%3E&quot;); background-size: 260px 260px; filter: contrast(110%) brightness(105%);"
   ></div>
   <div class="fixed inset-0 -z-1 pointer-events-none">
     <div
-      class="absolute inset-0 bg-cover bg-[center_bottom] bg-no-repeat"
+      class="absolute inset-0 bg-cover bg-position-[center_bottom] bg-no-repeat"
       style="background-image: url('/bg.jpg');"
     ></div>
     <div
