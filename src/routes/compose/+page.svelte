@@ -67,6 +67,23 @@
     return capabilities;
   }
 
+  function modeAllowsCode(m: ExecutionMode): boolean {
+    return m === 'once' || m === 'spawn';
+  }
+
+  function modeAllowsPrompt(m: ExecutionMode): boolean {
+    return m === 'once' || m === 'generate';
+  }
+
+  function setMode(next: ExecutionMode) {
+    mode = next;
+    if (inputType === 'code' && !modeAllowsCode(next) && modeAllowsPrompt(next)) {
+      inputType = 'prompt';
+    } else if (inputType === 'prompt' && !modeAllowsPrompt(next) && modeAllowsCode(next)) {
+      inputType = 'code';
+    }
+  }
+
   async function run() {
     loading = true;
     lastError = null;
@@ -183,33 +200,62 @@
     </p>
   </header>
 
-  {#if mode !== 'chain'}
+  <div class="space-y-2">
+    <label for="exec-mode" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block">
+      Execution mode
+    </label>
+    <select
+      id="exec-mode"
+      value={mode}
+      onchange={(e) => setMode((e.currentTarget as HTMLSelectElement).value as ExecutionMode)}
+      class="w-full border border-(--border) rounded-(--radius) bg-white px-3 py-2 text-[0.8125rem]"
+    >
+      <option value="once">Run once</option>
+      <option value="chain">Chain multiple steps</option>
+      <option value="spawn">Spawn nested isolates</option>
+      <option value="generate">Generate with AI</option>
+    </select>
+
+    {#if mode === 'generate'}
+      <div class="pt-1 text-[0.75rem] text-(--text-2)">
+        AI writes the code from your prompt, then runs it in an isolate.
+      </div>
+    {/if}
+  </div>
+
+  {#if modeAllowsCode(mode) || modeAllowsPrompt(mode)}
     <div class="space-y-2">
       <div class="flex items-center gap-4">
         <span class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">
           Input
         </span>
-        <div class="flex items-center gap-1 text-[0.75rem]">
-          <button
-            type="button"
-            onclick={() => inputType = 'code'}
-            class="px-2 py-1 rounded transition-colors {inputType === 'code' ? 'bg-(--accent) text-white' : 'text-(--text-2) hover:bg-(--surface-alt)'}"
-          >
-            Code
-          </button>
-          <button
-            type="button"
-            onclick={() => inputType = 'prompt'}
-            class="px-2 py-1 rounded transition-colors {inputType === 'prompt' ? 'bg-(--accent) text-white' : 'text-(--text-2) hover:bg-(--surface-alt)'}"
-          >
-            Prompt (AI)
-          </button>
-        </div>
+        {#if modeAllowsCode(mode) && modeAllowsPrompt(mode)}
+          <div class="flex items-center gap-1 text-[0.75rem]">
+            <button
+              type="button"
+              onclick={() => inputType = 'code'}
+              class="px-2 py-1 rounded transition-colors {inputType === 'code' ? 'bg-(--accent) text-white' : 'text-(--text-2) hover:bg-(--surface-alt)'}"
+            >
+              Code
+            </button>
+            <button
+              type="button"
+              onclick={() => inputType = 'prompt'}
+              class="px-2 py-1 rounded transition-colors {inputType === 'prompt' ? 'bg-(--accent) text-white' : 'text-(--text-2) hover:bg-(--surface-alt)'}"
+            >
+              Prompt (AI)
+            </button>
+          </div>
+        {:else}
+          <div class="text-[0.75rem] text-(--text-3)">
+            {modeAllowsCode(mode) ? 'Code only' : 'Prompt only'}
+          </div>
+        {/if}
       </div>
 
-      {#if inputType === 'code'}
+      {#if modeAllowsCode(mode) && inputType === 'code'}
         <Textarea bind:value={code} class="min-h-[200px] font-mono text-xs bg-white" placeholder={`return { hello: "world" }`} />
-      {:else}
+      {:else if modeAllowsPrompt(mode)}
         <Textarea bind:value={prompt} class="min-h-[100px] font-mono text-xs bg-white" placeholder="Describe what you want the AI to generate..." />
       {/if}
     </div>
@@ -243,20 +289,6 @@
   </details>
 
   <div class="space-y-2">
-    <label for="exec-mode" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block">
-      Execution mode
-    </label>
-    <select
-      id="exec-mode"
-      bind:value={mode}
-      class="w-full border border-(--border) rounded-(--radius) bg-white px-3 py-2 text-[0.8125rem]"
-    >
-      <option value="once">Run once</option>
-      <option value="chain">Chain multiple steps</option>
-      <option value="spawn">Spawn nested isolates</option>
-      <option value="generate">Generate with AI</option>
-    </select>
-
     {#if mode === 'chain'}
       <div class="pt-2">
         <ChainBuilder bind:chainJson disabled={loading} />
@@ -274,10 +306,6 @@
           max="8"
           class="w-24 border border-(--border) rounded-(--radius) bg-white px-3 py-2 text-[0.8125rem]"
         />
-      </div>
-    {:else if mode === 'generate'}
-      <div class="pt-2 text-[0.75rem] text-(--text-2)">
-        AI writes the code from your prompt, then runs it in an isolate.
       </div>
     {/if}
   </div>

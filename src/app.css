@@ -112,6 +112,8 @@
   }
   body {
     font-family: var(--font-sans);
+    font-size: 16px;
+    touch-action: pan-x pan-y;
     background: var(--bg);
     color: var(--text);
     line-height: 1.5;
@@ -394,6 +396,6 @@ textarea{
   input[type="email"],
   input[type="tel"],
   input[type="password"] {
-    font-size: 16px;
+    font-size: 16px!important;
   }
 }
