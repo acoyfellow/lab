@@ -116,11 +116,11 @@ export const runGenerate = query(
   'unchecked',
   async (payload: RunGeneratePayload): Promise<RunResult> => {
     const platform = getRequestEvent().platform;
-    const { prompt, capabilities, template, input, mode } = payload;
+    const { prompt, capabilities, template, input, mode, maxTokens } = payload;
     return callWorkerJSON<RunResult>(platform, '/run/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, capabilities, template, input, mode }),
+      body: JSON.stringify({ prompt, capabilities, template, input, mode, maxTokens }),
     });
   },
 );

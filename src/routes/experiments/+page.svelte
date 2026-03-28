@@ -18,7 +18,6 @@
   </header>
 
   <section class="space-y-3">
-    <h2 class="text-sm font-medium text-(--text-2)">Available</h2>
     <AppLink
       to="/experiments/garden"
       class="block no-underline rounded-lg border border-(--border) bg-(--surface) px-4 py-3 hover:border-(--accent)/40 transition-colors"
@@ -26,6 +25,15 @@
       <div class="text-sm font-medium text-(--text)">Garden</div>
       <div class="text-xs text-(--text-3) mt-1">
         Your personal AI-tended garden — persistent, evolving, and unique to you.
+      </div>
+    </AppLink>
+    <AppLink
+      to="/experiments/canvas"
+      class="block no-underline rounded-lg border border-(--border) bg-(--surface) px-4 py-3 hover:border-(--accent)/40 transition-colors"
+    >
+      <div class="text-sm font-medium text-(--text)">Tic-Tac-Toe</div>
+      <div class="text-xs text-(--text-3) mt-1">
+        Play against an LLM — it sees the real board, picks a move, and explains why.
       </div>
     </AppLink>
   </section>

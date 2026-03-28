@@ -202,9 +202,12 @@ export class PetriDish implements DurableObject {
       if (!PetriDish.VALID_TYPES.includes(newType as any)) {
         delete clean.type; // drop invalid types
       } else if (newType !== current.type) {
-        // only allow advancing one step (or staying the same)
-        const allowed = PetriDish.LIFECYCLE[current.type as string];
-        if (allowed && newType !== allowed) delete clean.type;
+        // Seeds can reveal into any valid type (mystery seed mechanic)
+        // Other types can only advance one lifecycle step
+        if (current.type !== 'seed') {
+          const allowed = PetriDish.LIFECYCLE[current.type as string];
+          if (allowed && newType !== allowed) delete clean.type;
+        }
       }
     }
 

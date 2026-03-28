@@ -64,6 +64,8 @@ export type RunGeneratePayload = {
   input?: unknown;
   /** `json` returns parsed JSON directly; `code` runs generated guest body. */
   mode?: "code" | "json";
+  /** Max tokens for LLM output (default 2048, max 4096). */
+  maxTokens?: number;
 };
 
 /** `POST /seed` response. */

@@ -768,6 +768,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
       }
 
       const caps = Array.isArray(json.capabilities) ? (json.capabilities as string[]) : []
+      const maxTokens = Math.min(4096, Math.max(256, typeof json.maxTokens === "number" ? json.maxTokens : 2048))
       const capSet = new Set(caps)
       const apiLines = CAPABILITY_REGISTRY.filter((row) => capSet.has(row.id as LabCapabilityId)).map(
         (row) => row.llmHint,
@@ -809,7 +810,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
             { role: "system", content: systemPrompt },
             { role: "user", content: prompt },
           ],
-          max_tokens: 1024,
+          max_tokens: maxTokens,
           temperature: 0.2,
         })) as { response?: string }
       } catch (error) {

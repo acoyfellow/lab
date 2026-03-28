@@ -3,6 +3,7 @@
   import * as d3 from 'd3';
   import SEO from '$lib/SEO.svelte';
   import { runGenerate } from '../../data.remote';
+  import { BarChart3, X, ClipboardCopy, Check } from '@lucide/svelte';
 
   type Mutation = { op: string; [key: string]: unknown };
 
@@ -100,6 +101,15 @@
   let statsOpen = $state(false);
   let iterations = $state(0);
   let stateVersion = $state(0); // bumped on every state change to drive $effect
+  let consecutiveErrors = 0;
+  let logCopied = $state(false);
+
+  function copyLog() {
+    const text = events.map(ev => `${ev.ts} ${ev.kind === 'error' ? '✗' : ev.kind === 'agent' ? '⟳' : ev.kind === 'mutation' ? '△' : '·'} ${ev.text}`).join('\n');
+    navigator.clipboard.writeText(text);
+    logCopied = true;
+    setTimeout(() => logCopied = false, 1500);
+  }
 
   let svgEl = $state<SVGSVGElement | undefined>(undefined);
   let simulation: d3.Simulation<SimNode, SimLink> | null = null;
@@ -505,45 +515,88 @@
     logEvent('agent', 'tending...');
 
     const NEXT_TYPE: Record<string, string> = { seed: 'sprout', sprout: 'bloom', bloom: 'tree' };
+    const REVEALS: CatalogPlant[] = CATALOG.filter(p => p.id !== 'seed');
     const nodes = gardenState?.nodes ?? [];
-    const stateJson = JSON.stringify({
-      nodes: nodes.map(n => ({ id: n.id, type: n.type, energy: +(n.energy).toFixed(2) })),
-      season: gardenState?.season,
-    });
+    const links = gardenState?.links ?? [];
 
-    const prompt = `Tend the garden. State: ${stateJson}
+    // Pre-compute mandatory mutations
+    const ops: string[] = [];
 
-Build a mutations array, then call: return await labPetri.mutate(mutations);
+    // 1. Advance eligible plants (cap at 6 per iteration to keep prompt within token limits)
+    const eligible = [...nodes].sort((a, b) => b.energy - a.energy).slice(0, 6);
+    for (const n of eligible) {
+      if (n.energy >= 0.3 && NEXT_TYPE[n.type]) {
+        if (n.type === 'seed') {
+          const reveal = REVEALS[Math.floor(Math.random() * REVEALS.length)];
+          ops.push(`  { op: 'updateNode', id: '${n.id}', updates: { type: '${reveal.type}', energy: ${reveal.energy}, size: ${reveal.size}, color: '${reveal.color}', label: '${reveal.label}' } }`);
+        } else {
+          ops.push(`  { op: 'updateNode', id: '${n.id}', updates: { type: '${NEXT_TYPE[n.type]}', energy: ${Math.min(1, n.energy + 0.15).toFixed(2)}, size: ${Math.min(60, n.size + 4)} } }`);
+        }
+      } else if (n.energy < 0.1) {
+        ops.push(`  { op: 'removeNode', id: '${n.id}' }`);
+      } else {
+        ops.push(`  { op: 'updateNode', id: '${n.id}', updates: { energy: ${Math.min(1, n.energy + 0.1).toFixed(2)} } }`);
+      }
+    }
 
-RULES (server enforces — invalid ops are silently dropped):
-- updateNode: { op:'updateNode', id, updates:{energy?, type?, size?, color?} }
-- type advances ONE step only: seed→sprout→bloom→tree→fallen (skip = rejected)
-- energy ∈ [0,1], size ∈ [1,60]
-- removeNode: { op:'removeNode', id } — prune dead plants (energy < 0.1)
-- addLink: { op:'addLink', link:{source,target,type,strength} } — types: roots/pollination/shade/nutrients
-- nextSeason: { op:'nextSeason' } — advances season
-- log: { op:'log', message } — REQUIRED as last mutation
+    // 2. Auto-advance season every 3 iterations
+    if ((gardenState?.tick ?? 0) % 3 === 2) {
+      ops.push(`  { op: 'nextSeason' }`);
+    }
 
-DO THIS EACH CALL:
-1. Advance EVERY plant with energy≥0.3 to its next type (${nodes.filter(n => n.energy >= 0.3 && NEXT_TYPE[n.type]).map(n => `${n.id}: ${n.type}→${NEXT_TYPE[n.type]}`).join(', ') || 'none eligible'})
-2. Adjust energy: +0.1 to +0.2 for healthy plants, −0.1 for stressed ones
-3. Grow size: +2 to +5 for plants that advanced
-4. Remove any plant with energy<0.1
-5. Optionally add a link or advance the season
-6. End with a log message describing what happened
+    // 3. Suggest a few links between unlinked plants (cap at 3 to keep prompt small)
+    const linkedPairs = new Set(links.map(l => `${l.source}-${l.target}`));
+    const linkTypes = ['roots', 'pollination', 'shade', 'nutrients'];
+    let linkCount = 0;
+    for (let i = 0; i < nodes.length && linkCount < 3; i++) {
+      for (let j = i + 1; j < nodes.length && linkCount < 3; j++) {
+        const key = `${nodes[i].id}-${nodes[j].id}`;
+        if (!linkedPairs.has(key) && Math.random() < 0.3) {
+          const lt = linkTypes[Math.floor(Math.random() * linkTypes.length)];
+          ops.push(`  { op: 'addLink', link: { source: '${nodes[i].id}', target: '${nodes[j].id}', type: '${lt}', strength: ${(0.3 + Math.random() * 0.7).toFixed(2)} } }`);
+          linkCount++;
+        }
+      }
+    }
 
-return await labPetri.mutate(mutations);`;
+    const prompt = `Tend the garden. You MUST call labPetri.mutate() with an array of mutation objects.
+
+CURRENT: ${nodes.length} plants, ${links.length} links, season=${gardenState?.season}, tick=${gardenState?.tick}
+
+Here are the REQUIRED mutations — include ALL of them, then ADD your own creative additions:
+const mutations = [
+${ops.join(',\n')},
+  // === YOUR ADDITIONS BELOW ===
+  // Be bold! Do several of these each turn:
+  // - addNode: introduce a new seedling or wildflower (give it a unique id, label, color, type='seed', energy, size)
+  // - Change colors to reflect season (autumn = warm tones, winter = muted, spring = bright)
+  // - Adjust energy dramatically: storms drain energy (-0.3), sunshine boosts it (+0.3)
+  // - Add narrative log messages — tell the story of what's happening
+  // Add at LEAST 2-3 of your own mutations before the final log.
+  { op: 'log', message: 'YOUR_NARRATIVE_LOG_HERE' }
+];
+return await labPetri.mutate(mutations);
+
+VALID OPS: updateNode(id, updates:{type,energy,size,color}), addNode(node:{id,type,energy,size,color,label}), removeNode(id), addLink(link:{source,target,type,strength}), removeLink(source,target), nextSeason, log(message).
+Type lifecycle: seed→sprout→bloom→tree→fallen (one step only, server rejects skips).`;
 
     try {
       const result = await runGenerate({
         prompt,
         mode: 'code',
         capabilities: ['petri', 'fetch'],
-        input: { dishId, state: gardenState }
+        maxTokens: 2048,
+        input: {
+          dishId,
+          state: gardenState,
+          nodes: gardenState.nodes,
+          links: gardenState.links,
+        }
       });
 
       lastTraceId = result.traceId ?? null;
       lastCode = result.generated ?? '';
+      consecutiveErrors = 0;
 
       if (!result.ok) {
         logEvent('error', result.error ?? 'unknown error');
@@ -551,7 +604,13 @@ return await labPetri.mutate(mutations);`;
         logEvent('agent', `done${lastTraceId ? ` /t/${lastTraceId}` : ''}`, lastTraceId ? `/t/${lastTraceId}` : undefined);
       }
     } catch (e) {
-      logEvent('error', e instanceof Error ? e.message : String(e));
+      consecutiveErrors++;
+      const msg = e instanceof Error ? e.message : String(e);
+      logEvent('error', msg);
+      if (consecutiveErrors >= 3) {
+        logEvent('error', 'Too many consecutive failures — stopping.');
+        running = false;
+      }
     }
 
     waiting = false;
@@ -569,7 +628,7 @@ return await labPetri.mutate(mutations);`;
   async function iterateLoop() {
     while (running) {
       await iterate();
-      await new Promise(r => setTimeout(r, 8000));
+      await new Promise(r => setTimeout(r, 3000));
     }
   }
 
@@ -737,7 +796,7 @@ return await labPetri.mutate(mutations);`;
         class="px-2 py-2 rounded-lg bg-(--code-bg) text-(--text-3) text-sm border border-(--border) hover:opacity-90 transition-opacity cursor-pointer"
         title="Garden stats"
       >
-        {statsOpen ? '✕' : '📊'}
+        {#if statsOpen}<X size={14} />{:else}<BarChart3 size={14} />{/if}
       </button>
 
       <div class="ml-auto text-xs text-(--text-3) tabular-nums">
@@ -854,7 +913,14 @@ return await labPetri.mutate(mutations);`;
 
   <!-- Event Log -->
   <div class="space-y-2">
-    <h2 class="text-sm font-medium text-(--text-2)">Event Log</h2>
+    <div class="flex items-center justify-between">
+      <h2 class="text-sm font-medium text-(--text-2)">Event Log</h2>
+      {#if events.length > 0}
+        <button onclick={copyLog} class="flex items-center gap-1 text-xs text-(--text-3) hover:text-(--text) transition-colors cursor-pointer" title="Copy log">
+          {#if logCopied}<Check size={12} /><span>Copied</span>{:else}<ClipboardCopy size={12} /><span>Copy</span>{/if}
+        </button>
+      {/if}
+    </div>
     <div class="bg-(--code-bg) border border-(--border) rounded-lg p-3 h-48 overflow-y-auto font-mono">
       {#if events.length === 0}
         <p class="text-xs text-(--text-3) italic">No events yet</p>
