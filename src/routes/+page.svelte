@@ -70,8 +70,8 @@
         </div>
 
         <h1 class="text-[1.65rem] sm:text-[2.25rem] font-semibold tracking-tight leading-[1.15] text-(--text) drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
-          Agents run code here.<br />
-          <span class="text-(--text-2)">Every run leaves a trace.</span>
+          Run code in isolation.<br />
+          <span class="text-(--text-2)">Trace what happened.</span>
         </h1>
 
         <p class="text-[1.0625rem] text-(--text-2) leading-relaxed max-w-[60ch]">
