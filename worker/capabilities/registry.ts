@@ -80,7 +80,7 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRegistryEntry[] = [
     binding: "PETRI_DO",
     summary: "Mutate a Petri garden dish via POST /invoke/petri; guest calls labPetri.mutate.",
     denyGuestMessage: "Petri capability not granted",
-    llmHint: "`labPetri.mutate(mutations)` — async, applies mutation ops to the garden dish and returns the new snapshot. Ops: `{ op: 'updateNode', id, updates }`, `{ op: 'addNode', node }`, `{ op: 'removeNode', id }`, `{ op: 'addLink', link }`, `{ op: 'removeLink', source, target }`, `{ op: 'nextSeason' }`, `{ op: 'log', message }`.",
+    llmHint: "`labPetri.mutate(mutations)` — async, applies mutation ops to the garden dish and returns the new snapshot. Ops: `{ op: 'updateNode', id, updates }`, `{ op: 'addNode', node }`, `{ op: 'removeNode', id }`, `{ op: 'addLink', link }`, `{ op: 'removeLink', source, target }`, `{ op: 'nextSeason' }`, `{ op: 'log', message }`. Server enforces lifecycle: type must advance exactly one step (seed→sprout→bloom→tree→fallen); skipping steps is silently rejected. Energy clamped [0,1], size [1,60].",
   },
 ] as const
 

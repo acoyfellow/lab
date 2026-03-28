@@ -97,6 +97,7 @@
   let lastCode: string = $state('');
   let events: EventEntry[] = $state([]);
   let menuOpen = $state(false);
+  let statsOpen = $state(false);
   let iterations = $state(0);
   let stateVersion = $state(0); // bumped on every state change to drive $effect
 
@@ -503,17 +504,35 @@
     waiting = true;
     logEvent('agent', 'tending...');
 
-    const prompt = `The garden state is in input.state. Tend it for one iteration using labPetri.mutate([...]).
+    const NEXT_TYPE: Record<string, string> = { seed: 'sprout', sprout: 'bloom', bloom: 'tree' };
+    const nodes = gardenState?.nodes ?? [];
+    const stateJson = JSON.stringify({
+      nodes: nodes.map(n => ({ id: n.id, type: n.type, energy: +(n.energy).toFixed(2) })),
+      season: gardenState?.season,
+    });
 
-input.state = { nodes: [{id, type, age, energy, color, size, label}], links: [...], tick, season }
-Current state: ${JSON.stringify({ nodes: gardenState?.nodes?.map(n => ({id: n.id, type: n.type, age: n.age, energy: n.energy})), season: gardenState?.season, tick: gardenState?.tick })}
+    const prompt = `Tend the garden. State: ${stateJson}
 
-Mutations: { op: 'updateNode', id, updates: {energy?, age?, type?, color?, size?} } or { op: 'log', message }
+Build a mutations array, then call: return await labPetri.mutate(mutations);
 
-Rules: 1-2 changes only. Use exact node ids from input.state.nodes. Seeds grow (age 0→1→2→3 = seed→sprout→bloom→tree). Low energy (<0.2) → wither (remove). Season: ${gardenState?.season}.
-Always include { op: 'log', message: 'description' } last.
+RULES (server enforces — invalid ops are silently dropped):
+- updateNode: { op:'updateNode', id, updates:{energy?, type?, size?, color?} }
+- type advances ONE step only: seed→sprout→bloom→tree→fallen (skip = rejected)
+- energy ∈ [0,1], size ∈ [1,60]
+- removeNode: { op:'removeNode', id } — prune dead plants (energy < 0.1)
+- addLink: { op:'addLink', link:{source,target,type,strength} } — types: roots/pollination/shade/nutrients
+- nextSeason: { op:'nextSeason' } — advances season
+- log: { op:'log', message } — REQUIRED as last mutation
 
-return await labPetri.mutate([...your mutations...]);`;
+DO THIS EACH CALL:
+1. Advance EVERY plant with energy≥0.3 to its next type (${nodes.filter(n => n.energy >= 0.3 && NEXT_TYPE[n.type]).map(n => `${n.id}: ${n.type}→${NEXT_TYPE[n.type]}`).join(', ') || 'none eligible'})
+2. Adjust energy: +0.1 to +0.2 for healthy plants, −0.1 for stressed ones
+3. Grow size: +2 to +5 for plants that advanced
+4. Remove any plant with energy<0.1
+5. Optionally add a link or advance the season
+6. End with a log message describing what happened
+
+return await labPetri.mutate(mutations);`;
 
     try {
       const result = await runGenerate({
@@ -550,7 +569,7 @@ return await labPetri.mutate([...your mutations...]);`;
   async function iterateLoop() {
     while (running) {
       await iterate();
-      await new Promise(r => setTimeout(r, 3000));
+      await new Promise(r => setTimeout(r, 8000));
     }
   }
 
@@ -713,6 +732,14 @@ return await labPetri.mutate([...your mutations...]);`;
         {/if}
       </div>
 
+      <button
+        onclick={() => statsOpen = !statsOpen}
+        class="px-2 py-2 rounded-lg bg-(--code-bg) text-(--text-3) text-sm border border-(--border) hover:opacity-90 transition-opacity cursor-pointer"
+        title="Garden stats"
+      >
+        {statsOpen ? '✕' : '📊'}
+      </button>
+
       <div class="ml-auto text-xs text-(--text-3) tabular-nums">
         {#if gardenState}
           {gardenState.nodes.length} plants · {gardenState.season} · #{iterations}
@@ -735,6 +762,69 @@ return await labPetri.mutate([...your mutations...]);`;
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"/>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
         </svg>
+      </div>
+    {/if}
+
+    <!-- Stats overlay -->
+    {#if statsOpen && gardenState}
+      {@const typeCounts = gardenState.nodes.reduce((acc, n) => { acc[n.type] = (acc[n.type] ?? 0) + 1; return acc; }, {} as Record<string, number>)}
+      {@const avgEnergy = gardenState.nodes.length ? +(gardenState.nodes.reduce((s, n) => s + n.energy, 0) / gardenState.nodes.length).toFixed(2) : 0}
+      <div class="absolute inset-0 z-20 bg-(--code-bg)/95 backdrop-blur-sm p-5 overflow-y-auto">
+        <div class="space-y-4 max-w-sm mx-auto">
+          <h3 class="text-sm font-medium text-(--text)">Garden Snapshot</h3>
+
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div class="space-y-1">
+              <div class="text-(--text-3)">Season</div>
+              <div class="text-(--text) font-medium capitalize">{gardenState.season}</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-(--text-3)">Iterations</div>
+              <div class="text-(--text) font-medium tabular-nums">{iterations}</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-(--text-3)">Plants</div>
+              <div class="text-(--text) font-medium">{gardenState.nodes.length}</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-(--text-3)">Links</div>
+              <div class="text-(--text) font-medium">{gardenState.links.length}</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-(--text-3)">Avg Energy</div>
+              <div class="text-(--text) font-medium tabular-nums">{avgEnergy}</div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-(--text-3)">Composition</div>
+              <div class="text-(--text) font-medium">
+                {Object.entries(typeCounts).map(([t, c]) => `${c} ${t}`).join(', ') || 'empty'}
+              </div>
+            </div>
+          </div>
+
+          <h4 class="text-xs font-medium text-(--text-2) pt-2">All Plants</h4>
+          <div class="space-y-1.5">
+            {#each gardenState.nodes as plant}
+              <div class="flex items-center gap-2 text-xs">
+                <div
+                  class="w-3 h-3 rounded-full shrink-0"
+                  style="background-color: {plant.color}; opacity: {plant.energy * 0.8 + 0.2};"
+                ></div>
+                <span class="text-(--text) font-medium min-w-0 truncate">{plant.label ?? plant.id}</span>
+                <span class="text-(--text-3) capitalize">{plant.type}</span>
+                <div class="ml-auto flex items-center gap-2 shrink-0 tabular-nums">
+                  <span class="text-(--text-3)" title="energy">{(plant.energy * 100).toFixed(0)}%</span>
+                  <div class="w-12 h-1.5 rounded-full bg-(--border) overflow-hidden">
+                    <div
+                      class="h-full rounded-full transition-all duration-300"
+                      style="width: {plant.energy * 100}%; background-color: {plant.energy > 0.5 ? '#4ade80' : plant.energy > 0.2 ? '#fbbf24' : '#f87171'};"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            {/each}
+          </div>
+        </div>
       </div>
     {/if}
 
