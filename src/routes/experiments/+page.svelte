@@ -36,6 +36,23 @@
         Play against an LLM — it sees the real board, picks a move, and explains why.
       </div>
     </AppLink>
+    <AppLink
+      to="/experiments/drop-four"
+      class="block no-underline rounded-lg border border-(--border) bg-(--surface) px-4 py-3 hover:border-(--accent)/40 transition-colors"
+    >
+      <div class="text-sm font-medium text-(--text)">Drop Four</div>
+      <div class="text-xs text-(--text-3) mt-1">
+        6 AI personalities play a round-robin Connect 4 tournament in parallel, then you challenge the winner.
+      </div>
+    </AppLink>
+    <AppLink
+      to="/experiments/versus"
+      class="block no-underline rounded-lg border border-(--border) bg-(--surface) px-4 py-3 hover:border-(--accent)/40 transition-colors"
+    >
+      <div class="text-sm font-medium text-(--text)">Versus</div>
+      <div class="text-xs text-(--text-3) mt-1">
+        1v1 Connect 4 — deterministic search handles tactics, an LLM with a minimal prompt picks preference on ties, and it learns from every loss. Every move is traced.
+      </div>
+    </AppLink>
   </section>
 </div>
-

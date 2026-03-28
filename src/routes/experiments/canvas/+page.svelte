@@ -269,7 +269,7 @@ Return JSON: {"x": <col 0-2>, "y": <row 0-2>, "r": "<why>"}`;
 
 <SEO title="Tic-Tac-Toe — Lab" description="Play tic-tac-toe against an LLM. It sees the board, picks a move, and explains why." path="/experiments/canvas" />
 
-<div class="max-w-2xl mx-auto px-5 py-8 space-y-6">
+<div class="max-w-3xl mx-auto px-5 py-8 space-y-6">
   <header class="space-y-2">
     <h1 class="text-2xl font-semibold text-(--text)">Tic-Tac-Toe</h1>
     <p class="text-sm text-(--text-3) max-w-xl leading-relaxed">

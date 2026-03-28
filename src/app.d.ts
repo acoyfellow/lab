@@ -13,6 +13,8 @@ declare global {
 				WORKER: Fetcher;
 				BETTER_AUTH_SECRET?: string;
 				BETTER_AUTH_URL?: string;
+				GH_CLIENT_ID?: string;
+				GH_CLIENT_SECRET?: string;
 			};
 		}
 	}

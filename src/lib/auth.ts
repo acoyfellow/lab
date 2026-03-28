@@ -56,6 +56,12 @@ export function initAuth(db: D1Database, env: any, baseURL: string) {
         verification,
       },
     }),
+    socialProviders: {
+      github: {
+        clientId: env?.GH_CLIENT_ID || '',
+        clientSecret: env?.GH_CLIENT_SECRET || '',
+      },
+    },
     emailAndPassword: {
       enabled: true,
       autoSignIn: true,

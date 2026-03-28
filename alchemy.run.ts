@@ -49,6 +49,7 @@ const R2 = await R2Bucket(`${projectName}-r2`);
 
 const LAB_DO = DurableObjectNamespace("lab-stub-do", {
   className: "LabStubDurableObject",
+  sqlite: true,
 });
 
 // Petri Dish Durable Object for persistent experiment substrate
@@ -102,6 +103,8 @@ export const APP = await SvelteKit(`${projectName}-app`, {
       return secret;
     })(),
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || "http://localhost:5173",
+    GH_CLIENT_ID: process.env.GH_CLIENT_ID || "",
+    GH_CLIENT_SECRET: process.env.GH_CLIENT_SECRET || "",
   }
 });
 

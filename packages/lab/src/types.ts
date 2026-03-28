@@ -66,6 +66,8 @@ export type RunGeneratePayload = {
   mode?: "code" | "json";
   /** Max tokens for LLM output (default 2048, max 4096). */
   maxTokens?: number;
+  /** Workers AI model ID override (default `@cf/meta/llama-3.1-8b-instruct`). */
+  model?: string;
 };
 
 /** `POST /seed` response. */

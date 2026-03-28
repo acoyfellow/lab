@@ -19,6 +19,11 @@
       title: 'Canary Run',
       badge: 'Diff',
       description: 'Old logic and new logic run on the same inputs. The trace shows exactly what changed before you ship.'
+    },
+    {
+      title: 'Adaptive Opponent',
+      badge: 'Loop',
+      description: 'AI plays Connect 4 with deterministic tactics. Losses produce traced insights that feed the next game. No prompt engineering — the system gets smarter through composition, not instruction.'
     }
   ];
 
@@ -93,11 +98,15 @@
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Self-healing loops</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Run fails. Agent reads the trace, sees exactly what broke, patches the code, runs again. Each iteration is a new trace. Watch it debug itself.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Run fails. Agent reads the trace, sees exactly what broke, patches the code, runs again. Or: an AI loses a game, and the trace becomes an insight for next time. Each iteration is a new trace. Watch it learn.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Follow the story</div>
         <p class="text-[0.8125rem] text-(--text-2) m-0">Share a trace URL with a human. They can follow exactly what happened without needing the agent's context. It's a narrative, not a log.</p>
+      </div>
+      <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface) sm:col-span-2">
+        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Traces feed forward</div>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">A trace from a failed run becomes context for the next one. Game loses? The insight feeds the next game. Pipeline breaks? The error trace seeds the fix. Old outputs become new inputs.</p>
       </div>
     </div>
   </section>

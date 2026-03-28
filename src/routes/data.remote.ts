@@ -116,11 +116,11 @@ export const runGenerate = query(
   'unchecked',
   async (payload: RunGeneratePayload): Promise<RunResult> => {
     const platform = getRequestEvent().platform;
-    const { prompt, capabilities, template, input, mode, maxTokens } = payload;
+    const { prompt, capabilities, template, input, mode, maxTokens, model } = payload;
     return callWorkerJSON<RunResult>(platform, '/run/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, capabilities, template, input, mode, maxTokens }),
+      body: JSON.stringify({ prompt, capabilities, template, input, mode, maxTokens, model }),
     });
   },
 );
@@ -141,3 +141,41 @@ export const getTrace = query('unchecked', async (traceId: string): Promise<Trac
   const platform = getRequestEvent().platform;
   return callWorkerJSON<TraceData | { error: string }>(platform, `/t/${traceId}`);
 });
+
+// Durable Object SQL helpers
+type DoSqlResult = { ok: true; rows: Record<string, unknown>[] } | { ok: false; error: string };
+
+export const doSqlQuery = query(
+  'unchecked',
+  async (payload: { doName: string; sql: string; params?: unknown[] }): Promise<DoSqlResult> => {
+    const platform = getRequestEvent().platform;
+    const result = await callWorkerJSON<{ ok: boolean; result?: { ok: boolean; rows?: Record<string, unknown>[]; error?: string }; error?: string }>(
+      platform,
+      '/invoke/do',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: payload.doName, method: 'POST', path: '/sql/query', body: { sql: payload.sql, params: payload.params } }),
+      },
+    );
+    if (!result.ok) return { ok: false, error: result.error ?? 'DO query failed' };
+    return { ok: true, rows: result.result?.rows ?? [] };
+  },
+);
+
+export const doSqlExec = command(
+  'unchecked',
+  async (payload: { doName: string; sql: string; params?: unknown[] }): Promise<{ ok: boolean; error?: string }> => {
+    const platform = getRequestEvent().platform;
+    const result = await callWorkerJSON<{ ok: boolean; error?: string }>(
+      platform,
+      '/invoke/do',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: payload.doName, method: 'POST', path: '/sql/exec', body: { sql: payload.sql, params: payload.params } }),
+      },
+    );
+    return { ok: result.ok, error: result.error };
+  },
+);

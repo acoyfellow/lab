@@ -10,7 +10,7 @@ import { CAPABILITY_REGISTRY, type LabCapabilityId } from "./capabilities/regist
 import { buildLabCatalog } from "./catalog"
 import { resolveGuestTemplateId, type GuestTemplateId } from "./guest/templates"
 
-const AI_MODEL = "@cf/meta/llama-3.1-8b-instruct" as const
+const AI_MODEL_DEFAULT = "@cf/meta/llama-3.1-8b-instruct" as const
 
 interface Env {
   LOADER: WorkerLoaderBinding
@@ -199,7 +199,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
         return withCors(Response.json({ ok: false, error: "invalid prompt" }, { status: 400 }))
       }
       try {
-        const aiResult = (await env.AI.run(AI_MODEL as Parameters<typeof env.AI.run>[0], {
+        const aiResult = (await env.AI.run(AI_MODEL_DEFAULT as Parameters<typeof env.AI.run>[0], {
           messages: [{ role: "user", content: body.prompt.slice(0, 8000) }],
           max_tokens: 256,
           temperature: 0.2,
@@ -769,6 +769,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
 
       const caps = Array.isArray(json.capabilities) ? (json.capabilities as string[]) : []
       const maxTokens = Math.min(4096, Math.max(256, typeof json.maxTokens === "number" ? json.maxTokens : 2048))
+      const aiModel = typeof json.model === "string" && json.model.trim() ? json.model.trim() : AI_MODEL_DEFAULT
       const capSet = new Set(caps)
       const apiLines = CAPABILITY_REGISTRY.filter((row) => capSet.has(row.id as LabCapabilityId)).map(
         (row) => row.llmHint,
@@ -805,7 +806,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
 
       let aiResult: { response?: string }
       try {
-        aiResult = (await env.AI.run(AI_MODEL as Parameters<typeof env.AI.run>[0], {
+        aiResult = (await env.AI.run(aiModel as Parameters<typeof env.AI.run>[0], {
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: prompt },
