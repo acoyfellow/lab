@@ -6,7 +6,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **GitHub OAuth:** experiments require sign-in to play (LLM calls cost money); pages remain publicly viewable to entice sign-ups.
+- **Versus experiment:** 1v1 Connect 4 — minimax with alpha-beta pruning handles tactics, a minimal LLM prompt breaks ties, and traced losses feed a DO SQLite learning loop. Expandable game history with trace links.
+- **Drop Four experiment:** 6 AI personalities play a round-robin Connect 4 tournament in parallel isolates, then you challenge the winner.
+- **Auth component:** reusable `AuthButton.svelte` — GitHub sign-in when unauthenticated, avatar + sign-out when authenticated.
+- **Server-side auth guards:** `requireAuth()` on LLM-consuming RPCs (`runGenerate`, `seedKv`, `doSqlExec`). Cheap worker isolate calls (`runSandbox`, `runKv`, `runChain`, `runSpawn`) remain public.
+
+### Changed
+
+- **Homepage:** new headline — "Run code in isolation. Trace what happened." Clean 2×2 "Why traces" grid, "Patterns" section leading with Adaptive Opponent.
+- **Site-wide layout audit:** unified page padding (`px-6 py-10`) and `h1` styles (`text-2xl tracking-tight`) across all subpages.
+- **Docs sidebar:** merged "Guides" into "Start" — two nav groups instead of three.
+- **Nav:** removed Tutorial and Guides from main nav; simplified footer to Build / Learn / Project.
+- **Examples:** removed internal "Score" sort; tightened descriptions.
+- **Experiments index:** concrete card descriptions grounded in what each experiment actually does.
 
 ## [0.0.1] - 2026-03-26
 
