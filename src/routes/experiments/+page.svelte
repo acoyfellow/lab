@@ -34,7 +34,7 @@
     >
       <div class="text-sm font-medium text-(--text)">Garden</div>
       <div class="text-xs text-(--text-3) mt-1">
-        D3 force graph tended by an LLM. Nodes grow, connect, and evolve across sessions.
+        D3 force graph tended by AI. Nodes grow, connect, and evolve across sessions.
       </div>
     </AppLink>
     <AppLink
@@ -43,7 +43,7 @@
     >
       <div class="text-sm font-medium text-(--text)">Tic-Tac-Toe</div>
       <div class="text-xs text-(--text-3) mt-1">
-        Play against an LLM that sees the real board state as structured JSON and picks its move.
+        Play against AI that sees the real board state as structured JSON and picks its move.
       </div>
     </AppLink>
     <AppLink

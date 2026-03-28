@@ -299,13 +299,13 @@ Return JSON: {"col": <0-6>, "r": "<why>"}`;
     <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Drop Four</h1>
     <p class="text-sm text-(--text-3) max-w-2xl leading-relaxed">
       Six AI personalities compete in a round-robin Connect 4 tournament — 15 games running in parallel across isolated workers.
-      Each move is a structured JSON response from the LLM reading the real board state. When the dust settles, you challenge the champion.
+      Each move comes from a model reading the real board state as structured JSON. When the dust settles, you challenge the champion.
     </p>
   </header>
 
   {#if showAuthGate}
     <div class="rounded-lg border border-(--border) bg-(--surface) px-5 py-4 max-w-md space-y-3 text-center">
-      <p class="text-sm text-(--text-2)">Sign in with GitHub to play. Experiments use LLM calls that cost real money.</p>
+      <p class="text-sm text-(--text-2)">Sign in with GitHub to play. Experiments use AI calls that cost real money.</p>
       <div class="flex justify-center">
         <AuthButton />
       </div>

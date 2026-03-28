@@ -302,7 +302,7 @@
 
   {#if showAuthGate}
     <div class="rounded-lg border border-(--border) bg-(--surface) px-5 py-4 max-w-md space-y-3 text-center">
-      <p class="text-sm text-(--text-2)">Sign in with GitHub to play. Experiments use LLM calls that cost real money.</p>
+      <p class="text-sm text-(--text-2)">Sign in with GitHub to play. Experiments use AI calls that cost real money.</p>
       <div class="flex justify-center">
         <AuthButton />
       </div>
