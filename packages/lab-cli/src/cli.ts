@@ -158,8 +158,8 @@ const main = Effect.gen(function* () {
 		console.error(e.message);
 		return Effect.sync(() => process.exit(1));
 	}),
-	Effect.catchAll((e) => {
-		console.error(JSON.stringify({ error: String(e) }, null, 2));
+	Effect.catchCause((cause) => {
+		console.error(JSON.stringify({ error: String(cause) }, null, 2));
 		return Effect.sync(() => process.exit(1));
 	}),
 );

@@ -6,6 +6,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.0.2] - 2026-03-28
+
 ### Added
 
 - **GitHub OAuth:** experiments require sign-in to play (LLM calls cost money); pages remain publicly viewable to entice sign-ups.
@@ -13,6 +17,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 - **Drop Four experiment:** 6 AI personalities play a round-robin Connect 4 tournament in parallel isolates, then you challenge the winner.
 - **Auth component:** reusable `AuthButton.svelte` — GitHub sign-in when unauthenticated, avatar + sign-out when authenticated.
 - **Server-side auth guards:** `requireAuth()` on LLM-consuming RPCs (`runGenerate`, `seedKv`, `doSqlExec`). Cheap worker isolate calls (`runSandbox`, `runKv`, `runChain`, `runSpawn`) remain public.
+
+### Fixed
+
+- **`@acoyfellow/lab-cli`:** replaced removed `Effect.catchAll` with `Effect.catchCause` for Effect v4 beta compatibility.
 
 ### Changed
 

@@ -1,6 +1,6 @@
 {
   "name": "@acoyfellow/lab-cli",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Minimal CLI for Lab — agents shell out, get traces back",
   "license": "MIT",
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "@acoyfellow/lab-mcp",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "MCP server for lab: find (catalog/trace) + execute (guest runs) via stdio",
   "license": "MIT",
   "type": "module",

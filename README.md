@@ -12,7 +12,7 @@ agent sends code  →  isolated execution  →  trace URL (permanent artifact)
 
 **See a trace:** [lab.coey.dev/compose](https://lab.coey.dev/compose) — run a chain, click the trace link, follow the story.
 
-> **0.0.1** — API and trace shapes may still move. Pin to exact versions or self-host.
+> **0.0.2** — API and trace shapes may still move. Pin to exact versions or self-host.
 
 ## Why traces
 
