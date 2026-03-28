@@ -4,6 +4,7 @@
   import CommandPalette from "$lib/CommandPalette.svelte";
   import Logo from '$lib/Logo.svelte';
   import { paths } from '$lib/paths';
+  import { version } from '../../package.json';
 
   let { children } = $props();
 
@@ -45,7 +46,7 @@
     >
       <AppLink to="/" class="flex items-center gap-2 shrink-0 no-underline">
         <Logo />
-        <code class="text-[0.6rem] text-(--text-3) tracking-tight">v0.0.2</code>
+        <code class="text-[0.6rem] text-(--text-3) tracking-tight">v{version}</code>
       </AppLink>
       <nav
         class="flex flex-wrap items-center gap-x-4 gap-y-1 justify-end text-[0.8125rem]"
