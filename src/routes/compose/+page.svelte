@@ -192,7 +192,7 @@
   type="website"
 />
 
-<div class="max-w-3xl mx-auto px-6 py-8 max-sm:px-4 space-y-6">
+<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-6">
   <header class="space-y-1">
     <h1 class="text-lg font-semibold tracking-tight">Compose</h1>
     <p class="text-[0.8125rem] text-(--text-2)">

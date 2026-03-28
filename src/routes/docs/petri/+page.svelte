@@ -8,10 +8,10 @@
   path="/docs/petri"
 />
 
-<div class="max-w-3xl mx-auto px-5 py-8 space-y-8">
+<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-8">
   <header class="space-y-2">
-    <h1 class="text-3xl font-semibold text-(--text)">Petri</h1>
-    <p class="text-lg text-(--text-3)">
+    <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Petri</h1>
+    <p class="text-sm text-(--text-3)">
       Persistent substrate for Lab experiments. Agents inhabit state rather than generating it.
     </p>
   </header>

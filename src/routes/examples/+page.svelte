@@ -150,11 +150,11 @@
 
 <div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8">
   <header class="mb-10">
-    <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-(--text) mb-3">
+    <h1 class="text-2xl font-semibold tracking-tight text-(--text) mb-3">
       Examples
     </h1>
     <p class="text-[1.0625rem] text-(--text-2) max-w-[60ch]">
-      Pick a workflow, open it in Compose, run it, and share the trace. These examples are written so the trace reads like a receipt: what ran, what changed, what you can trust next time.
+      Pick a workflow, open it in Compose, run it, and follow the trace.
     </p>
     <div class="mt-6">
       <input
@@ -177,11 +177,8 @@
           Signature workflows
         </h2>
         <p class="text-[0.875rem] text-(--text-2) mt-2 mb-0 max-w-[70ch]">
-          Six patterns that show Lab at its best: multi-step pipelines, handoffs, safety checks, and proof artifacts. Open one, run it, and follow the trace URL like a story.
+          Multi-step pipelines, handoffs, safety checks, and proof artifacts.
         </p>
-      </div>
-      <div class="text-[0.75rem] text-(--text-3)">
-        Curated from featured + agentic + step count.
       </div>
     </div>
 
@@ -231,13 +228,10 @@
           All examples
         </h2>
         <p class="text-[0.875rem] text-(--text-2) mt-2 mb-0 max-w-[70ch]">
-          The full catalog. Search filters this list; use the sort controls to scan by score, step count, or title.
+          The full catalog. Search filters both sections.
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <Button size="sm" variant="outline" onclick={() => toggleSort('score')}>
-          Sort: Score {sortKey === 'score' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-        </Button>
         <Button size="sm" variant="outline" onclick={() => toggleSort('steps')}>
           Sort: Steps {sortKey === 'steps' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
         </Button>

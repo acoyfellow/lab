@@ -6,24 +6,28 @@
 
   const featuredExamples = [
     {
+      title: 'Adaptive Opponent',
+      badge: 'Loop',
+      href: '/experiments/versus',
+      description: 'AI plays Connect 4 with deterministic tactics. Losses produce traced insights that feed the next game. No prompt engineering — the system learns through composition.'
+    },
+    {
       title: 'Trace Handoff',
       badge: 'URL',
+      href: '/examples',
       description: 'Agent A produces a trace URL. Agent B reads it and continues the work. The trace becomes the handoff protocol.'
     },
     {
       title: 'Proof of Correctness',
       badge: '10/10',
+      href: '/examples',
       description: 'Agent writes a function, specifies edge cases, runs them all in isolated steps, and returns the trace as the execution receipt.'
     },
     {
       title: 'Canary Run',
       badge: 'Diff',
+      href: '/examples',
       description: 'Old logic and new logic run on the same inputs. The trace shows exactly what changed before you ship.'
-    },
-    {
-      title: 'Adaptive Opponent',
-      badge: 'Loop',
-      description: 'AI plays Connect 4 with deterministic tactics. Losses produce traced insights that feed the next game. No prompt engineering — the system gets smarter through composition, not instruction.'
     }
   ];
 
@@ -71,12 +75,12 @@
         </h1>
 
         <p class="text-[1.0625rem] text-(--text-2) leading-relaxed max-w-[60ch]">
-          An agent sends JavaScript. Lab runs each step in an <strong class="text-(--text)">isolated V8</strong> with only the capabilities you grant.
+          An agent sends JavaScript. Lab runs each step in an <strong class="text-(--text)">isolated V8</strong> — sandboxed, capability-scoped, edge-deployed.
           Every run produces a permanent <strong class="text-(--text)">trace</strong> — the proof of what happened, shareable with agents and humans alike.
         </p>
         <div class="flex items-center gap-3 flex-wrap">
-          <Button href="/compose" variant="default">Run a chain</Button>
-          <a href="/examples" class="text-[0.8125rem] text-(--accent) hover:underline">see what agents build →</a>
+          <Button href="/compose" variant="default">Open Compose</Button>
+          <a href="/examples" class="text-[0.8125rem] text-(--accent) hover:underline">browse example chains →</a>
         </div>
       </div>
     </header>
@@ -98,15 +102,11 @@
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Self-healing loops</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Run fails. Agent reads the trace, sees exactly what broke, patches the code, runs again. Or: an AI loses a game, and the trace becomes an insight for next time. Each iteration is a new trace. Watch it learn.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Run fails. Agent reads the trace, sees exactly what broke, patches the code, runs again. Each iteration is a new trace — the system fixes itself.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Follow the story</div>
         <p class="text-[0.8125rem] text-(--text-2) m-0">Share a trace URL with a human. They can follow exactly what happened without needing the agent's context. It's a narrative, not a log.</p>
-      </div>
-      <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface) sm:col-span-2">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Traces feed forward</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">A trace from a failed run becomes context for the next one. Game loses? The insight feeds the next game. Pipeline breaks? The error trace seeds the fix. Old outputs become new inputs.</p>
       </div>
     </div>
   </section>
@@ -124,10 +124,10 @@
 
   <!-- What agents build -->
   <section class="space-y-4">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">What agents build with this</h2>
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Patterns</h2>
     <div class="space-y-3">
       {#each featuredExamples as example}
-        <a href="/examples" class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
+        <a href={example.href} class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
           <div class="flex items-start gap-3">
             <span class="flex-shrink-0 mt-0.5 min-w-8 h-8 rounded-full bg-(--surface-alt) text-(--text-2) flex items-center justify-center text-[0.6875rem] font-bold px-2">{example.badge}</span>
             <div>

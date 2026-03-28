@@ -257,9 +257,9 @@
   path="/experiments/versus"
 />
 
-<div class="max-w-3xl mx-auto px-5 py-8 space-y-6">
+<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-6">
   <header class="space-y-2">
-    <h1 class="text-2xl font-semibold text-(--text)">Versus</h1>
+    <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Versus</h1>
     <p class="text-sm text-(--text-3) max-w-2xl leading-relaxed">
       The AI plays Connect 4 using minimax search — no prompt engineering, no strategy instructions. When multiple moves are equally strong, a small LLM picks its preference from a minimal prompt: just the board state and one-line insights from past losses. It gets smarter between games, not between tokens. Every move produces a trace so you can see exactly what the algorithm decided vs. what the LLM influenced.
     </p>

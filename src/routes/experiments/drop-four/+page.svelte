@@ -1,7 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { page } from '$app/state';
   import SEO from '$lib/SEO.svelte';
+  import AuthButton from '$lib/components/AuthButton.svelte';
   import { runGenerate } from '../../data.remote';
+
+  let authed = $derived(!!page.data.experimentAuth?.authenticated);
+  let showAuthGate = $state(false);
   import {
     createBoard,
     cloneBoard,
@@ -166,6 +171,7 @@ Return JSON: {"col": <0-6>, "r": "<why>"}`;
   }
 
   function handleChalClick(e: MouseEvent) {
+    if (!authed) { showAuthGate = true; return; }
     if (chalWaiting || chalGameOver) return;
     const rect = chalCanvas.getBoundingClientRect();
     const scaleX = CHAL_W / rect.width;
@@ -276,6 +282,7 @@ Return JSON: {"col": <0-6>, "r": "<why>"}`;
   }
 
   async function startTournament() {
+    if (!authed) { showAuthGate = true; return; }
     stopStartAnim();
     await runTournament();
   }
@@ -287,14 +294,23 @@ Return JSON: {"col": <0-6>, "r": "<why>"}`;
   path="/experiments/drop-four"
 />
 
-<div class="max-w-3xl mx-auto px-5 py-8 space-y-6">
+<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-6">
   <header class="space-y-2">
-    <h1 class="text-2xl font-semibold text-(--text)">Drop Four</h1>
+    <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Drop Four</h1>
     <p class="text-sm text-(--text-3) max-w-2xl leading-relaxed">
       Six AI personalities compete in a round-robin Connect 4 tournament — 15 games running in parallel across isolated workers.
       Each move is a structured JSON response from the LLM reading the real board state. When the dust settles, you challenge the champion.
     </p>
   </header>
+
+  {#if showAuthGate}
+    <div class="rounded-lg border border-(--border) bg-(--surface) px-5 py-4 max-w-md space-y-3 text-center">
+      <p class="text-sm text-(--text-2)">Sign in with GitHub to play. Experiments use LLM calls that cost real money.</p>
+      <div class="flex justify-center">
+        <AuthButton />
+      </div>
+    </div>
+  {/if}
 
   {#if view === 'tournament'}
     <div class="flex items-center gap-3 flex-wrap">

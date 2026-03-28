@@ -1,7 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { page } from '$app/state';
   import SEO from '$lib/SEO.svelte';
+  import AuthButton from '$lib/components/AuthButton.svelte';
   import { runGenerate } from '../../data.remote';
+
+  let authed = $derived(!!page.data.experimentAuth?.authenticated);
+  let showAuthGate = $state(false);
 
   // The model sees the real board state and decides its move
   // No hidden logic — just structured JSON output driving the game
@@ -234,6 +239,7 @@ Return JSON: {"x": <col 0-2>, "y": <row 0-2>, "r": "<why>"}`;
   }
 
   function handleClick(e: MouseEvent) {
+    if (!authed) { showAuthGate = true; return; }
     if (waiting || gameOver) return;
 
     const rect = canvas.getBoundingClientRect();
@@ -269,13 +275,22 @@ Return JSON: {"x": <col 0-2>, "y": <row 0-2>, "r": "<why>"}`;
 
 <SEO title="Tic-Tac-Toe — Lab" description="Play tic-tac-toe against an LLM. It sees the board, picks a move, and explains why." path="/experiments/canvas" />
 
-<div class="max-w-3xl mx-auto px-5 py-8 space-y-6">
+<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-6">
   <header class="space-y-2">
-    <h1 class="text-2xl font-semibold text-(--text)">Tic-Tac-Toe</h1>
+    <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Tic-Tac-Toe</h1>
     <p class="text-sm text-(--text-3) max-w-xl leading-relaxed">
       You play X, the agent plays O. Each turn, the LLM receives the actual board state as structured input, returns its move as JSON, and the board updates. No tricks, no hardcoded AI — just a model reading the truth of the game and responding.
     </p>
   </header>
+
+  {#if showAuthGate}
+    <div class="rounded-lg border border-(--border) bg-(--surface) px-5 py-4 max-w-md space-y-3 text-center">
+      <p class="text-sm text-(--text-2)">Sign in with GitHub to play. Experiments use LLM calls that cost real money.</p>
+      <div class="flex justify-center">
+        <AuthButton />
+      </div>
+    </div>
+  {/if}
 
   <div class="flex items-center gap-3 flex-wrap">
     <button onclick={initGame} class="px-4 py-2 rounded-lg bg-(--accent) text-white text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer">

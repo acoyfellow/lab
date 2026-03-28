@@ -1,8 +1,13 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { page } from '$app/state';
   import * as d3 from 'd3';
   import SEO from '$lib/SEO.svelte';
+  import AuthButton from '$lib/components/AuthButton.svelte';
   import { runGenerate } from '../../data.remote';
+
+  let authed = $derived(!!page.data.experimentAuth?.authenticated);
+  let showAuthGate = $state(false);
   import { BarChart3, X, ClipboardCopy, Check } from '@lucide/svelte';
 
   type Mutation = { op: string; [key: string]: unknown };
@@ -617,6 +622,7 @@ Type lifecycle: seed→sprout→bloom→tree→fallen (one step only, server rej
   }
 
   function start() {
+    if (!authed) { showAuthGate = true; return; }
     running = true;
     iterateLoop();
   }
@@ -682,10 +688,10 @@ Type lifecycle: seed→sprout→bloom→tree→fallen (one step only, server rej
   <div class="fixed inset-0 z-40" onclick={() => menuOpen = false}></div>
 {/if}
 
-<div class="max-w-3xl mx-auto px-5 py-8 space-y-6">
+<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-6">
   <header class="space-y-2">
     <div class="flex items-baseline justify-between">
-      <h1 class="text-2xl font-semibold text-(--text)">Garden</h1>
+      <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Garden</h1>
       <a href="https://github.com/acoyfellow/lab/blob/main/src/routes/experiments/garden/%2Bpage.svelte" class="text-xs text-(--text-3) hover:text-(--accent) transition-colors">Source</a>
     </div>
     <p class="text-sm text-(--text-3) max-w-xl leading-relaxed">
@@ -693,6 +699,15 @@ Type lifecycle: seed→sprout→bloom→tree→fallen (one step only, server rej
       your garden is yours alone, and picks up where you left off each visit.
     </p>
   </header>
+
+  {#if showAuthGate}
+    <div class="rounded-lg border border-(--border) bg-(--surface) px-5 py-4 max-w-md space-y-3 text-center">
+      <p class="text-sm text-(--text-2)">Sign in with GitHub to play. Experiments use LLM calls that cost real money.</p>
+      <div class="flex justify-center">
+        <AuthButton />
+      </div>
+    </div>
+  {/if}
 
   {#if needsSetup}
     <!-- ── Garden Setup ── -->

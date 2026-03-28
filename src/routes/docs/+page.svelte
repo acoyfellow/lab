@@ -9,7 +9,7 @@
     { id: 'guides' as const, heading: 'Guides', cards: docsHubByGroup('guides') },
     { id: 'reference' as const, heading: 'Reference', cards: docsHubByGroup('reference') }
   ];
-  
+
   const navSections = [
     {
       title: 'Start',
@@ -19,27 +19,22 @@
         { label: 'Self-Hosting', to: '/docs/self-host' },
         { label: 'How It Works', to: '/docs/how-it-works' },
         { label: 'Tutorial', to: paths.tutorial },
-      ]
-    },
-    {
-      title: 'Guides',
-      items: [
-        { label: 'Agent Patterns', to: paths.docsPatterns },
-        { label: 'When to use Lab', to: paths.docsWhenToUse },
         { label: 'HTTP API', to: paths.docsHttpApi },
         { label: 'TypeScript Client', to: paths.docsTypescript },
         { label: 'Agent Integration', to: paths.docsAgentIntegration },
-        { label: 'FAQ', to: paths.docsFaq },
+        { label: 'Agent Patterns', to: paths.docsPatterns },
+        { label: 'When to use Lab', to: paths.docsWhenToUse },
         { label: 'Capabilities', to: paths.docsCapabilities },
+        { label: 'FAQ', to: paths.docsFaq },
       ]
     },
     {
       title: 'Reference',
       items: [
-        { label: 'Limits', to: paths.docsLimits },
-        { label: 'Security', to: paths.docsSecurity },
-        { label: 'Failures & traces', to: paths.docsFailures },
         { label: 'Architecture', to: paths.docsArchitecture },
+        { label: 'Security', to: paths.docsSecurity },
+        { label: 'Limits', to: paths.docsLimits },
+        { label: 'Failures & traces', to: paths.docsFailures },
         { label: 'Trace Schema', to: paths.docsTraceSchema },
       ]
     }

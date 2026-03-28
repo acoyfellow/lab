@@ -9,6 +9,14 @@ import type {
 } from '@acoyfellow/lab';
 import { query, command, getRequestEvent } from '$app/server';
 import { dev } from '$app/environment';
+import { error } from '@sveltejs/kit';
+
+function requireAuth() {
+  const event = getRequestEvent();
+  if (!event.locals.user) {
+    error(401, 'Sign in to use this feature.');
+  }
+}
 
 // Helper: call the lab worker
 async function callWorker(
@@ -115,6 +123,7 @@ export const runSpawn = query(
 export const runGenerate = query(
   'unchecked',
   async (payload: RunGeneratePayload): Promise<RunResult> => {
+    requireAuth();
     const platform = getRequestEvent().platform;
     const { prompt, capabilities, template, input, mode, maxTokens, model } = payload;
     return callWorkerJSON<RunResult>(platform, '/run/generate', {
@@ -129,6 +138,7 @@ export const runGenerate = query(
 export const seedKv = command(
   'unchecked',
   async (_payload: void | undefined): Promise<SeedResult> => {
+    requireAuth();
     const platform = getRequestEvent().platform;
     return callWorkerJSON<{ ok: boolean; seeded: number }>(platform, '/seed', {
       method: 'POST',
@@ -166,6 +176,7 @@ export const doSqlQuery = query(
 export const doSqlExec = command(
   'unchecked',
   async (payload: { doName: string; sql: string; params?: unknown[] }): Promise<{ ok: boolean; error?: string }> => {
+    requireAuth();
     const platform = getRequestEvent().platform;
     const result = await callWorkerJSON<{ ok: boolean; error?: string }>(
       platform,

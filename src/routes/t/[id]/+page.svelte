@@ -184,7 +184,7 @@
   type="website"
 />
 
-<div class="max-w-3xl mx-auto px-5 py-8 pb-12">
+<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 pb-12">
   <!-- Header -->
   <header class="flex justify-between items-start gap-4 mb-6 max-sm:flex-col">
     <div>
