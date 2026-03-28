@@ -89,7 +89,7 @@
   let needsSetup = $state(false);
   let cart: CatalogPlant[] = $state([]);
   let cartSpent = $derived(cart.reduce((s, p) => s + p.cost, 0));
-  let state: GardenState | null = $state(null);
+  let gardenState: GardenState | null = $state(null);
   let connected = $state(false);
   let running = $state(false);
   let waiting = $state(false);
@@ -100,7 +100,7 @@
   let iterations = $state(0);
   let stateVersion = $state(0); // bumped on every state change to drive $effect
 
-  let svgEl: SVGSVGElement;
+  let svgEl = $state<SVGSVGElement | undefined>(undefined);
   let simulation: d3.Simulation<SimNode, SimLink> | null = null;
   let graphInited = false;
   const WIDTH = 600;
@@ -140,7 +140,7 @@
     if (existing.ok) {
       const snap = await existing.json() as { state?: GardenState; tick?: number; logs?: string[] };
       if (snap.state) {
-        state = snap.state;
+        gardenState = snap.state;
         stateVersion++;
         iterations = snap.tick ?? snap.state.tick ?? 0;
 
@@ -220,7 +220,7 @@
       return;
     }
 
-    state = initialState;
+    gardenState = initialState;
     stateVersion++;
     iterations = 0;
     needsSetup = false;
@@ -233,7 +233,7 @@
   }
 
   function initGraph() {
-    if (!svgEl || !state) return;
+    if (!svgEl || !gardenState) return;
 
     const svg = d3.select(svgEl);
     svg.selectAll('*').remove();
@@ -249,13 +249,13 @@
     svg.append('g').attr('class', 'nodes');
     svg.append('g').attr('class', 'labels');
 
-    const simNodes: SimNode[] = state.nodes.map(n => ({
+    const simNodes: SimNode[] = gardenState.nodes.map(n => ({
       ...n,
       x: WIDTH / 2 + (Math.random() - 0.5) * 100,
       y: HEIGHT / 2 + (Math.random() - 0.5) * 80,
     }));
 
-    const simLinks: SimLink[] = state.links.map(l => ({
+    const simLinks: SimLink[] = gardenState.links.map(l => ({
       source: l.source,
       target: l.target,
       type: l.type,
@@ -355,12 +355,12 @@
   }
 
   function updateGraph() {
-    if (!simulation || !state) return;
+    if (!simulation || !gardenState) return;
 
     const oldNodes = simulation.nodes();
     const nodeMap = new Map(oldNodes.map(n => [n.id, n]));
 
-    const simNodes: SimNode[] = state.nodes.map(n => {
+    const simNodes: SimNode[] = gardenState.nodes.map(n => {
       const existing = nodeMap.get(n.id);
       return {
         ...n,
@@ -371,7 +371,7 @@
       };
     });
 
-    const simLinks: SimLink[] = state.links.map(l => ({
+    const simLinks: SimLink[] = gardenState.links.map(l => ({
       source: l.source,
       target: l.target,
       type: l.type,
@@ -405,7 +405,7 @@
   // Drive D3 updates from state changes via stateVersion
   $effect(() => {
     const _v = stateVersion;
-    if (!state || !svgEl) return;
+    if (!gardenState || !svgEl) return;
     if (!graphInited) {
       graphInited = true;
       initGraph();
@@ -427,7 +427,7 @@
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
       if (msg.type === 'snapshot') {
-        state = msg.data.state;
+        gardenState = msg.data.state;
         stateVersion++;
         iterations = msg.data.tick ?? iterations;
         logEvent('mutation', `snapshot #${msg.data.tick ?? '?'} plants=${msg.data.state?.nodes?.length ?? '?'}`);
@@ -457,48 +457,48 @@
   }
 
   function applyMutations(mutations: Mutation[]) {
-    if (!state) return;
+    if (!gardenState) return;
 
     for (const m of mutations) {
       switch (m.op) {
         case 'updateNode': {
-          const node = state.nodes.find((n: Plant) => n.id === m.id);
+          const node = gardenState.nodes.find((n: Plant) => n.id === m.id);
           const updates = m.updates as Partial<Plant> | undefined;
           if (node && updates) Object.assign(node, updates);
           break;
         }
         case 'addNode': {
           const node = m.node as Plant | undefined;
-          if (node && !state.nodes.find((n: Plant) => n.id === node.id)) state.nodes.push(node);
+          if (node && !gardenState.nodes.find((n: Plant) => n.id === node.id)) gardenState.nodes.push(node);
           break;
         }
         case 'removeNode': {
-          state.nodes = state.nodes.filter((n: Plant) => n.id !== m.id);
-          state.links = state.links.filter((l: Link) => l.source !== m.id && l.target !== m.id);
+          gardenState.nodes = gardenState.nodes.filter((n: Plant) => n.id !== m.id);
+          gardenState.links = gardenState.links.filter((l: Link) => l.source !== m.id && l.target !== m.id);
           break;
         }
         case 'addLink': {
-          if (m.link) state.links.push(m.link as Link);
+          if (m.link) gardenState.links.push(m.link as Link);
           break;
         }
         case 'removeLink': {
-          state.links = state.links.filter((l: Link) => !(l.source === m.source && l.target === m.target));
+          gardenState.links = gardenState.links.filter((l: Link) => !(l.source === m.source && l.target === m.target));
           break;
         }
         case 'nextSeason': {
-          const idx = SEASONS.indexOf(state.season);
-          state.season = SEASONS[(idx + 1) % 4];
+          const idx = SEASONS.indexOf(gardenState.season);
+          gardenState.season = SEASONS[(idx + 1) % 4];
           break;
         }
       }
     }
 
-    state = { ...state, nodes: [...state.nodes], links: [...state.links] };
+    gardenState = { ...gardenState, nodes: [...gardenState.nodes], links: [...gardenState.links] };
     stateVersion++;
   }
 
   async function iterate() {
-    if (!state || waiting) return;
+    if (!gardenState || waiting) return;
 
     waiting = true;
     logEvent('agent', 'tending...');
@@ -506,11 +506,11 @@
     const prompt = `The garden state is in input.state. Tend it for one iteration using labPetri.mutate([...]).
 
 input.state = { nodes: [{id, type, age, energy, color, size, label}], links: [...], tick, season }
-Current state: ${JSON.stringify({ nodes: state?.nodes?.map(n => ({id: n.id, type: n.type, age: n.age, energy: n.energy})), season: state?.season, tick: state?.tick })}
+Current state: ${JSON.stringify({ nodes: gardenState?.nodes?.map(n => ({id: n.id, type: n.type, age: n.age, energy: n.energy})), season: gardenState?.season, tick: gardenState?.tick })}
 
 Mutations: { op: 'updateNode', id, updates: {energy?, age?, type?, color?, size?} } or { op: 'log', message }
 
-Rules: 1-2 changes only. Use exact node ids from input.state.nodes. Seeds grow (age 0→1→2→3 = seed→sprout→bloom→tree). Low energy (<0.2) → wither (remove). Season: ${state?.season}.
+Rules: 1-2 changes only. Use exact node ids from input.state.nodes. Seeds grow (age 0→1→2→3 = seed→sprout→bloom→tree). Low energy (<0.2) → wither (remove). Season: ${gardenState?.season}.
 Always include { op: 'log', message: 'description' } last.
 
 return await labPetri.mutate([...your mutations...]);`;
@@ -520,7 +520,7 @@ return await labPetri.mutate([...your mutations...]);`;
         prompt,
         mode: 'code',
         capabilities: ['petri', 'fetch'],
-        input: { dishId, state }
+        input: { dishId, state: gardenState }
       });
 
       lastTraceId = result.traceId ?? null;
@@ -563,7 +563,7 @@ return await labPetri.mutate([...your mutations...]);`;
 
     localStorage.removeItem('petri:dishId');
     events = [];
-    state = null;
+    gardenState = null;
     lastCode = '';
     lastTraceId = null;
     iterations = 0;
@@ -596,11 +596,11 @@ return await labPetri.mutate([...your mutations...]);`;
   });
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<!-- svelte-ignore a11y_click_events_have_key_events -->
 <SEO title="Garden — Lab" description="Your personal AI-tended garden. Watch it grow and change in real time — your garden persists between visits." path="/experiments/garden" />
 
 {#if menuOpen}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div class="fixed inset-0 z-40" onclick={() => menuOpen = false}></div>
 {/if}
 
@@ -714,8 +714,8 @@ return await labPetri.mutate([...your mutations...]);`;
       </div>
 
       <div class="ml-auto text-xs text-(--text-3) tabular-nums">
-        {#if state}
-          {state.nodes.length} plants · {state.season} · #{iterations}
+        {#if gardenState}
+          {gardenState.nodes.length} plants · {gardenState.season} · #{iterations}
         {:else if initializing}
           Loading your garden...
         {:else}
@@ -747,11 +747,11 @@ return await labPetri.mutate([...your mutations...]);`;
       class="d3-garden"
     ></svg>
 
-    {#if state && state.links.length > 0}
-      {@const labelOf = (id: string) => state!.nodes.find(n => n.id === id)?.label ?? id}
+    {#if gardenState && gardenState.links.length > 0}
+      {@const labelOf = (id: string) => gardenState!.nodes.find(n => n.id === id)?.label ?? id}
       {@const verbs: Record<string, string> = { shade: 'shades', nutrients: 'feeds', pollination: 'pollinates', roots: 'roots into' }}
       <div class="px-6 pb-4 flex flex-wrap gap-x-4 gap-y-1 border-t border-(--border) pt-3 mx-4 mb-2">
-        {#each state.links as link}
+        {#each gardenState.links as link}
           <span class="text-xs text-(--text-3)">
             {labelOf(link.source)} <span class="opacity-60">{verbs[link.type] ?? link.type}</span> {labelOf(link.target)}
           </span>
