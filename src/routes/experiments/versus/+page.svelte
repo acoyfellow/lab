@@ -253,7 +253,7 @@
 
 <SEO
   title="Versus — Lab"
-  description="1v1 Connect 4 against an AI that learns from past games. Tactics are algorithmic. Preference is LLM. Every move is traced."
+  description="1v1 Connect 4 against an AI that learns from traced losses. Tactics are search. The model is interchangeable."
   path="/experiments/versus"
 />
 
@@ -261,7 +261,7 @@
   <header class="space-y-2">
     <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Versus</h1>
     <p class="text-sm text-(--text-3) max-w-2xl leading-relaxed">
-      The AI plays Connect 4 using minimax search — no prompt engineering, no strategy instructions. When multiple moves are equally strong, a small LLM picks its preference from a minimal prompt: just the board state and one-line insights from past losses. It gets smarter between games, not between tokens. Every move produces a trace so you can see exactly what the algorithm decided vs. what the LLM influenced.
+      Deterministic search plays the game. When moves are equal, a model breaks the tie. Swap it for any other model and the result barely changes. After each loss, the trace becomes a one-line insight that feeds the next game. The system improves through structure, not better prompts.
     </p>
   </header>
 

@@ -10,7 +10,7 @@
       title: 'Adaptive Opponent',
       badge: 'Loop',
       href: '/experiments/versus',
-      description: 'AI plays Connect 4 with deterministic tactics. Losses produce traced insights that feed the next game. No prompt engineering — the system learns through composition.'
+      description: 'Deterministic search plays Connect 4. Any model breaks ties. Losses produce traced insights that feed the next game. Swap the model, the system still improves.'
     },
     {
       title: 'Trace Handoff',

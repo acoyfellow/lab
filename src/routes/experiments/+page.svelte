@@ -61,7 +61,7 @@
     >
       <div class="text-sm font-medium text-(--text)">Versus</div>
       <div class="text-xs text-(--text-3) mt-1">
-        1v1 Connect 4 — minimax handles tactics, a minimal LLM prompt breaks ties, and traced losses feed the next game.
+        1v1 Connect 4. Search handles tactics, any model breaks ties, traced losses feed the next game.
       </div>
     </AppLink>
   </section>
