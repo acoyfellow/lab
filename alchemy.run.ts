@@ -51,6 +51,11 @@ const LAB_DO = DurableObjectNamespace("lab-stub-do", {
   className: "LabStubDurableObject",
 });
 
+// Petri Dish Durable Object for persistent experiment substrate
+const PETRI_DO = DurableObjectNamespace("petri-dish", {
+  className: "PetriDish",
+});
+
 // Worker Loader for V8 isolate creation
 const LOADER = WorkerLoader();
 
@@ -72,6 +77,7 @@ export const WORKER = await Worker(`${projectName}-worker`, {
     R2,
     ENGINE_D1,
     LAB_DO,
+    PETRI_DO,
   },
   url: false,
   // Same port as SvelteKit dev proxy (`data.remote.ts`) and `@acoyfellow/lab` local dogfood (`LAB_URL`).

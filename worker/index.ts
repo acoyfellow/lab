@@ -1,5 +1,8 @@
 export { LabStubDurableObject } from "./durable-object-stub"
+export { PetriDish } from "@acoyfellow/lab-petri/durable-object"
+export { PetriBinding } from "./petri-binding"
 
+import { WorkerEntrypoint } from "cloudflare:workers"
 import { Effect, Exit, Cause } from "effect"
 import { Isolate, IsolateError, makeIsolateLive, type WorkerLoaderBinding } from "./Loader"
 import type { CapabilitySet } from "./Capability"
@@ -17,6 +20,7 @@ interface Env {
   R2?: R2Bucket
   ENGINE_D1?: D1Database
   LAB_DO?: DurableObjectNamespace
+  PETRI_DO?: DurableObjectNamespace
   /** Optional Cloudflare Container / fetcher binding */
   LAB_CONTAINER?: Fetcher
 }
@@ -49,6 +53,8 @@ type TraceRequest = {
   /** @deprecated old traces */
   code?: string
   prompt?: string
+  mode?: "code" | "json"
+  input?: unknown
   capabilities?: string[]
   depth?: number
   steps?: ChainStepStored[]
@@ -131,8 +137,10 @@ type StoredTrace = {
   trace?: TraceEntry[]
 }
 
-const defaultExport = {
-  async fetch(req: Request, env: Env): Promise<Response> {
+// LabWorker class extending WorkerEntrypoint for proper RPC binding support
+class LabWorker extends WorkerEntrypoint<Env> {
+  async fetch(req: Request): Promise<Response> {
+    const env = this.env
     const url = new URL(req.url)
 
     const corsHeaders = {
@@ -178,6 +186,7 @@ const defaultExport = {
       if (capNames.includes("d1Read")) caps.d1Read = true
       if (capNames.includes("durableObjectFetch")) caps.durableObjectFetch = true
       if (capNames.includes("containerHttp")) caps.containerHttp = true
+      if (capNames.includes("petri")) caps.petri = true
       return caps
     }
 
@@ -338,6 +347,86 @@ const defaultExport = {
       } catch (e) {
         return withCors(Response.json({ ok: false, error: getErrorMessage(e) }, { status: 500 }))
       }
+    }
+
+    // --- Petri invoke routes (for sandboxed code to call via SELF) ---
+    if (req.method === "POST" && url.pathname === "/invoke/petri") {
+      if (!env.PETRI_DO) {
+        return withCors(Response.json({ ok: false, error: "PETRI_DO not configured" }, { status: 503 }))
+      }
+      const body = (await req.json()) as { dishId?: string; mutations?: unknown[] }
+      if (!body.dishId) {
+        return withCors(Response.json({ ok: false, error: "dishId required" }, { status: 400 }))
+      }
+      try {
+        const id = env.PETRI_DO.idFromName(body.dishId)
+        const stub = env.PETRI_DO.get(id)
+        // Forward to the DO's mutate endpoint
+        const doReq = new Request("http://internal/petri/" + body.dishId + "/mutate", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ mutations: body.mutations || [] }),
+        })
+        const response = await stub.fetch(doReq)
+        const data = await response.json()
+        return withCors(Response.json(data))
+      } catch (e) {
+        return withCors(Response.json({ ok: false, error: getErrorMessage(e) }, { status: 500 }))
+      }
+    }
+
+    if (req.method === "GET" && url.pathname === "/invoke/petri/snapshot") {
+      if (!env.PETRI_DO) {
+        return withCors(Response.json({ ok: false, error: "PETRI_DO not configured" }, { status: 503 }))
+      }
+      const dishId = url.searchParams.get("dishId")
+      if (!dishId) {
+        return withCors(Response.json({ ok: false, error: "dishId required" }, { status: 400 }))
+      }
+      try {
+        const id = env.PETRI_DO.idFromName(dishId)
+        const stub = env.PETRI_DO.get(id)
+        const response = await stub.fetch(new Request("http://internal/petri/" + dishId + "/snapshot"))
+        if (!response.ok) {
+          const err = await response.json() as { error?: string }
+          return withCors(Response.json({ ok: false, error: err.error || "snapshot failed" }, { status: response.status }))
+        }
+        const snapshot = await response.json() as { dishId?: string; state?: unknown; tick?: number }
+        return withCors(Response.json({ ok: true, state: snapshot.state }))
+      } catch (e) {
+        return withCors(Response.json({ ok: false, error: getErrorMessage(e) }, { status: 500 }))
+      }
+    }
+
+    // --- Petri Dish invoke routes ---
+    if (url.pathname.startsWith("/petri/")) {
+      if (!env.PETRI_DO) {
+        return withCors(Response.json({ ok: false, error: "PETRI_DO binding not configured" }, { status: 503 }))
+      }
+      const dishId = url.pathname.split("/")[2]
+      if (!dishId) {
+        return withCors(Response.json({ ok: false, error: "dishId required" }, { status: 400 }))
+      }
+      
+      const id = env.PETRI_DO.idFromName(dishId)
+      const stub = env.PETRI_DO.get(id)
+      const response = await stub.fetch(req)
+      
+      // For WebSocket upgrades, return the original response (can't copy webSocket)
+      if (response.status === 101) {
+        return response
+      }
+      
+      // For regular responses, add CORS headers
+      const newHeaders = new Headers(response.headers)
+      for (const [k, v] of Object.entries(corsHeaders)) {
+        newHeaders.set(k, v)
+      }
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders
+      })
     }
 
     // --- Agent lookup: machine-readable cap templates + execute map ---
@@ -669,6 +758,8 @@ const defaultExport = {
       const json = (await req.json()) as Record<string, unknown>
       const prompt = typeof json.prompt === "string" ? json.prompt : ""
       if (!prompt) return withCors(Response.json({ error: "no prompt" }, { status: 400 }))
+      const runInput = json.input
+      const runMode: "code" | "json" = json.mode === "json" ? "json" : "code"
       const runTemplate = resolveGuestTemplateId(
         typeof json.template === "string" && json.template.trim() ? json.template.trim() : undefined,
       )
@@ -683,17 +774,30 @@ const defaultExport = {
       )
 
       const systemPrompt = [
-        "You are a code generator. You write JavaScript guest bodies (async statements, not a full module).",
-        "The user describes what they want. You return ONLY the body — no markdown, no explanation.",
-        "The body is inserted into a host shell (`guest@v1`) and runs inside an async IIFE in a sandboxed V8 isolate.",
-        "Return the final value with `return`.",
+        runMode === "json"
+          ? "You are a structured generator. Return valid JSON only."
+          : "You are a code generator. You write JavaScript guest bodies (async statements, not a full module).",
+        runMode === "json"
+          ? "The user describes what they want. Return ONLY a JSON object — no markdown, no explanation."
+          : "The user describes what they want. You return ONLY the body — no markdown, no explanation.",
+        runMode === "json"
+          ? "Structured input is available as top-level `input` context."
+          : "The body is inserted into a host shell (`guest@v1`) and runs inside an async IIFE in a sandboxed V8 isolate.",
+        "Structured input is available as a top-level `input` variable.",
+        runMode === "json" ? "Do not return code. Emit JSON directly." : "Return the final value with `return`.",
         apiLines.length > 0
           ? "Available APIs:\n" + apiLines.join("\n")
           : "No external APIs available. Pure compute only.",
-        "Do NOT use import/export. Do NOT use fetch. Do NOT use console.log.",
-        "Do NOT wrap in an async function or IIFE. The code already runs inside an async context.",
-        "Use `return` at the TOP LEVEL to return the final value. Example: `const x = await kv.list(); return x;`",
-        "Do NOT use .then() chains. Use await instead.",
+        runMode === "json"
+          ? "Output must be parseable JSON object (double-quoted keys/strings)."
+          : "Do NOT use import/export. Do NOT use fetch. Do NOT use console.log.",
+        runMode === "json"
+          ? "No code fences. No comments. JSON only."
+          : "Do NOT wrap in an async function or IIFE. The code already runs inside an async context.",
+        runMode === "json"
+          ? "Do not include surrounding text."
+          : "Use `return` at the TOP LEVEL to return the final value. Example: `const x = await kv.list(); return x;`",
+        runMode === "json" ? "No trailing commas." : "Do NOT use .then() chains. Use await instead.",
       ].join("\n")
 
       const t0 = Date.now()
@@ -705,7 +809,7 @@ const defaultExport = {
             { role: "system", content: systemPrompt },
             { role: "user", content: prompt },
           ],
-          max_tokens: 512,
+          max_tokens: 1024,
           temperature: 0.2,
         })) as { response?: string }
       } catch (error) {
@@ -715,7 +819,7 @@ const defaultExport = {
             env,
             {
               type: "generate",
-              request: { template: runTemplate, prompt, capabilities: caps },
+              request: { mode: runMode, template: runTemplate, prompt, capabilities: caps, input: runInput },
               outcome: { ok: false, error: message },
               timing: { totalMs: Date.now() - t0, generateMs: Date.now() - t0, runMs: 0 },
             },
@@ -728,6 +832,40 @@ const defaultExport = {
       const generateMs = Date.now() - t0
       const raw = aiResult.response ?? ""
 
+      if (runMode === "json") {
+        const parsed = normalizeGeneratedJson(raw)
+        if (!parsed.ok) {
+          return withCors(
+            await respondWithTrace(
+              env,
+              {
+                type: "generate",
+                request: { mode: runMode, template: runTemplate, prompt, capabilities: caps, input: runInput },
+                outcome: { ok: false, error: parsed.error },
+                timing: { totalMs: generateMs, generateMs, runMs: 0 },
+                generated: raw,
+              },
+              { ok: false, error: parsed.error, generated: raw, generateMs, runMs: 0 },
+              500,
+            ),
+          )
+        }
+
+        return withCors(
+          await respondWithTrace(
+            env,
+            {
+              type: "generate",
+              request: { mode: runMode, template: runTemplate, prompt, capabilities: caps, input: runInput },
+              outcome: { ok: true, result: parsed.value },
+              timing: { totalMs: generateMs, generateMs, runMs: 0 },
+              generated: raw,
+            },
+            { ok: true, result: parsed.value, generated: raw, generateMs, runMs: 0 },
+          ),
+        )
+      }
+
       const genCode = normalizeGenerated(raw)
 
       if (!genCode) {
@@ -736,7 +874,7 @@ const defaultExport = {
             env,
             {
               type: "generate",
-              request: { template: runTemplate, prompt, capabilities: caps },
+              request: { mode: runMode, template: runTemplate, prompt, capabilities: caps, input: runInput },
               outcome: { ok: false, error: "LLM returned empty code" },
               timing: { totalMs: generateMs, generateMs, runMs: 0 },
               generated: raw,
@@ -751,7 +889,7 @@ const defaultExport = {
 
       const program = Effect.gen(function* () {
         const isolate = yield* Isolate
-        return yield* isolate.run(genCode, runCaps, undefined, runTemplate)
+        return yield* isolate.run(genCode, runCaps, runInput, runTemplate)
       })
 
       const layer = isolateLayer()
@@ -766,7 +904,7 @@ const defaultExport = {
               env,
               {
                 type: "generate",
-                request: { template: runTemplate, prompt, capabilities: caps },
+                request: { mode: runMode, template: runTemplate, prompt, capabilities: caps, input: runInput },
                 outcome: { ok: false, error: failure.error, reason: failure.reason },
                 timing: { totalMs: generateMs + runMs, generateMs, runMs },
                 generated: genCode,
@@ -789,7 +927,7 @@ const defaultExport = {
               env,
               {
                 type: "generate",
-                request: { template: runTemplate, prompt, capabilities: caps },
+                request: { mode: runMode, template: runTemplate, prompt, capabilities: caps, input: runInput },
                 outcome: { ok: true, result },
                 timing: { totalMs: generateMs + runMs, generateMs, runMs },
                 generated: genCode,
@@ -801,10 +939,10 @@ const defaultExport = {
     }
 
     return withCors(Response.json({ error: "not found" }, { status: 404 }))
-  },
+  }
 }
 
-export default defaultExport
+export default LabWorker
 
 function isReadOnlyD1Sql(sql: string): boolean {
   const s = sql.trim()
@@ -848,6 +986,19 @@ function normalizeGenerated(raw: string): string {
   return code
 }
 
+function normalizeGeneratedJson(raw: string): { ok: true; value: unknown } | { ok: false; error: string } {
+  const cleaned = raw
+    .replace(/^```(?:json)?\n?/gm, "")
+    .replace(/^```\s*$/gm, "")
+    .trim()
+  try {
+    return { ok: true, value: JSON.parse(cleaned) as unknown }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "invalid JSON"
+    return { ok: false, error: `LLM returned invalid JSON: ${msg}` }
+  }
+}
+
 async function runToResponse(
   effect: Effect.Effect<unknown, IsolateError>,
 ): Promise<Response> {
@@ -856,8 +1007,9 @@ async function runToResponse(
     onFailure: (cause) => {
       for (const reason of cause.reasons) {
         if (Cause.isFailReason(reason) && reason.error instanceof IsolateError) {
+          const err = reason.error as { message: string; reason: string }
           return Response.json(
-            { ok: false, reason: reason.error.reason, error: reason.error.message },
+            { ok: false, reason: err.reason, error: err.message },
             { status: 500 },
           )
         }
@@ -908,10 +1060,12 @@ function makeTraceId(): string {
 function getFailureDetails(cause: Cause.Cause<unknown>) {
   for (const reason of cause.reasons) {
     if (Cause.isFailReason(reason) && reason.error instanceof IsolateError) {
+      // Access the error properties directly from the instance
+      const err = reason.error as { message: string; reason: string }
       return {
         status: 500,
-        error: reason.error.message,
-        reason: reason.error.reason,
+        error: err.message,
+        reason: err.reason,
       }
     }
   }

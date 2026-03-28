@@ -54,6 +54,7 @@
         <AppLink to="/guides" class={navClass('/guides')}>Guides</AppLink>
         <AppLink to={paths.docs} class={navClass(paths.docs)}>Docs</AppLink>
         <AppLink to="/examples" class={navClass('/examples')}>Examples</AppLink>
+        <AppLink to="/experiments" class={navClass('/experiments')}>Experiments</AppLink>
         <AppLink to="/compose" class={navClass('/compose')}>Compose</AppLink>
         <a
           href="https://github.com/acoyfellow/lab"

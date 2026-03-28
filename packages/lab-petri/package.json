@@ -1,0 +1,26 @@
+{
+  "name": "@acoyfellow/lab-petri",
+  "version": "0.1.0",
+  "description": "Persistent substrate for Lab experiments - Durable Object backed state with real-time sync",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./durable-object": {
+      "import": "./dist/durable-object.js",
+      "types": "./dist/durable-object.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250321.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -14,6 +14,10 @@ export class IsolateError extends Data.TaggedError("IsolateError")<{
   readonly message: string
 }> {}
 
+// --- Custom binding factory for capabilities ---
+
+export type CustomBindingFactory = (caps: CapabilitySet | undefined, input: unknown | undefined) => Record<string, unknown> | undefined
+
 // --- Raw binding type (what Cloudflare gives you) ---
 
 export interface WorkerLoaderBinding {
@@ -61,6 +65,7 @@ function isolateUsesSelfOutbound(caps?: CapabilitySet): boolean {
   if (caps.d1Read) return true
   if (caps.durableObjectFetch) return true
   if (caps.containerHttp) return true
+  if (caps.petri) return true
   return false
 }
 
@@ -110,7 +115,7 @@ const parseIsolateResponse = Effect.fn("parseIsolateResponse")(function* (res: R
 
 // --- Execute an isolate with full config ---
 
-const execIsolate = (loader: WorkerLoaderBinding, kvNamespace: KVNamespace | undefined, selfFetcher?: Fetcher) =>
+const execIsolate = (loader: WorkerLoaderBinding, kvNamespace: KVNamespace | undefined, selfFetcher?: Fetcher, customBindings?: CustomBindingFactory) =>
   Effect.fn("execIsolate")(function* (
     body: string,
     caps: CapabilitySet | undefined,
@@ -128,6 +133,7 @@ const execIsolate = (loader: WorkerLoaderBinding, kvNamespace: KVNamespace | und
       caps?.d1Read ? ":d1" : "",
       caps?.durableObjectFetch ? ":do" : "",
       caps?.containerHttp ? ":ctr" : "",
+      caps?.petri ? ":petri" : "",
     ].join("")
     const inputKey = input !== undefined ? `:in:${JSON.stringify(input)}` : ""
     const id = yield* hash(templateId + ":" + body + capKey + inputKey)
@@ -149,10 +155,14 @@ const execIsolate = (loader: WorkerLoaderBinding, kvNamespace: KVNamespace | und
     const useOutbound = isolateUsesSelfOutbound(caps)
     const globalOutbound = useOutbound && selfFetcher ? selfFetcher : null
 
+    // Get custom env bindings (e.g., PETRI RPC stub)
+    const customEnv = customBindings ? customBindings(caps, input) : undefined
+
     const worker = loader.get(id, async () => ({
       compatibilityDate: "2025-06-01",
       mainModule: "main.js",
       modules: { "main.js": wrapped },
+      env: customEnv,
       globalOutbound,
     }))
 
@@ -170,9 +180,10 @@ const execIsolate = (loader: WorkerLoaderBinding, kvNamespace: KVNamespace | und
 export const makeIsolateLive = (
   loader: WorkerLoaderBinding,
   kvNamespace?: KVNamespace,
-  selfFetcher?: Fetcher
+  selfFetcher?: Fetcher,
+  customBindings?: CustomBindingFactory
 ) => {
-  const exec = execIsolate(loader, kvNamespace, selfFetcher)
+  const exec = execIsolate(loader, kvNamespace, selfFetcher, customBindings)
   return Layer.succeed(Isolate)({
     run: Effect.fn("Isolate.run")(function* (
       body: string,

@@ -19,4 +19,5 @@ export type CapabilitySet = {
   d1Read?: true
   durableObjectFetch?: true
   containerHttp?: true
+  petri?: true
 }

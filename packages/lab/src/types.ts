@@ -60,6 +60,10 @@ export type RunGeneratePayload = {
   capabilities: string[];
   /** Shell for the generated body (default `guest@v1`). */
   template?: string;
+  /** Optional structured input injected as `input` in guest body. */
+  input?: unknown;
+  /** `json` returns parsed JSON directly; `code` runs generated guest body. */
+  mode?: "code" | "json";
 };
 
 /** `POST /seed` response. */

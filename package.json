@@ -6,7 +6,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "alchemy dev",
+    "kill:dev": "bun run scripts/kill-dev-ports.ts",
+    "dev": "bun run kill:dev && alchemy dev",
     "dogfood:lab": "bun run build:client && bun scripts/dogfood-lab.ts",
     "pi:lab-bridge": "bun run scripts/pi-lab-bridge.ts",
     "mcp:lab": "bun run --cwd packages/lab-mcp start",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@acoyfellow/lab": "workspace:*",
+    "@acoyfellow/lab-petri": "workspace:*",
     "@cloudflare/workers-types": "^4.20260317.1",
     "@fontsource-variable/inter": "^5.2.8",
     "@internationalized/date": "^3.12.0",
@@ -52,7 +54,8 @@
     "tailwindcss": "^4.2.2",
     "tw-animate-css": "^1.4.0",
     "typescript": "^5.9.3",
-    "vite": "^8.0.2"
+    "vite": "^8.0.2",
+    "wrangler": "^4.78.0"
   },
   "dependencies": {
     "@cf-wasm/resvg": "^0.3.3",

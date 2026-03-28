@@ -10,6 +10,7 @@ export const CAP_IDS = [
   "d1Read",
   "durableObjectFetch",
   "containerHttp",
+  "petri",
 ] as const
 
 export type LabCapabilityId = (typeof CAP_IDS)[number]
@@ -73,6 +74,13 @@ export const CAPABILITY_REGISTRY: readonly CapabilityRegistryEntry[] = [
     summary: "HTTP GET to the bound container via POST /invoke/container.",
     denyGuestMessage: "ContainerHttp capability not granted",
     llmHint: "`labContainer.get(path)` — async HTTP GET to bound container (if configured).",
+  },
+  {
+    id: "petri",
+    binding: "PETRI_DO",
+    summary: "Mutate a Petri garden dish via POST /invoke/petri; guest calls labPetri.mutate.",
+    denyGuestMessage: "Petri capability not granted",
+    llmHint: "`labPetri.mutate(mutations)` — async, applies mutation ops to the garden dish and returns the new snapshot. Ops: `{ op: 'updateNode', id, updates }`, `{ op: 'addNode', node }`, `{ op: 'removeNode', id }`, `{ op: 'addLink', link }`, `{ op: 'removeLink', source, target }`, `{ op: 'nextSeason' }`, `{ op: 'log', message }`.",
   },
 ] as const
 

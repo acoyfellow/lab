@@ -192,6 +192,37 @@ export function composeGuestModule(
     });
 `
 
+  const petriShim = caps?.petri
+    ? `
+    const labPetri = {
+      async mutate(mutations) {
+        const dishId = input?.dishId;
+        if (!dishId) throw new Error("petri: dishId required in input");
+        const res = await fetch("http://internal/invoke/petri", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ dishId, mutations }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "petri mutate failed");
+        return data.snapshot;
+      },
+      async getState() {
+        const dishId = input?.dishId;
+        if (!dishId) throw new Error("petri: dishId required in input");
+        const res = await fetch("http://internal/invoke/petri/snapshot?dishId=" + encodeURIComponent(dishId));
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "petri getState failed");
+        return data.state;
+      }
+    };
+`
+    : `
+    const labPetri = new Proxy({}, {
+      get() { throw new Error("petri capability not granted"); }
+    });
+`
+
   return `
 export default {
   async fetch(req, env) {
@@ -204,6 +235,7 @@ export default {
       ${d1Shim}
       ${doShim}
       ${contShim}
+      ${petriShim}
       const __result = await (async () => {
         ${body}
       })();
