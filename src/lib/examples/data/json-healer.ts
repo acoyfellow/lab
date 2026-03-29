@@ -12,7 +12,7 @@ export const jsonHealer: ExampleData = {
 	complexity: 'workflow',
 	startHere: true,
 	featured: true,
-	traceValue: 'This successful example run shows the failed parse, the repair step, and the final validated output in one shareable result.',
+	traceValue: 'In this successful example run, the saved result shows the failed parse, the repair step, and the final validated output in one shareable receipt.',
 	steps: [
 		{
 			name: 'Load Broken JSON',

@@ -83,7 +83,7 @@ export const proofOfCorrectness: ExampleData = {
 	complexity: 'workflow',
 	startHere: true,
 	featured: true,
-	traceValue: 'This successful example run records the cases, assertions, and final verdict so the proof artifact is inspectable and shareable.',
+	traceValue: 'In this successful example run, the saved result records the cases, assertions, and final verdict so the proof artifact is inspectable and shareable.',
 	steps: [
 		{ name: 'Specify', description: '10 edge cases with expected outputs', code: '{ input: "$1,234.56", expected: 1234.56 }', input: {}, output: { totalCases: 10 }, capabilities: [], ms: 1 },
 		{ name: 'Execute', description: 'Run parseAmount() against every case', code: 'parseAmount("$1,234.56") → 1234.56', input: { cases: '...' }, output: { executed: 10 }, capabilities: [], ms: 3 },
@@ -178,7 +178,7 @@ export const canaryRun: ExampleData = {
 	tags: ['canary', 'diff', 'refactor', 'safety', 'agent'],
 	complexity: 'workflow',
 	featured: true,
-	traceValue: 'Trace turns a risky refactor into a review artifact: same inputs, old output, new output, exact diff.',
+	traceValue: 'In this successful comparison run, the saved result becomes a review artifact: same inputs, old output, new output, exact diff.',
 	steps: [
 		{ name: 'Test Data', description: '6 emails including edge cases', code: '{ cases: [{ email: "alice@example.com" }, ...] }', input: {}, output: { cases: 6 }, capabilities: [], ms: 1 },
 		{ name: 'Old Logic (v1)', description: 'email.toLowerCase()', code: '"  BOB@EXAMPLE.COM  " → "  bob@example.com  "', input: { cases: '...' }, output: { version: 'v1' }, capabilities: [], ms: 1 },
@@ -529,7 +529,7 @@ export const traceHandoff: ExampleData = {
 	complexity: 'agentic',
 	startHere: true,
 	featured: true,
-	traceValue: 'Trace becomes the protocol: one URL preserves the research, synthesis, and final draft for the next agent.',
+	traceValue: 'In this handoff example, one saved result URL preserves the research, synthesis, and final draft for the next agent.',
 	steps: [
 		{ name: 'Agent A: Research', description: 'Gather and structure findings', code: '{ sources: 3, summary: "All consistent" }', input: {}, output: { sources: 3, handoff: 'Ready for Agent B' }, capabilities: [], ms: 2 },
 		{ name: 'Agent B: Synthesize', description: 'Filter and conclude', code: '{ conclusion: "3/3 high-confidence" }', input: { sources: '...' }, output: { recommendation: 'Proceed' }, capabilities: [], ms: 1 },
@@ -619,7 +619,7 @@ export const iterativeRepair: ExampleData = {
 	complexity: 'agentic',
 	startHere: true,
 	featured: true,
-	traceValue: 'Trace captures the failure, diagnosis, repair strategy, and retry so the whole debugging loop is auditable.',
+	traceValue: 'In this successful example run, the saved result captures the failure, diagnosis, repair strategy, and retry so the debugging loop is auditable.',
 	steps: [
 		{ name: 'Attempt 1', description: 'Naive JSON.parse', code: 'JSON.parse(raw) → throws', input: {}, output: { ok: false, error: 'Unexpected token' }, capabilities: [], ms: 1 },
 		{ name: 'Diagnose', description: 'Read error + raw data', code: '{ diagnosis: ["unquoted_keys"] }', input: { error: '...' }, output: { strategy: 'Quote all keys' }, capabilities: [], ms: 1 },

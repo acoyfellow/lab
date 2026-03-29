@@ -234,7 +234,7 @@
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Debugging built in</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">When something fails, the saved result includes the error and reason. Depending on where execution stopped, step detail may be partial. Agents can use that result to retry or debug.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">When something fails, the saved result includes the error and reason. Depending on where execution stopped, step detail may be partial. Agents use that result to retry or debug. You use it to understand what happened.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Shareable</div>
