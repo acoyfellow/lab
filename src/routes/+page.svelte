@@ -1,9 +1,14 @@
 <script lang="ts">
   import type { PageProps } from './$types';
+  import type { RunResult } from '@acoyfellow/lab';
   import SEO from '$lib/SEO.svelte';
-  import MiniSandbox from '$lib/tutorial/MiniSandbox.svelte';
   import { Button } from '$lib/components/ui/button';
   import { version as appVersion } from '$app/environment';
+  import { runChain } from '$lib/api';
+  import { RUNNABLE_STEPS } from '$lib/home-snippets';
+  import { goto } from '$app/navigation';
+  import PlayIcon from '@lucide/svelte/icons/play';
+  import Loader2Icon from '@lucide/svelte/icons/loader-2';
 
   const featuredExamples = [
     {
@@ -40,6 +45,47 @@
 
   let { data }: PageProps = $props();
   let activeTab = $state(0);
+  let loading = $state(false);
+  let result = $state<RunResult | null>(null);
+  let error = $state<string | null>(null);
+
+  function getStepsForTab(tabIndex: number) {
+    const patternId = data.knownPatterns[tabIndex]?.id;
+    return patternId ? RUNNABLE_STEPS[patternId] : undefined;
+  }
+
+  async function runDemo() {
+    const steps = getStepsForTab(activeTab);
+    if (!steps) return;
+    loading = true;
+    error = null;
+    result = null;
+    try {
+      const r = await runChain(steps);
+      result = r;
+      if (!r.ok) {
+        error = JSON.stringify({ error: r.error, reason: r.reason }, null, 2);
+      }
+    } catch (e) {
+      error = e instanceof Error ? e.message : String(e);
+    } finally {
+      loading = false;
+    }
+  }
+
+  function forkInCompose() {
+    const steps = getStepsForTab(activeTab);
+    if (!steps) return;
+    sessionStorage.setItem('lab-fork', JSON.stringify({ mode: 'chain', steps }));
+    goto('/compose');
+  }
+
+  // Reset result when switching tabs
+  function switchTab(i: number) {
+    activeTab = i;
+    result = null;
+    error = null;
+  }
 </script>
 
 <SEO
@@ -95,13 +141,13 @@
 
   <div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-12">
 
-  <!-- You've used these before -->
+  <!-- Runnable pattern tabs -->
   <section class="space-y-4">
     <!-- Tab bar -->
     <div class="flex gap-0 border-b border-(--border)">
       {#each data.knownPatterns as pattern, i}
         <button
-          onclick={() => activeTab = i}
+          onclick={() => switchTab(i)}
           class="relative px-4 py-2.5 text-[0.8125rem] font-medium transition-colors cursor-pointer bg-transparent border-none
             {activeTab === i ? 'text-(--text)' : 'text-(--text-3) hover:text-(--text-2)'}"
         >
@@ -127,10 +173,51 @@
       {/if}
     {/each}
 
-    <div class="flex items-center gap-4">
-      <a href="/docs/patterns" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">All 6 patterns →</a>
-      <a href="/examples" class="text-[0.8125rem] text-(--text-3) hover:text-(--text) hover:underline">Run these examples →</a>
+    <!-- Run + result area -->
+    <div class="flex items-center gap-3">
+      <Button onclick={runDemo} disabled={loading}>
+        {loading ? 'Running...' : 'Run this example'}
+        {#if loading}
+          <Loader2Icon class="w-4 h-4 animate-spin" />
+        {:else}
+          <PlayIcon class="w-4 h-4" />
+        {/if}
+      </Button>
+      <button onclick={forkInCompose} class="text-[0.875rem] text-(--text-2) hover:text-(--text) underline underline-offset-2 bg-transparent border-none cursor-pointer p-0">
+        Fork in Compose
+      </button>
+      <a href="/docs/patterns" class="text-[0.8125rem] text-(--accent) hover:underline font-medium ml-auto">All 6 patterns →</a>
     </div>
+
+    {#if result && result.ok}
+      <div class="rounded-(--radius) border border-emerald-500/25 bg-(--surface) p-4 space-y-2">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <span class="text-[0.8125rem] font-semibold text-emerald-500">Ran successfully</span>
+          {#if result.traceId}
+            <a href="/t/{result.traceId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">
+              Open the saved result →
+            </a>
+          {/if}
+        </div>
+        <pre class="font-mono text-[0.8125rem] text-(--text) m-0 overflow-x-auto">{JSON.stringify(result.result, null, 2)}</pre>
+      </div>
+    {/if}
+
+    {#if result && !result.ok}
+      <div class="rounded-(--radius) border border-red-500/30 bg-red-500/5 p-4 space-y-2">
+        <span class="text-[0.8125rem] font-semibold text-red-400">Failed</span>
+        {#if result.traceId}
+          <a href="/t/{result.traceId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium block">
+            Open the result to see what happened →
+          </a>
+        {/if}
+        <pre class="font-mono text-[0.8125rem] text-red-500 m-0 overflow-x-auto">{JSON.stringify({ error: result.error, reason: result.reason }, null, 2)}</pre>
+      </div>
+    {/if}
+
+    {#if error}
+      <pre class="rounded-(--radius) border border-red-500/30 bg-red-500/5 p-3 font-mono text-xs text-red-500 overflow-x-auto">{error}</pre>
+    {/if}
   </section>
 
   <!-- What you get back -->
@@ -154,17 +241,6 @@
         <p class="text-[0.8125rem] text-(--text-2) m-0">Every run gets a permanent URL. Send it to a teammate, attach it to a PR, or feed it to another agent.</p>
       </div>
     </div>
-  </section>
-
-  <!-- Live demo -->
-  <section class="space-y-3">
-    <div class="flex items-center justify-between">
-      <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Watch an agent heal broken data</h2>
-    </div>
-    <p class="text-[0.9375rem] text-(--text-2)">
-      Four pieces of code, four sandboxes. Each one's output flows into the next one's input. Hit Run, then open the result.
-    </p>
-    <MiniSandbox />
   </section>
 
   <!-- What agents build -->
@@ -199,7 +275,7 @@
       <a href="/tutorial" class="flex items-center gap-3 p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
         <div>
           <div class="font-semibold text-(--text) group-hover:text-(--accent)">Tutorial</div>
-          <div class="text-[0.8125rem] text-(--text-2)">5 minutes to your first run</div>
+          <div class="text-[0.8125rem] text-(--text-2)">2 minutes to your first run</div>
         </div>
       </a>
 
