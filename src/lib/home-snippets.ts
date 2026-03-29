@@ -40,10 +40,10 @@ export function bashSingleQuoted(s: string): string {
 
 const CHAIN_JSON = JSON.stringify({ steps: [...CHAIN_STEPS_FOR_CURL] });
 
-export const SEED_CURL = 'curl -X POST https://lab.coey.dev/seed';
+export const SEED_CURL = 'curl -X POST $LAB_URL/seed';
 
 /** POST /run/chain — body matches seeded demo KV (three user:* rows). */
-export const CHAIN_CURL = `curl -X POST https://lab.coey.dev/run/chain \\
+export const CHAIN_CURL = `curl -X POST $LAB_URL/run/chain \\
   -H 'Content-Type: application/json' \\
   -d ${bashSingleQuoted(CHAIN_JSON)}`;
 
@@ -53,7 +53,7 @@ const SPAWN_JSON = JSON.stringify({
 	depth: 2,
 });
 
-export const SPAWN_PARALLEL_CURL = `curl -X POST https://lab.coey.dev/run/spawn \\
+export const SPAWN_PARALLEL_CURL = `curl -X POST $LAB_URL/run/spawn \\
   -H 'Content-Type: application/json' \\
   -d ${bashSingleQuoted(SPAWN_JSON)}`;
 

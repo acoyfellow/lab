@@ -22,7 +22,7 @@ npm install @acoyfellow/lab
 import { createLabClient } from "@acoyfellow/lab";
 
 const lab = createLabClient({
-  baseUrl: "https://lab.coey.dev",
+  baseUrl: process.env.LAB_URL,  // your Lab instance URL
 });
 
 // Self-healing pipeline: load broken JSON → try parse → heal → validate
@@ -34,7 +34,7 @@ const out = await lab.runChain([
 ]);
 
 console.log(out.result);   // { valid: true, healed: true, users: 1 }
-console.log(out.traceId);  // → lab.coey.dev/t/<id> (the receipt)
+console.log(out.traceId);  // → $LAB_URL/t/<id> (the receipt)
 ```
 
 Each step runs in its own sandbox. Step 2's output flows to Step 3's `input`. The trace records everything — share the URL to show exactly what happened.

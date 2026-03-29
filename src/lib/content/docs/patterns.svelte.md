@@ -41,7 +41,7 @@ const out = await lab.runChain([
   }`, capabilities: [] },
 ]);
 
-// Agent's response: "Proof: lab.coey.dev/t/<traceId>"
+// Agent's response: "Proof: your-instance/t/<traceId>"
 ```
 
 **When to use:** Before shipping generated code. Before claiming correctness. Whenever "it works" needs to become "here's the receipt."
@@ -273,7 +273,7 @@ npx @acoyfellow/lab-cli chain '[{"body":"return 1+1","capabilities":[]}]'
 
 **Raw HTTP:**
 ```bash
-curl -X POST https://lab.coey.dev/run/chain \
+curl -X POST $LAB_URL/run/chain \
   -H 'Content-Type: application/json' \
   -d '{"steps":[{"body":"return 1+1","capabilities":[]}]}'
 ```

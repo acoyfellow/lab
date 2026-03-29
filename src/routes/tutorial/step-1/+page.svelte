@@ -72,7 +72,7 @@
       <div class="text-[0.75rem] text-(--text-3) mb-2">Example trace output:</div>
       <pre class="text-[0.75rem] bg-(--code-bg) p-3 rounded font-mono overflow-x-auto">Roll call: Alice, Bob, Carol (3)
 
-Trace: https://lab.coey.dev/t/abc123...</pre>
+Trace: $LAB_URL/t/abc123...</pre>
     </div>
   </section>
 

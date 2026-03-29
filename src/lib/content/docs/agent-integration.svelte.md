@@ -15,7 +15,7 @@ The `@acoyfellow/lab-mcp` package gives your agent two tools:
 npm install -g @acoyfellow/lab-mcp
 ```
 
-Set `LAB_URL` to your Lab instance (e.g. `https://lab.coey.dev` or your self-hosted URL).
+Set `LAB_URL` to your Lab instance (e.g. `$LAB_URL` or your self-hosted URL).
 
 **Cursor:** merge the example config from [`docs/cursor-mcp-lab.example.json`](https://github.com/acoyfellow/lab/blob/main/docs/cursor-mcp-lab.example.json) into your MCP settings. Update `--cwd` to point to your clone.
 
@@ -27,7 +27,7 @@ Set `LAB_URL` to your Lab instance (e.g. `https://lab.coey.dev` or your self-hos
 import { createLabClient } from "@acoyfellow/lab";
 
 const lab = createLabClient({
-  baseUrl: process.env.LAB_URL ?? "https://lab.coey.dev",
+  baseUrl: process.env.LAB_URL ?? "$LAB_URL",
 });
 
 // Run a single piece of code
@@ -47,7 +47,7 @@ An [Effect](https://effect.website) variant is also available — `import { crea
 Any agent that can make HTTP requests can use Lab directly:
 
 ```bash
-curl -X POST https://lab.coey.dev/run \
+curl -X POST $LAB_URL/run \
   -H 'Content-Type: application/json' \
   -d '{"body": "return 1 + 1"}'
 ```

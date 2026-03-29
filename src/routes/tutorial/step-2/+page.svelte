@@ -70,7 +70,7 @@
 Step 2: 3
 Step 3: { count: 3, items: "1, 2, 3" }
 
-Trace: https://lab.coey.dev/t/abc123...`}</pre>
+Trace: $LAB_URL/t/abc123...`}</pre>
     </div>
   </section>
 

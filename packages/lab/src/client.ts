@@ -10,7 +10,7 @@ import type {
 import { chainStepsForWire, guestWirePayload, normalizeBaseUrl, requestJSON } from './wire.js';
 
 export type LabClientOptions = {
-  /** Origin only, e.g. `https://lab.coey.dev` (no trailing slash). */
+  /** Origin only, e.g. `https://your-instance.example` (no trailing slash). */
   baseUrl: string;
   /** Defaults to global `fetch` (Node 18+, Workers, modern runtimes). */
   fetch?: typeof fetch;

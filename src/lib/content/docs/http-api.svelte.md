@@ -2,7 +2,7 @@
 
 Every Lab feature is available as an HTTP endpoint. You can call these with `curl`, any HTTP client, or the [TypeScript client](/docs/typescript).
 
-All examples use `https://lab.coey.dev` — replace with your own instance URL.
+All examples use `$LAB_URL` — set this to your instance URL (e.g. `export LAB_URL=https://your-instance.example`).
 
 Related: [Permissions](/docs/capabilities) · [Limits](/docs/limits) · [Failures](/docs/failures) · [Security](/docs/security)
 
@@ -25,21 +25,21 @@ Related: [Permissions](/docs/capabilities) · [Limits](/docs/limits) · [Failure
 
 **Run code:**
 ```bash
-curl -X POST https://lab.coey.dev/run \
+curl -X POST $LAB_URL/run \
   -H 'Content-Type: application/json' \
   -d '{"body":"return { sum: [1,2,3].reduce((a,b)=>a+b, 0) }"}'
 ```
 
 **Run a pipeline:**
 ```bash
-curl -X POST https://lab.coey.dev/run/chain \
+curl -X POST $LAB_URL/run/chain \
   -H 'Content-Type: application/json' \
   -d '{"steps":[{"body":"return [1, 2, 3]","capabilities":[]}, ...]}'
 ```
 
 **Run with permissions:**
 ```bash
-curl -X POST https://lab.coey.dev/run \
+curl -X POST $LAB_URL/run \
   -H 'Content-Type: application/json' \
   -d '{"body":"return await d1.query(\"SELECT 1 as n\")","capabilities":["d1Read"]}'
 ```
@@ -62,7 +62,7 @@ Same as `/run`, but automatically includes `kvRead` permission. Your code can us
 
 After seeding (`POST /seed`):
 ```bash
-curl -X POST https://lab.coey.dev/run/kv \
+curl -X POST $LAB_URL/run/kv \
   -H 'Content-Type: application/json' \
   -d '{"body":"const keys = await kv.list(\"user:\"); return keys;"}'
 ```

@@ -13,9 +13,9 @@ console.log(out.result); // 4
 console.log(out.traceId); // clu01abc...
 
 // View the trace at:
-// https://lab.coey.dev/t/\${out.traceId}`;
+// $LAB_URL/t/\${out.traceId}`;
 
-export const TUTORIAL_STEP1_CURL = `curl -X POST https://lab.coey.dev/run \\
+export const TUTORIAL_STEP1_CURL = `curl -X POST $LAB_URL/run \\
   -H 'Content-Type: application/json' \\
   -d '{"body":"return 2 + 2","capabilities":[]}'`;
 
@@ -44,7 +44,7 @@ const out = await lab.runChain([
 console.log(out.result); // { count: 3, items: "1, 2, 3" }
 console.log(out.traceId); // clu01abc...`;
 
-export const TUTORIAL_STEP2_CURL = `curl -X POST https://lab.coey.dev/run/chain \\
+export const TUTORIAL_STEP2_CURL = `curl -X POST $LAB_URL/run/chain \\
   -H 'Content-Type: application/json' \\
   -d '{"steps":[{"body":"return [1,2,3]","capabilities":[]},{"body":"return input.length","capabilities":[]}]}'`;
 
