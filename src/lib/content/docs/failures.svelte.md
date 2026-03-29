@@ -1,39 +1,27 @@
-<script lang="ts">
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
-</script>
+# What happens when things fail
 
-# Failures and traces
+## Pipeline failures
 
-## Chain runs
+If every step succeeds, the saved result includes full details for each step — code, inputs, outputs, and timing.
 
-On **success**, `POST /run/chain` returns a full per-step **`trace`** array (step index, bodies, inputs, outputs, wall **`ms`**). Persisted documents match the [trace schema](/docs/trace-schema).
+If a step fails, Lab still saves a result, but the per-step details may be incomplete. The step that failed will show an error and reason. Steps that didn't run won't appear.
 
-On **failure** (any step’s isolate run fails or the Effect pipeline fails), the current Worker implementation still persists a trace document, but the **stored payload uses an empty `trace` array** in the failure branch: the sequential step array built during the loop is **not** attached when the chain aborts. Do not assume partial step visibility in **`GET /t/:id`** after a failed chain—verify behavior on your deployment.
+**Don't assume you'll see partial results after a failure.** Check your deployment's behavior — the current implementation saves an empty step array when a pipeline aborts.
 
-Implementation reference: `onFailure` for `/run/chain` in [`worker/index.ts`](https://github.com/acoyfellow/lab/blob/main/worker/index.ts) (search for `trace: []` in the chain handler).
+## Error reasons
 
-## Isolate error reasons
+When code fails, the error includes a `reason` that tells you what went wrong:
 
-`IsolateError` in [`worker/Loader.ts`](https://github.com/acoyfellow/lab/blob/main/worker/Loader.ts) uses tagged **`reason`** values:
+| Reason | What happened |
+|---|---|
+| `timeout` | The code took too long |
+| `sandbox_violation` | The code tried something the platform doesn't allow |
+| `capability_denied` | The code tried to use a permission it wasn't granted |
+| `runtime` | Syntax error, thrown exception, bad JSON, or other code-level failure |
 
-| `reason` | Typical cause |
-|----------|----------------|
-| `timeout` | Isolate or subrequest exceeded limits |
-| `sandbox_violation` | Platform / loader restriction (e.g. “not permitted”) |
-| `capability_denied` | Guest called a capability that was not granted |
-| `runtime` | Syntax, thrown error, bad JSON, or other execution failure |
-
-Responses and persisted **`outcome`** may include **`error`** / **`reason`** strings; exact shapes are documented under [Trace schema](/docs/trace-schema).
+These show up in the saved result's `outcome` field, alongside the `error` message.
 
 ## See also
 
-- [Limits](/docs/limits) — platform and repo-enforced bounds.
-- [Architecture](/docs/architecture) — **Isolate identity, cache, and cold starts** (why timings differ between runs).
-
-<DocFooterNav
-  gridClass="sm:grid-cols-2"
-  links={[
-    { label: 'Trace schema', to: '/docs/trace-schema', description: 'Stored JSON fields and tables.' },
-    { label: 'HTTP API', to: '/docs/http-api', description: 'Run endpoints and curl examples.' },
-  ]}
-/>
+- [Limits](/docs/limits) — what gets capped and why
+- [How Lab works](/docs/architecture) — why timing can vary between runs

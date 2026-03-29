@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { afterNavigate } from '$app/navigation';
   import { page } from '$app/state';
+  import type { PageProps } from './$types';
   import SEO from '$lib/SEO.svelte';
   import AuthButton from '$lib/components/AuthButton.svelte';
   import {
@@ -15,6 +17,8 @@
   import { drawChallengeBoard, hitTestColumn } from '../drop-four/render';
   import { aiMove } from './ai';
   import { doSqlQuery, doSqlExec } from '../../data.remote';
+
+  let { data }: PageProps = $props();
 
   let authed = $derived(!!page.data.experimentAuth?.authenticated);
   let showAuthGate = $state(false);
@@ -43,11 +47,18 @@
   let turnCount = $state(0);
   let gameId = $state(crypto.randomUUID());
 
-  // Learning loop state
-  let insights = $state<string[]>([]);
+  // Learning loop state — SSR loads history for everyone; client refresh after saves / New Game
   type GameRecord = { id: string; outcome: string; moves: number; trace_ids: string; insight: string | null; created_at: string };
-  let pastGames = $state<GameRecord[]>([]);
+  /** Client-fetched list; cleared on navigation so `data.pastGames` wins after a new load. */
+  let pastGamesClient = $state<GameRecord[] | null>(null);
+  let pastGames = $derived(pastGamesClient ?? data.pastGames);
   let expandedGame = $state<string | null>(null);
+
+  let insights = $derived(pastGames.filter((g) => g.insight).map((g) => g.insight!));
+
+  afterNavigate(() => {
+    pastGamesClient = null;
+  });
 
   async function loadInsights() {
     try {
@@ -56,10 +67,7 @@
         sql: 'SELECT * FROM games ORDER BY created_at DESC LIMIT 20',
       });
       if (result.ok) {
-        pastGames = result.rows as GameRecord[];
-        insights = pastGames
-          .filter(g => g.insight)
-          .map(g => g.insight!);
+        pastGamesClient = result.rows as GameRecord[];
       }
     } catch (e) {
       console.error('loadInsights failed:', e);
@@ -78,6 +86,7 @@
         params: [gameId, outcome, turnCount, JSON.stringify(traceIds), null],
       });
       void generateInsight(outcome);
+      void loadInsights();
     } catch {
       // Best effort — don't break the game
     }
@@ -103,6 +112,7 @@
         sql: 'UPDATE games SET insight = ? WHERE id = ?',
         params: [insight, gameId],
       }).catch(() => {});
+      void loadInsights();
     }
   }
 
@@ -247,7 +257,6 @@
   onMount(() => {
     ctx = canvas.getContext('2d')!;
     draw();
-    void loadInsights();
   });
 </script>
 

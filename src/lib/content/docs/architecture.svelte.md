@@ -1,121 +1,108 @@
-# Why this architecture
+# How Lab works
 
-## Guiding metaphor
+## You send code. Lab runs it. You get a record of what happened.
 
-We use one informal picture across docs and product copy: **the edge is the work plane; your client is the control plane**. You orchestrate **many small isolates** (chains, spawn) with HTTP and read results in **traces**. That is **motivation**—why traces and per-run caps matter—not a promise of unlimited parallelism, a single shared-memory machine, or HPC semantics. The real design is still **Worker Loaders**, **CapabilitySet**, and **host `/invoke/*`**.
+That's the whole idea. Your agent (or script, or curl command) sends JavaScript to Lab. Lab runs it inside a Cloudflare sandbox — a fresh, isolated environment that starts in milliseconds. When it finishes, Lab saves everything: the code, the inputs, the outputs, the timing. That saved record has a permanent URL you can share, debug from, or feed to another agent.
 
-## The problem
+---
 
-You want to run untrusted code on Cloudflare. You want to control what that code can do. You want to compose multiple pieces of untrusted code into a pipeline where each piece has different permissions.
+## Permissions start at zero
 
-Cloudflare Worker Loaders solve the first part — they create V8 isolates at runtime from a string of code, with millisecond startup and near-zero cost. But they don't have a built-in permission model. An isolate either has `globalOutbound` (can make any request) or doesn't (can't make any request). There's nothing in between.
+Your code can't do anything dangerous by default. It runs in a locked-down sandbox with no network access, no storage, no AI calls — nothing.
 
-## The approach
+You unlock what it needs by declaring permissions:
 
-This project uses Effect for isolate execution. **KV read** is modeled as an Effect `Context.Tag` service on the host; other capabilities (`spawn`, `workersAi`, `r2Read`, …) are flags on `CapabilitySet` that select Loader wrapper shims and/or host **`/invoke/*`** routes. The parent inspects the set before running an isolate and injects the right shims. A **bindings / tradeoffs table** for each guest string lives at [Capabilities](/docs/capabilities).
+| Permission | What it unlocks |
+|---|---|
+| `fetch` | Make HTTP requests |
+| `kvRead` | Read from Cloudflare KV storage |
+| `workersAi` | Call Cloudflare AI models |
+| `r2Read` | Read files from Cloudflare R2 |
+| `d1Read` | Query a Cloudflare D1 database |
+| `spawn` | Launch more sandboxed code (with equal or fewer permissions) |
 
-This means:
+If you don't declare it, the code can't use it. There's no "grant all" shortcut.
 
-- **Capabilities are additive.** An isolate starts with nothing. You add what it needs.
-- **Capabilities are visible.** You can see what an isolate can do by reading its capability set.
-- **Capabilities are attenuating.** A child isolate can have fewer capabilities than its parent, never more.
+---
 
-## How KV read works without a binding
+## Multi-step pipelines
 
-Cloudflare's `KVNamespace` object cannot be passed into a Worker Loader's `env` — the runtime throws a serialization error. The workaround: the parent reads all KV data into memory before creating the isolate, serializes it as JSON, and injects it into the isolate's wrapper code. The isolate gets `kv.get()` and `kv.list()` functions backed by that in-memory snapshot.
+You can run multiple pieces of code in sequence. The output of each one becomes the `input` of the next:
 
-This has tradeoffs. The snapshot is a point-in-time copy. If KV changes between snapshot and execution, the isolate sees stale data. For the use cases this project targets (short-lived compute tasks), that's acceptable.
+```
+Step 1: Fetch data     →  { users: [...] }
+Step 2: Transform it   →  { cleaned: [...] }
+Step 3: Validate it    →  { valid: true, count: 42 }
+```
 
-## How host invoke works (`/invoke/*`)
+Each step runs in its own sandbox. Each step can have different permissions. Step 1 might need `fetch`. Step 2 might need nothing. Step 3 might need `d1Read`.
 
-Some capabilities (`workersAi`, `r2Read`, `d1Read`, `durableObjectFetch`, `containerHttp`) cannot inject raw bindings into the Loader child. Those shims use the same **`SELF` `globalOutbound`** as spawn: the isolate calls `fetch("http://internal/invoke/…")`, the parent Worker handles `POST /invoke/*` with the real `AI`, `R2`, `ENGINE_D1`, `LAB_DO`, or `LAB_CONTAINER` bindings, and returns JSON the shim unwraps. Denied or unconfigured bindings surface as isolate errors or **503** on the host route. This is **not** arbitrary RPC: each path is tied to a declared capability and closed request/response shapes. See [Guest module shape](#guest-module-shape-guestv1-vs-workerentrypoint) for when **not** to add invoke routes.
+---
 
-## Practical guidance: direct binding vs shim
+## Code can launch more code
 
-Worker Loaders can pass `env` bindings into a child isolate. That does **not** make shims obsolete; they solve different problems.
+If you grant the `spawn` permission, your code can launch additional sandboxes — useful for parallel work or breaking a problem into parts.
 
-- **Direct child binding (`env`)**: lower overhead and fewer hops, but guest code gets the raw API shape and you lose a central policy choke point unless you wrap everything anyway.
-- **Shim + host invoke (`/invoke/*`)**: one extra hop, but stronger capability boundaries, request validation, stable guest API contracts, and consistent trace/error envelopes.
+There's a depth limit. Each level down gets the same or fewer permissions than its parent, never more. At depth 0, spawning is blocked entirely.
 
-Use this decision rule:
+---
 
-1. Use **direct binding** only if the raw binding is safe to expose to untrusted guest code, does not need host-side policy, and materially benefits from lower hop cost.
-2. Use **shims** when you need host-controlled validation, narrowed operations, or stable contracts across capability versions.
+## What gets saved
 
-Current repo stance (intentional):
+Every run produces a JSON record stored at a permanent URL. It contains:
 
-- **`kvRead`** uses a **snapshot shim** (not direct KV binding) because Loader-child serialization and snapshot semantics are part of the contract.
-- **`workersAi`, `r2Read`, `d1Read`, `durableObjectFetch`, `containerHttp`** use **`/invoke/*` shims** so the parent Worker owns privileged access and guardrails.
-- **`spawn`** uses **SELF outbound** + `/spawn/child` because child isolates never receive `LOADER` directly.
+- Every piece of code that ran
+- Every input and output
+- Timing for each step
+- Whether it succeeded or failed (and why)
 
-So: direct binding support is available, but this repo defaults to shims when capability control and traceability matter more than raw-call convenience.
+See [the full schema](/docs/trace-schema) for details.
 
-## How spawn works
+---
 
-An isolate can't create other isolates directly — it doesn't have the `LOADER` binding. Instead, it makes a fetch request that routes back to the parent worker.
+## The four packages
 
-The mechanism: `wrangler.jsonc` declares a `SELF` service binding that points to the worker itself. When an isolate has the spawn capability, its `globalOutbound` is set to this `SELF` fetcher. The isolate's `spawn()` function calls `fetch("http://internal/spawn/child", ...)`, which the parent worker handles by creating a new isolate.
+| Package | What it does | Install |
+|---|---|---|
+| [`@acoyfellow/lab`](https://www.npmjs.com/package/@acoyfellow/lab) | TypeScript client — run code, get results | `npm i @acoyfellow/lab` |
+| [`@acoyfellow/lab-cli`](https://www.npmjs.com/package/@acoyfellow/lab-cli) | CLI — agents shell out, get results back | `npm i -g @acoyfellow/lab-cli` |
+| [`@acoyfellow/lab-mcp`](https://www.npmjs.com/package/@acoyfellow/lab-mcp) | MCP server — plug Lab into Cursor, Claude Code | `npm i -g @acoyfellow/lab-mcp` |
+| [`@acoyfellow/lab-petri`](https://www.npmjs.com/package/@acoyfellow/lab-petri) | Persistent shared state for experiments | `npm i @acoyfellow/lab-petri` |
 
-Depth is decremented at each level. At depth 0, the spawn shim throws synchronously instead of making a fetch request. No outbound is needed and the isolate can't work around it.
+---
 
-## How chains work
+## Under the hood (for contributors)
 
-A chain is a sequence of isolates where each step's output becomes the next step's `input`. The parent runs them sequentially in one `Effect.gen` loop — each step awaits the isolate run for the next carry value.
+<details>
+<summary>Cloudflare Worker Loaders</summary>
 
-Each step has its own capability set. The first step might have KV read. The second might have nothing. The third might have spawn. This is the "attenuating permissions" pattern applied sequentially.
+Lab runs code using [Worker Loaders](https://developers.cloudflare.com/workers/runtime-apis/bindings/worker-loader/) — a Cloudflare feature (closed beta) that creates V8 isolates at runtime from a string of code. Single-digit millisecond startup, near-zero cost.
 
-The input is serialized as JSON and injected into the isolate's wrapper code, same as KV data. It's included in the isolate's hash key so cached isolates don't return stale results from a previous chain run.
+Worker Loaders don't have a built-in permission model — an isolate either has full network access or none. Lab adds the permission layer on top.
+</details>
 
-## Isolate identity, cache, and cold starts
+<details>
+<summary>How permissions work internally</summary>
 
-The Loader derives an isolate **id** from a hash of **template**, guest **body**, capability material, and serialized **input** (see [`worker/Loader.ts`](https://github.com/acoyfellow/lab/blob/main/worker/Loader.ts)). **Different guest body ⇒ different id** — a chain whose steps all use **distinct** code strings creates **many** distinct isolates (the intended stress in “cold boot”-style demos).
+Permissions that can't be passed directly into a sandbox (AI, R2, D1, Durable Objects) use a proxy pattern: the sandbox calls an internal URL, and the parent Worker handles it with the real Cloudflare bindings. This keeps privileged access on the host side.
 
-When the same body + same hash inputs repeat, the platform may **reuse** a compiled isolate; wall-clock **`ms`** in traces can still **vary** run-to-run (scheduling, cache, load). Do not treat a single trace’s timings as a universal SLA.
+KV works differently — the parent reads the data into memory before creating the sandbox, and injects it as a snapshot. This means KV data is a point-in-time copy, not a live connection.
+</details>
 
-## How code generation works
+<details>
+<summary>How spawning works internally</summary>
 
-The `/run/generate` endpoint takes a natural language prompt and a capability list. It builds a system prompt from [`worker/capabilities/registry.ts`](https://github.com/acoyfellow/lab/blob/main/worker/capabilities/registry.ts) **`llmHint`** lines (plus pure-compute fallback), then runs the model. The generated **guest body** gets normalized:
+Sandboxes can't create other sandboxes directly — they don't have the Worker Loader binding. Instead, they make a fetch request back to the parent Worker via a `SELF` service binding, which creates a new sandbox on their behalf. Depth is decremented at each level.
+</details>
 
-1. Strip markdown fences (LLMs often wrap code in ` ```js ` blocks)
-2. Unwrap async IIFE wrappers (the isolate already runs inside one)
-3. Auto-prepend `return` to the last expression if there's no top-level return
+<details>
+<summary>Effect (TypeScript library)</summary>
 
-The normalized code runs in a sandboxed isolate with the declared capabilities.
+The Worker internals use [Effect](https://effect.website) for typed error handling, service injection, and composition. New Worker-side behavior should stay in Effect pipelines. The client libraries and website are plain TypeScript/Svelte over `fetch`.
+</details>
 
-## What Worker Loaders are
+<details>
+<summary>Code generation (`/run/generate`)</summary>
 
-Worker Loaders are a Cloudflare feature (closed beta) that lets a Worker create child V8 isolates at runtime. You provide:
-
-- A module string (host template + guest **body**)
-- An ID (used for caching — same ID reuses the same compiled isolate)
-- Optional `env` bindings and `globalOutbound` fetcher
-
-The isolate starts in single-digit milliseconds. It's the cheapest spawn primitive available on any cloud platform.
-
-## Guest module shape (`guest@v1`) vs `WorkerEntrypoint`
-
-Cloudflare’s **Dynamic Workers** docs show loading code from `modules` with a **`export default { fetch }`** handler, then calling `worker.getEntrypoint().fetch(…)` — that is the default entrypoint. [Worker Loader](https://developers.cloudflare.com/workers/runtime-apis/bindings/worker-loader/) also documents **named** entrypoints via `getEntrypoint("SomeEntrypointClass", { props })` for class-based Workers (`WorkerEntrypoint`).
-
-**Decision for this repo:** `composeGuestModule` in [`worker/guest/templates.ts`](https://github.com/acoyfellow/lab/blob/main/worker/guest/templates.ts) emits a string module with **`export default { fetch }`** (plus shims), which matches what [`worker/Loader.ts`](https://github.com/acoyfellow/lab/blob/main/worker/Loader.ts) passes to `loader.get(…).getEntrypoint().fetch(...)`. **No migration to `WorkerEntrypoint`** unless we need a named entrypoint, `ctx.props`, or the platform stops accepting the default-export pattern for string modules. Isolation and capability boundaries are unchanged: the certified **body** region is still the only user-authored slice inside the template shell.
-
-## `/invoke/*` vs parent wrappers
-
-Guest capabilities that **cannot** receive real bindings inside a Loader child (`workersAi`, `r2Read`, `d1Read`, `durableObjectFetch`, `containerHttp`) already use **`globalOutbound: SELF`** and `fetch("http://internal/invoke/…")` handled by the **parent** Worker. That keeps each route **narrow** (`/invoke/ai`, `/invoke/r2`, …) and maps one capability family to one handler.
-
-**Invariant:** Do **not** add new broad `/invoke/*` surface area unless a capability is blocked without it — prefer extending an existing invoke handler or the **spawn**/`/spawn/child` path when the flow is “another isolate,” not “privileged host I/O.” Document new routes beside the capability in [`worker/capabilities/registry.ts`](https://github.com/acoyfellow/lab/blob/main/worker/capabilities/registry.ts) and [Capabilities](/docs/capabilities).
-
-## What Effect provides
-
-Effect is used for:
-
-- **Service tags** (`Context.Tag`) — model capabilities as typed dependencies
-- **Error types** (`Data.TaggedError`) — `IsolateError` with tagged reasons
-- **Composition** (`Effect.gen`, sequential `Isolate.run`) — chain steps with explicit carry
-- **Tracing** (`Effect.fn`) — all effectful functions are named for observability
-- **Promise interop** (`Effect.tryPromise`, `Effect.promise`) — wrap Cloudflare APIs
-
-**Effect-first rule:** new behavior in the **Worker** (run paths, trace persistence, spawn/KV/generate) should stay in Effect pipelines (`Effect.gen`, `Exit`, `Cause`) like `worker/index.ts`. The Svelte app and HTTP client are thin layers over `fetch` and remote functions.
-
-## Traces
-
-After each persisted run, the Worker stores a `StoredTrace` JSON blob in KV under `trace:<id>` and returns `traceId` in the HTTP response. `GET /t/:id` serves that document. See [trace schema](/docs/trace-schema) for fields.
+The `/run/generate` endpoint takes a natural language prompt, builds a system prompt from capability hints, and runs a Cloudflare AI model. The generated code gets cleaned up (strip markdown fences, unwrap wrappers, auto-add `return`) before running in a sandbox.
+</details>

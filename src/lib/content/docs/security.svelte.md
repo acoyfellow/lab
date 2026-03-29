@@ -1,7 +1,3 @@
-<script lang="ts">
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
-</script>
-
 # Security model
 
 This page is a **framing** for operators and integrators—not a formal audit.
@@ -26,11 +22,3 @@ Capabilities that need real bindings (AI, R2, D1, etc.) call **narrow** `POST /i
 ## Operators
 
 **You** own Cloudflare account security, secrets, API tokens, and what runs in the parent Worker. Lab documents **mechanism**; it does not guarantee a compliance regime by itself.
-
-<DocFooterNav
-  gridClass="sm:grid-cols-2"
-  links={[
-    { label: 'Capabilities', to: '/docs/capabilities', description: 'Per-capability behavior and tradeoffs.' },
-    { label: 'Architecture', to: '/docs/architecture', description: 'Loaders, spawn, chains, invoke.' },
-  ]}
-/>

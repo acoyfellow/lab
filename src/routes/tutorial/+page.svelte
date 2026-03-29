@@ -1,91 +1,103 @@
 <script lang="ts">
+  import type { PageProps } from './$types';
   import AppLink from '$lib/AppLink.svelte';
   import SEO from '$lib/SEO.svelte';
   import { paths } from '$lib/paths';
+
+  let { data }: PageProps = $props();
 </script>
 
 <SEO
-  title="Tutorial — lab"
-  description="Learn Lab step by step. Install the client, run your first chain, and understand traces."
+  title="Tutorial — Lab"
+  description="Install Lab, connect your agent, run code in a sandbox, and see the result."
   path="/tutorial"
   type="website"
 />
 
-<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-8">
-  <header class="space-y-2">
-    <h1 class="text-2xl font-semibold tracking-tight">Tutorial</h1>
-    <p class="text-[0.9375rem] text-(--text-2)">
-      Install the client, chain some isolates, read a trace. Takes about five minutes.
-    </p>
-  </header>
+<header class="space-y-2">
+  <h1 class="text-2xl font-semibold tracking-tight">Get started</h1>
+  <p class="leading-relaxed">
+    Install the client, connect an agent, run code, see the result. Takes about two minutes.
+  </p>
+</header>
 
-  <div class="space-y-4">
-    <a 
-      href={paths.tutorialStep1}
-      class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
-    >
-      <div class="flex items-start gap-4">
-        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-(--accent) text-white flex items-center justify-center font-semibold">
-          1
-        </div>
-        <div class="flex-1">
-          <h2 class="font-semibold text-(--text) group-hover:text-(--accent) mb-1">Install and first run</h2>
-          <p class="text-[0.8125rem] text-(--text-2)">
-            Install the client, run a chain, get your first trace URL.
-          </p>
-        </div>
-      </div>
-    </a>
-
-    <a 
-      href={paths.tutorialStep2}
-      class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
-    >
-      <div class="flex items-start gap-4">
-        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-(--surface-alt) border border-(--border) text-(--text-2) flex items-center justify-center font-semibold">
-          2
-        </div>
-        <div class="flex-1">
-          <h2 class="font-semibold text-(--text) group-hover:text-(--accent) mb-1">Chains and capabilities</h2>
-          <p class="text-[0.8125rem] text-(--text-2)">
-            Pass data between steps, grant capabilities, read the trace.
-          </p>
-        </div>
-      </div>
-    </a>
-
-    <a 
-      href={paths.tutorialStep3}
-      class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
-    >
-      <div class="flex items-start gap-4">
-        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-(--surface-alt) border border-(--border) text-(--text-2) flex items-center justify-center font-semibold">
-          3
-        </div>
-        <div class="flex-1">
-          <h2 class="font-semibold text-(--text) group-hover:text-(--accent) mb-1">Agents and MCP</h2>
-          <p class="text-[0.8125rem] text-(--text-2)">
-            Connect AI agents via MCP, use traces as handoff artifacts.
-          </p>
-        </div>
-      </div>
-    </a>
+<!-- 1. Install -->
+<section class="space-y-3">
+  <h2 class="docs-section-label">1. Install</h2>
+  <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+    {@html data.codeHtml.install}
   </div>
+</section>
 
-  <div class="pt-8 border-t border-(--border)">
-    <div class="flex flex-wrap gap-3">
-      <AppLink
-        to={paths.tutorialStep1}
-        class="inline-flex items-center min-h-10 font-semibold text-[0.875rem] px-5 py-2.5 rounded-(--radius) bg-(--accent) text-white no-underline hover:bg-(--accent-hover)"
-      >
-        Start Step 1
-      </AppLink>
-      <a
-        href="/compose"
-        class="inline-flex items-center min-h-10 font-medium text-[0.875rem] px-5 py-2.5 rounded-(--radius) bg-(--surface) text-(--text-2) border border-(--border) no-underline hover:bg-(--surface-alt)"
-      >
-        Skip to Compose
-      </a>
+<!-- 2. Connect your agent -->
+<section class="space-y-3">
+  <h2 class="docs-section-label">2. Connect your agent</h2>
+  <p>
+    Add Lab as an MCP server so your agent can run code and read results. Works with Claude Desktop, Cursor, or any MCP client.
+  </p>
+  <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4">
+    <div class="docs-section-label mb-2">MCP config</div>
+    <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+      {@html data.codeHtml.mcpConfig}
     </div>
   </div>
-</div>
+  <p class="text-[0.8125rem] text-(--text-3)">
+    Replace <code class="font-mono text-[0.8125rem]">$LAB_URL</code> with your instance URL.
+    Don't have one yet? <AppLink to={paths.docsSelfHost} class="text-(--accent) hover:underline">Self-host guide →</AppLink>
+  </p>
+</section>
+
+<!-- 3. Run code -->
+<section class="space-y-3">
+  <h2 class="docs-section-label">3. Run code</h2>
+  <p>
+    Send code to Lab. It runs in a Cloudflare Worker sandbox and returns the result plus a permanent URL.
+  </p>
+  <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+    {@html data.codeHtml.runFromAgent}
+  </div>
+
+  <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 space-y-2">
+    <div class="docs-section-label">Or with curl</div>
+    <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+      {@html data.codeHtml.runCurl}
+    </div>
+  </div>
+</section>
+
+<!-- 4. See the result -->
+<section class="space-y-3">
+  <h2 class="docs-section-label">4. See the result</h2>
+  <p>
+    Every run saves a JSON result at a permanent URL. You can open it in a browser, fetch it programmatically, or hand it to another agent.
+  </p>
+  <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+    {@html data.codeHtml.fetchResult}
+  </div>
+</section>
+
+<!-- What's next -->
+<section class="rounded-(--radius) border border-(--border) bg-(--surface-alt) p-5 space-y-3">
+  <h3 class="font-semibold text-(--text)">That's it.</h3>
+  <p>Install, connect, run, see the result. Here's where to go next:</p>
+  <div class="flex flex-wrap gap-3">
+    <AppLink
+      to="/compose"
+      class="inline-flex items-center min-h-10 font-semibold text-[0.875rem] px-5 py-2.5 rounded-(--radius) bg-(--accent) text-white no-underline hover:bg-(--accent-hover)"
+    >
+      Open Compose
+    </AppLink>
+    <AppLink
+      to={paths.docsPatterns}
+      class="inline-flex items-center min-h-10 font-medium text-[0.875rem] px-5 py-2.5 rounded-(--radius) bg-(--surface) text-(--text-2) border border-(--border) no-underline hover:bg-(--surface-alt)"
+    >
+      Browse patterns
+    </AppLink>
+    <AppLink
+      to={paths.docsHttpApi}
+      class="inline-flex items-center min-h-10 font-medium text-[0.875rem] px-5 py-2.5 rounded-(--radius) bg-(--surface) text-(--text-2) border border-(--border) no-underline hover:bg-(--surface-alt)"
+    >
+      HTTP API reference
+    </AppLink>
+  </div>
+</section>

@@ -1,66 +1,46 @@
-<script lang="ts">
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
-</script>
+# Run result format
 
-# Trace document schema
+When you run code on Lab, the result is saved as JSON at a permanent URL (`/t/:id`). This page describes what that JSON looks like.
 
-JSON returned by `GET /t/:id` (Worker or app) and `GET /t/:id.json`. Authoring source: `src/lib/content/docs/trace-schema.svelte.md` in the repo (same content as this page).
+## Top-level fields
 
-Traces are stored in KV under `trace:<id>` and returned by:
+| Field | Type | What it is |
+|---|---|---|
+| `id` | string | Unique ID (same as the URL) |
+| `type` | string | How the code was run: `sandbox`, `kv`, `chain`, `generate`, or `spawn` |
+| `createdAt` | string | When it ran (ISO 8601) |
+| `request` | object | What was sent in (code, permissions, prompt, etc.) |
+| `outcome` | object | What happened — `ok: true` with a `result`, or `ok: false` with `error` and `reason` |
+| `timing` | object | How long it took (`totalMs`, and for AI-generated runs: `generateMs`, `runMs`) |
+| `generated` | string? | The code the AI wrote (only for `/run/generate`) |
+| `trace` | array? | Per-step details (only for `/run/chain`) |
 
-- `GET /t/:id` (JSON body, Worker or app proxy)
-- `GET /t/:id.json` (SvelteKit, same JSON)
+## The `request` field (varies by type)
 
-`id` is a short alphanumeric string (10 hex chars from a UUID slice).
+- **sandbox / kv:** `{ body, capabilities? }` — the code and permissions
+- **chain:** `{ steps: [{ body, capabilities, name?, input? }] }` — each step in the pipeline
+- **generate:** `{ prompt, capabilities }` — what you asked the AI to build
+- **spawn:** `{ body, capabilities, depth? }` — the code and nesting limit
 
-## Top-level object (`StoredTrace`)
+## Per-step details (pipelines only)
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Trace id (same as URL segment) |
-| `type` | `"sandbox"` \| `"kv"` \| `"chain"` \| `"generate"` \| `"spawn"` | Run mode |
-| `createdAt` | string | ISO 8601 timestamp |
-| `request` | object | Inputs (shape varies by `type`) |
-| `outcome` | object | `ok`, optional `result`, `error`, `reason` |
-| `timing` | object? | `totalMs`, optional `generateMs`, `runMs` |
-| `generated` | string? | Normalized **body** after LLM (generate mode) |
-| `trace` | array? | Per-step execution trace (chain mode) |
+When you run a pipeline (`/run/chain`), the `trace` array contains one entry per step:
 
-## `request` by type
+| Field | Type | What it is |
+|---|---|---|
+| `step` | number | Step index (starts at 0) |
+| `name` | string? | Name you gave this step |
+| `body` | string? | The code that ran |
+| `capabilities` | string[] | Permissions this step had |
+| `input` | any | What this step received |
+| `output` | any | What this step returned |
+| `ms` | number | How long this step took (milliseconds) |
 
-- **sandbox:** `{ template?, body, capabilities? }` — default template `guest@v1` when omitted on the wire. Legacy traces: `{ code?, capabilities? }`.
-- **kv:** same fields as sandbox; persisted `capabilities` includes `kvRead`.
-- **chain:** `{ steps: { name?, template?, body, capabilities[], props?, input? }[] }` — each step is one isolate. Legacy steps may use `code` instead of `body`.
-- **generate:** `{ template?, prompt, capabilities[] }`
-- **spawn:** `{ template?, body, capabilities[], depth? }`
+## Getting the result
 
-## `trace` entry (chain execution)
+Every run response includes a `traceId`. Use it to fetch the full result later:
 
-Each element:
+- `GET /t/:id` — JSON
+- `GET /t/:id.json` — same JSON (alternate URL)
 
-| Field | Type |
-|-------|------|
-| `step` | number (0-based) |
-| `name` | string? |
-| `template` | string? (e.g. `guest@v1`) |
-| `body` | string? |
-| `capabilities` | string[] |
-| `input` | unknown |
-| `output` | unknown |
-| `ms` | number |
-
-## Run response (POST bodies)
-
-Successful run endpoints include `traceId` in the JSON response alongside mode-specific fields (`result`, `trace`, `generated`, etc.). Failed runs that go through trace persistence also return `traceId`.
-
-`POST /seed` does not create a trace.
-
-
-<DocFooterNav
-  gridClass="sm:grid-cols-2 lg:grid-cols-3"
-  links={[
-    { label: 'Examples', to: '/examples', description: 'Runnable demos and bookmarkable trace URLs.' },
-    { label: 'Compose', to: '/compose', description: 'Run modes in the browser against the Worker.' },
-    { label: 'Docs', to: '/docs', description: 'Hub for HTTP API, architecture, TypeScript, capabilities.' },
-  ]}
-/>
+`POST /seed` is the only endpoint that doesn't create a saved result.

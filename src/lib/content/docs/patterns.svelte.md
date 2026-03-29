@@ -1,8 +1,8 @@
 # Agent Patterns
 
-Lab is built for agents. These patterns show how agents use isolated execution and traces to do real work — not toy demos, but workflows that replace "trust me" with "here's the proof."
+Lab is built for agents. These patterns show how agents use sandboxed code and recorded results to do real work — not toy demos, but workflows that replace "trust me" with "here's the proof."
 
-Every pattern produces a trace. The trace is always the point.
+Every run saves a result. The result is always the point.
 
 ---
 
@@ -14,10 +14,10 @@ Every pattern produces a trace. The trace is always the point.
 
 1. Agent writes the function
 2. Agent writes test cases with expected outputs
-3. Each test case runs in an isolated step
+3. Each test case runs in its own sandbox
 4. Final step asserts every result and returns a verdict
 
-**The trace shows:** every input, every output, every assertion. 10/10 pass. The trace URL is the proof — share it with a human or another agent.
+**The result shows:** every input, every output, every assertion. 10/10 pass. The URL is the proof — share it with a human or another agent.
 
 ```js
 const out = await lab.runChain([
@@ -41,7 +41,7 @@ const out = await lab.runChain([
   }`, capabilities: [] },
 ]);
 
-// Agent's response: "Proof: lab.coey.dev/t/<traceId>"
+// Agent's response: "Proof: $LAB_URL/t/<traceId>"
 ```
 
 **When to use:** Before shipping generated code. Before claiming correctness. Whenever "it works" needs to become "here's the receipt."
@@ -50,55 +50,11 @@ const out = await lab.runChain([
 
 ---
 
-## Self-Improving Loop
-
-**The HyperAgents pattern.** Generate candidate implementations, evaluate them against the same test cases, select the winner by fitness. One chain = one generation. An outer loop feeds the winner back as the parent.
-
-**How it works:**
-
-1. Define test cases with expected thresholds
-2. Run Candidate A (e.g. trigram overlap) against all cases
-3. Run Candidate B (e.g. Levenshtein distance) against the same cases
-4. Compare fitness scores, select the winner
-
-**The trace is the lab notebook.** Every candidate's score on every test case. The selection rationale. The fitness delta. Open the trace and you see the full experiment — which approach won, why, and by how much.
-
-```js
-const out = await lab.runChain([
-  { name: "Test Cases", body: `return {
-    task: 'fuzzy string match',
-    cases: [
-      { a: 'kitten', b: 'sitting', minScore: 0.5 },
-      { a: 'hello',  b: 'hello',   minScore: 1.0 },
-      { a: 'abc',    b: 'xyz',     minScore: 0.0 },
-    ]
-  }`, capabilities: [] },
-  { name: "Candidate A", body: `// trigram overlap
-  // ... evaluate against input.cases
-  return { candidate: 'A', fitness: 63, passed: 5, total: 8 };
-  `, capabilities: [] },
-  { name: "Candidate B", body: `// Levenshtein distance
-  // ... evaluate against same cases
-  return { candidate: 'B', fitness: 100, passed: 8, total: 8 };
-  `, capabilities: [] },
-  { name: "Select Winner", body: `return {
-    winner: input.fitness > input.candidateA.fitness ? 'B' : 'A',
-    next: 'Feed winner as parent to next generation.',
-  }`, capabilities: [] },
-]);
-// Trace = the lab notebook for this generation.
-// Outer loop: mutate the winner, run another chain, repeat.
-```
-
-**When to use:** Evolutionary code generation. Prompt optimization. Any scenario where an agent produces multiple variants and needs to pick the best one with proof.
-
-[Run this pattern →](/examples)
-
----
-
 ## Self-Healing Loop
 
-An agent doesn't give up on first failure. It reads the error, diagnoses the problem, applies a fix, and retries — all within the trace.
+An agent doesn't give up on first failure. It reads the error, diagnoses the problem, applies a fix, and retries — all within one run.
+
+This follows the same principle as [closed-loop control systems](https://en.wikipedia.org/wiki/Closed-loop_controller): measure the output, compare it to what you wanted, feed the error back in.
 
 **How it works:**
 
@@ -107,7 +63,7 @@ An agent doesn't give up on first failure. It reads the error, diagnoses the pro
 3. Step 3 applies a targeted fix based on the diagnosis
 4. Step 4 validates the repair
 
-**The trace shows:** the failure, the diagnosis, the fix, the success. A human opening this trace sees the agent's *reasoning chain* — not just the final answer.
+**The result shows:** the failure, the diagnosis, the fix, the success. A human opening this sees the agent's reasoning — not just the final answer.
 
 ```js
 const out = await lab.runChain([
@@ -141,16 +97,16 @@ const out = await lab.runChain([
 
 ## Agent Handoff
 
-Three agents, one trace. Agent A does research. Agent B synthesizes. Agent C produces the deliverable. The trace is the coordination protocol — no message queue, no shared database.
+Multiple agents, one run. Agent A does research. Agent B synthesizes. Agent C produces the deliverable. No message queue, no shared database — output flows forward automatically.
+
+This is a [pipeline architecture](https://en.wikipedia.org/wiki/Pipeline_(computing)): each stage transforms data and passes it to the next.
 
 **How it works:**
 
-1. Each "agent" is a step in the chain
+1. Each "agent" is a step in the pipeline
 2. Agent A's output becomes Agent B's input automatically
 3. Agent C's output is the final result
-4. The trace shows the full relay
-
-**The trace shows:** exactly what each agent contributed. A human or a fourth agent can read the trace and understand the entire workflow.
+4. The saved result shows exactly what each agent contributed
 
 ```js
 const out = await lab.runChain([
@@ -171,12 +127,11 @@ const out = await lab.runChain([
     summary: input.reconciled.active + " active users of " + input.reconciled.users + " total",
     confidence: input.confidence,
     sources: input.sources,
-    traceNote: "Open this trace to verify the data pipeline."
   }`, capabilities: [] },
 ]);
 ```
 
-**When to use:** Multi-step workflows where different "agents" (or different prompts/models) handle different phases. Research-then-synthesize. Gather-then-validate. Plan-then-execute.
+**When to use:** Multi-step workflows where different agents (or different prompts/models) handle different phases. Research-then-synthesize. Gather-then-validate. Plan-then-execute.
 
 [Run this pattern →](/examples)
 
@@ -184,7 +139,9 @@ const out = await lab.runChain([
 
 ## Canary Deploy
 
-Old logic vs new logic, same inputs. The trace shows exactly what changed before you ship.
+Old logic vs new logic, same inputs. See exactly what changed before you ship.
+
+Named after the [canary release](https://en.wikipedia.org/wiki/Feature_toggle#Canary_release) strategy in software deployment, but applied to code an agent wrote.
 
 **How it works:**
 
@@ -193,7 +150,7 @@ Old logic vs new logic, same inputs. The trace shows exactly what changed before
 3. Step 3 runs the **new** logic against the same inputs
 4. Step 4 diffs the outputs
 
-**The trace shows:** every input where v1 and v2 disagree. An agent (or human) reviews the diffs and decides: ship it, fix it, or roll back.
+**The result shows:** every input where v1 and v2 disagree. An agent (or human) reviews the diffs and decides: ship it, fix it, or roll back.
 
 **When to use:** Refactoring. Upgrading a dependency. Any time "it should behave the same" needs verification.
 
@@ -201,31 +158,60 @@ Old logic vs new logic, same inputs. The trace shows exactly what changed before
 
 ---
 
-## Compute Offload
+## Stress Test
 
-LLMs hallucinate math. Agents that need exact answers ship the computation to an isolate and get the result with a trace proving it.
+You wrote a skill, a prompt, or a pipeline. It works once. But does it work reliably? And does it work because your instructions are clear, or because the model is smart enough to guess what you meant?
+
+This applies the same idea as [minimax](https://en.wikipedia.org/wiki/Minimax) in game theory: assume the worst case and see if things still hold. In games, that means assuming your opponent plays perfectly. Here, it means assuming the model is as dumb as possible.
 
 **How it works:**
 
-1. Agent generates the computation code
-2. Lab runs it in an isolate — real V8, real math
-3. Agent reads the result from the trace
+1. Run your pipeline N times, collect results
+2. Check: did every run produce the same (correct) output?
+3. If not, read the failing results — they show exactly where the ambiguity hit
+4. Fix the instructions, run again
+5. Once it's reliable, try with a smaller/cheaper model to find the floor
 
-**The trace shows:** the exact computation, the exact answer, the execution time. No hallucination. No approximation.
+```ts
+const lab = createLabClient({ baseUrl: process.env.LAB_URL });
 
-**When to use:** Arithmetic, data aggregation, sorting, filtering, regex matching — anything where "close enough" isn't good enough.
+const results = [];
 
-[Run this pattern →](/examples)
+for (let i = 0; i < 10; i++) {
+  const out = await lab.runChain([
+    { name: "Generate", body: `
+      // your skill/prompt logic here
+      return parseUserInput("$1,234.56");
+    `, capabilities: [] },
+    { name: "Verify", body: `
+      const expected = 1234.56;
+      return {
+        run: ${i + 1},
+        output: input,
+        pass: input === expected,
+      };
+    `, capabilities: [] },
+  ]);
 
----
+  results.push({
+    run: i + 1,
+    pass: out.result?.pass,
+    traceId: out.traceId,
+  });
+}
 
-## Zero Bleed (Isolation Proof)
+const passed = results.filter(r => r.pass).length;
+console.log(`${passed}/10 passed`);
 
-Prove that isolates are truly isolated. Step 1 poisons every global and prototype. Step 2 is a fresh V8. Nothing leaks.
+// Failed runs have URLs — open them to see where the output diverged
+results.filter(r => !r.pass).forEach(r =>
+  console.log(`Run ${r.run} failed: $LAB_URL/t/${r.traceId}`)
+);
+```
 
-**The trace shows:** Step 1 successfully poisoned `globalThis`, `Object.prototype`, `Array.prototype`. Step 2 checked every vector — all clean. Isolation confirmed.
+You can extend this with an evolutionary approach — generate multiple candidate implementations, evaluate each against the same test cases, select the winner by score. One run = one generation. Feed the winner back as the starting point for the next round. This is the same idea behind [genetic algorithms](https://en.wikipedia.org/wiki/Genetic_algorithm): mutate, evaluate, select, repeat.
 
-**When to use:** As a trust foundation. Run this as a canary before executing untrusted agent code. Include the trace in your security documentation.
+**When to use:** Before you trust a skill in production. Before you optimize for cost by switching to a smaller model. Any time "it worked once" isn't good enough.
 
 [Run this pattern →](/examples)
 
@@ -235,12 +221,12 @@ Prove that isolates are truly isolated. Step 1 poisons every global and prototyp
 
 The real power is composition. An agent might:
 
-1. **Compute Offload** to get exact data
-2. **Prove It** to verify the computation handles edge cases
-3. **Agent Handoff** the trace to a review agent
-4. **Canary Deploy** the new logic against the old
+1. **Prove It** to verify code handles edge cases
+2. **Stress Test** to make sure it's reliable, not lucky
+3. **Hand off** the results to a review agent
+4. **Compare** the new logic against the old before shipping
 
-Each step produces a trace. The traces link together into a story that any agent or human can follow.
+Each run saves a result. The results link together into a story that any agent or human can follow.
 
 ---
 
@@ -273,9 +259,9 @@ npx @acoyfellow/lab-cli chain '[{"body":"return 1+1","capabilities":[]}]'
 
 **Raw HTTP:**
 ```bash
-curl -X POST https://lab.coey.dev/run/chain \
+curl -X POST $LAB_URL/run/chain \
   -H 'Content-Type: application/json' \
   -d '{"steps":[{"body":"return 1+1","capabilities":[]}]}'
 ```
 
-The trace URL in the response is the artifact. Everything else is just plumbing.
+The URL in the response is the artifact. Everything else is just plumbing.

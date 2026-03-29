@@ -7,37 +7,44 @@
 
   const featuredExamples = [
     {
-      title: 'Adaptive Opponent',
-      badge: 'Loop',
-      href: '/experiments/versus',
-      description: 'Deterministic search plays Connect 4. Any model breaks ties. Losses produce traced insights that feed the next game. Swap the model, the system still improves.'
-    },
-    {
-      title: 'Trace Handoff',
-      badge: 'URL',
-      href: '/examples',
-      description: 'Agent A produces a trace URL. Agent B reads it and continues the work. The trace becomes the handoff protocol.'
-    },
-    {
-      title: 'Proof of Correctness',
+      title: 'Code mode — but verified',
       badge: '10/10',
-      href: '/examples',
-      description: 'Agent writes a function, specifies edge cases, runs them all in isolated steps, and returns the trace as the execution receipt.'
+      href: '/docs/patterns#prove-it',
+      description: 'Agent writes a function, generates edge cases, runs them all. 10/10 pass — here\'s the URL to prove it.'
     },
     {
-      title: 'Canary Run',
+      title: 'Auto-fix pipeline',
+      badge: 'Fix',
+      href: '/docs/patterns#self-healing-loop',
+      description: 'Something fails. Agent sees what broke, patches the code, reruns. Watch it debug itself.'
+    },
+    {
+      title: 'Multi-agent relay',
+      badge: 'URL',
+      href: '/docs/patterns#agent-handoff',
+      description: 'Agent A researches. Agent B synthesizes. Agent C delivers. Each one picks up where the last left off — one URL ties it together.'
+    },
+    {
+      title: 'Compare before you ship',
       badge: 'Diff',
-      href: '/examples',
-      description: 'Old logic and new logic run on the same inputs. The trace shows exactly what changed before you ship.'
+      href: '/docs/patterns#canary-deploy',
+      description: 'Old logic vs new logic, same inputs. See exactly what changed before you deploy.'
+    },
+    {
+      title: 'Stress test',
+      badge: 'N',
+      href: '/docs/patterns#stress-test',
+      description: 'Run it 10 times. If run 7 breaks, your instructions are ambiguous. Try with a dumber model to find the floor.'
     }
   ];
 
   let { data }: PageProps = $props();
+  let activeTab = $state(0);
 </script>
 
 <SEO
-  title="Lab — Isolated execution and traces for AI agents"
-  description="Agents send code. Lab runs each step in an isolated V8. Every run produces a trace — a permanent artifact that proves what happened."
+  title="Lab — Run agent code. Get proof it worked."
+  description="Agents write code. Lab runs it in a sandbox and returns a trace — a full record of what happened. The agent reads the trace, fixes what broke, and runs again."
   path="/"
   type="website"
 />
@@ -71,17 +78,16 @@
         </div>
 
         <h1 class="text-[1.65rem] sm:text-[2.25rem] font-semibold tracking-tight leading-[1.15] text-(--text) drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
-          Run code in isolation.<br />
-          <span class="text-(--text-2)">Trace what happened.</span>
+          Run agent code.<br />
+          <span class="text-(--text-2)">Get proof it worked.</span>
         </h1>
 
         <p class="text-[1.0625rem] text-(--text-2) leading-relaxed max-w-[60ch]">
-          An agent sends JavaScript. Lab runs each step in an <strong class="text-(--text)">isolated V8</strong> — sandboxed, capability-scoped, edge-deployed.
-          Every run produces a permanent <strong class="text-(--text)">trace</strong> — the proof of what happened, shareable with agents and humans alike.
+          An agent writes code. Lab runs it in a <strong class="text-(--text)">Cloudflare sandbox</strong> and returns a <strong class="text-(--text)">trace</strong> — a full record of what happened. The agent reads the trace, fixes what broke, and runs again.
         </p>
         <div class="flex items-center gap-3 flex-wrap">
           <Button href="/compose" variant="default">Open Compose</Button>
-          <a href="/examples" class="text-[0.8125rem] text-(--accent) hover:underline">browse example chains →</a>
+          <a href="/examples" class="text-[0.8125rem] text-(--accent) hover:underline">browse examples →</a>
         </div>
       </div>
     </header>
@@ -89,25 +95,63 @@
 
   <div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-12">
 
-  <!-- Why traces matter -->
+  <!-- You've used these before -->
   <section class="space-y-4">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Why traces</h2>
+    <!-- Tab bar -->
+    <div class="flex gap-0 border-b border-(--border)">
+      {#each data.knownPatterns as pattern, i}
+        <button
+          onclick={() => activeTab = i}
+          class="relative px-4 py-2.5 text-[0.8125rem] font-medium transition-colors cursor-pointer bg-transparent border-none
+            {activeTab === i ? 'text-(--text)' : 'text-(--text-3) hover:text-(--text-2)'}"
+        >
+          <span>{pattern.tab}</span>
+          {#if activeTab === i}
+            <span class="absolute bottom-0 left-0 right-0 h-[2px] bg-(--accent)"></span>
+          {/if}
+        </button>
+      {/each}
+    </div>
+
+    <!-- Tab content -->
+    {#each data.knownPatterns as pattern, i}
+      {#if activeTab === i}
+        <div class="space-y-3">
+          <p class="text-[0.875rem] text-(--text) m-0 font-medium">
+            {pattern.whatItDoes}
+          </p>
+          <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-x-auto text-[0.8125rem]">
+            {@html pattern.html}
+          </div>
+        </div>
+      {/if}
+    {/each}
+
+    <div class="flex items-center gap-4">
+      <a href="/docs/patterns" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">All 6 patterns →</a>
+      <a href="/examples" class="text-[0.8125rem] text-(--text-3) hover:text-(--text) hover:underline">Run these examples →</a>
+    </div>
+  </section>
+
+  <!-- What you get back -->
+  <section class="space-y-4">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Every run records everything</h2>
     <div class="grid gap-3 sm:grid-cols-2">
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Proof, not claims</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">An agent says "I fixed the data." The trace shows every step — what it received, what it returned, what failed. It's a receipt.</p>
+        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Proof, not promises</div>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Every piece of code that ran, every input, every output, every timing. "I fixed the data" becomes a URL you can verify.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Agent-to-agent handoff</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Agent A produces a trace URL. Agent B reads it and continues the work. No shared database, no custom API — just a URL.</p>
+        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Agents can pick up where others left off</div>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Agent A finishes and produces a URL. Agent B reads that URL and continues the work. No message queue, no shared database.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Self-healing loops</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Run fails. Agent reads the trace, sees exactly what broke, patches the code, runs again. Each iteration is a new trace — the system fixes itself.</p>
+        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Debugging built in</div>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">When something fails, you see exactly what input caused it. Agents use this to fix their own mistakes. You use it to understand what happened.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Follow the story</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Share a trace URL with a human. They can follow exactly what happened without needing the agent's context. It's a narrative, not a log.</p>
+        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Shareable</div>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Every run has a permanent URL. Send it to a teammate, attach it to a PR, or feed it to another agent.</p>
       </div>
     </div>
   </section>
@@ -118,7 +162,7 @@
       <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Watch an agent heal broken data</h2>
     </div>
     <p class="text-[0.9375rem] text-(--text-2)">
-      Four isolates. Step 1 loads broken JSON. Step 2 tries to parse it and fails. Step 3 diagnoses and repairs. Step 4 validates. Hit Run, then open the trace to follow the full story.
+      Four pieces of code, four sandboxes. Each one's output flows into the next one's input. Hit Run, then open the result.
     </p>
     <MiniSandbox />
   </section>
@@ -139,7 +183,10 @@
         </a>
       {/each}
     </div>
-    <a href="/examples" class="inline-block text-[0.8125rem] text-(--accent) hover:underline mt-1">See all examples →</a>
+    <div class="flex items-center gap-4 mt-1">
+      <a href="/docs/patterns" class="inline-block text-[0.8125rem] text-(--accent) hover:underline font-medium">All 6 patterns →</a>
+      <a href="/examples" class="inline-block text-[0.8125rem] text-(--text-3) hover:text-(--text) hover:underline">Browse runnable examples →</a>
+    </div>
   </section>
 
   <!-- Get started -->
@@ -152,14 +199,14 @@
       <a href="/tutorial" class="flex items-center gap-3 p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
         <div>
           <div class="font-semibold text-(--text) group-hover:text-(--accent)">Tutorial</div>
-          <div class="text-[0.8125rem] text-(--text-2)">5 minutes to your first trace</div>
+          <div class="text-[0.8125rem] text-(--text-2)">5 minutes to your first run</div>
         </div>
       </a>
 
       <a href="/docs" class="flex items-center gap-3 p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
         <div>
           <div class="font-semibold text-(--text) group-hover:text-(--accent)">Docs</div>
-          <div class="text-[0.8125rem] text-(--text-2)">API, capabilities, trace schema</div>
+          <div class="text-[0.8125rem] text-(--text-2)">API, permissions, reference</div>
         </div>
       </a>
 

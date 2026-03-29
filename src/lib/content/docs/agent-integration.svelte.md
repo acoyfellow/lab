@@ -1,53 +1,63 @@
-<script lang="ts">
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
-</script>
+# Using Lab from an agent
 
-# Agents and lab
+Lab works with any agent that can make HTTP requests or use MCP tools. Here's how to connect.
 
-**0.0.1:** ship a **stdio MCP** with exactly two tools — **`find`** and **`execute`** — for Cursor and other MCP hosts. Implementation: monorepo [`packages/lab-mcp`](https://github.com/acoyfellow/lab/tree/main/packages/lab-mcp) (Effect **v4 beta** + `@modelcontextprotocol/sdk`). **HTTP** remains the wire format to the Worker.
+## MCP (recommended for Cursor, Claude Code, etc.)
 
-## MCP (recommended)
+The `@acoyfellow/lab-mcp` package gives your agent two tools:
 
-- **Tools:** `find` — full `GET /lab/catalog`, optional dot-path slice (`execute.chain`, `capabilities`, …), or `traceId` → `GET /t/:id.json`. `execute` — discriminated `mode`: `sandbox` | `kv` | `chain` | `spawn` | `generate` | `seed` with the same fields as [`createLabClient`](https://www.npmjs.com/package/@acoyfellow/lab).
-- **Env:** `LAB_URL` required (origin with `/run/*`, `/lab/catalog`, `/t/:id`).
-- **Run:** from repo root, `bun run mcp:lab` (stdio). **Cursor:** merge something like [`docs/cursor-mcp-lab.example.json`](https://github.com/acoyfellow/lab/blob/main/docs/cursor-mcp-lab.example.json) into your MCP config; fix `args` `--cwd` to your clone path.
+- **`find`** — browse available permissions, look up past run results, or explore the API
+- **`execute`** — run code in a sandbox, run multi-step pipelines, generate code from a prompt
 
-## Lookup
+### Setup
 
-- **Worker origin:** `GET /lab/catalog` — JSON with `capabilities` (ids, `llmHint`, summaries), `templates`, `execute` (paths + body field names), `trace`, `seed`.
-- **Site origin (proxied):** `GET /lab/catalog` on the Svelte app hits the Worker the same way trace JSON does.
-
-Use this so models (or tool runners) do not scrape prose docs.
-
-## Execute
-
-- `POST /run`, `/run/kv`, `/run/chain`, `/run/spawn`, `/run/generate` — see [HTTP API](/docs/http-api).
-- Persisted runs: `traceId` then `GET /t/:id` or `GET /t/:id.json` on the Worker.
-
-## TypeScript
-
-**Promises:**
-
-```ts
-import { fetchLabCatalog, createLabClient } from "@acoyfellow/lab";
-
-const baseUrl = process.env.LAB_URL ?? "http://localhost:1337";
-const catalog = await fetchLabCatalog({ baseUrl });
-const lab = createLabClient({ baseUrl });
-// … model fills `body` / chain steps from catalog.hints; lab.runSandbox / runChain / …
+```bash
+npm install -g @acoyfellow/lab-mcp
 ```
 
-**Effect (same as MCP host internally):** `fetchLabCatalogEffect`, `createLabEffectClient`, `HttpError` from `@acoyfellow/lab/effect` with peer `effect@4.0.0-beta.40`.
+Set `LAB_URL` to your Lab instance (e.g. `$LAB_URL` or your self-hosted URL).
+
+**Cursor:** merge the example config from [`docs/cursor-mcp-lab.example.json`](https://github.com/acoyfellow/lab/blob/main/docs/cursor-mcp-lab.example.json) into your MCP settings. Update `--cwd` to point to your clone.
+
+**From the repo:** `bun run mcp:lab` starts the MCP server over stdio.
+
+## TypeScript client
+
+```ts
+import { createLabClient } from "@acoyfellow/lab";
+
+const lab = createLabClient({
+  baseUrl: process.env.LAB_URL ?? "$LAB_URL",
+});
+
+// Run a single piece of code
+const result = await lab.runSandbox({ body: "return 1 + 1" });
+
+// Run a multi-step pipeline
+const chain = await lab.runChain([
+  { body: "return [1, 2, 3]", capabilities: [] },
+  { body: "return input.map(n => n * n)", capabilities: [] },
+]);
+```
+
+An [Effect](https://effect.website) variant is also available — `import { createLabEffectClient } from "@acoyfellow/lab/effect"`.
+
+## Plain HTTP
+
+Any agent that can make HTTP requests can use Lab directly:
+
+```bash
+curl -X POST $LAB_URL/run \
+  -H 'Content-Type: application/json' \
+  -d '{"body": "return 1 + 1"}'
+```
+
+See [HTTP API](/docs/http-api) for all endpoints.
+
+## Auto-discovery
+
+`GET /lab/catalog` returns a machine-readable JSON document describing all available permissions, endpoints, and how to call them. Point your agent at this URL instead of hardcoding API details.
 
 ## Security
 
-Catalog is public if `/run` is public. Lock down with Cloudflare Access, private Worker URL, or ship catalog only on internal deploys.
-
-
-<DocFooterNav
-  gridClass="sm:grid-cols-2"
-  links={[
-    { label: 'HTTP API', to: '/docs/http-api', description: 'Endpoints and curl.' },
-    { label: 'TypeScript client', to: '/docs/typescript', description: 'createLabClient, fetchLabCatalog.' },
-  ]}
-/>
+The catalog is public if your Lab instance is public. To restrict access, use Cloudflare Access, a private Worker URL, or only expose the catalog on internal deploys.

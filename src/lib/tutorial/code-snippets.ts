@@ -1,62 +1,33 @@
-/** Raw source for Shiki — tutorial steps (+page.server.ts). */
+/** Raw source for Shiki — single tutorial page (+page.server.ts). */
 
-export const TUTORIAL_STEP1_CODE = `import { createLabClient } from "@acoyfellow/lab";
+export const TUTORIAL_INSTALL = `npm install @acoyfellow/lab`;
+
+export const TUTORIAL_MCP_CONFIG = `{
+  "mcpServers": {
+    "lab": {
+      "type": "streamable-http",
+      "url": "$LAB_URL/mcp"
+    }
+  }
+}`;
+
+export const TUTORIAL_RUN_FROM_AGENT = `import { createLabClient } from "@acoyfellow/lab";
 
 const lab = createLabClient({ baseUrl: process.env.LAB_URL! });
 
-const out = await lab.runSandbox({
+const result = await lab.runSandbox({
   body: "return 2 + 2",
   capabilities: [],
 });
 
-console.log(out.result); // 4
-console.log(out.traceId); // clu01abc...
+console.log(result.result); // 4
+console.log(result.ok);     // true
 
-// View the trace at:
-// https://lab.coey.dev/t/\${out.traceId}`;
+// Every run gets a permanent URL:
+// $LAB_URL/t/\${result.traceId}`;
 
-export const TUTORIAL_STEP1_CURL = `curl -X POST https://lab.coey.dev/run \\
+export const TUTORIAL_RUN_CURL = `curl -X POST $LAB_URL/run \\
   -H 'Content-Type: application/json' \\
   -d '{"body":"return 2 + 2","capabilities":[]}'`;
 
-export const TUTORIAL_STEP2_CODE = `import { createLabClient } from "@acoyfellow/lab";
-
-const lab = createLabClient({ baseUrl: process.env.LAB_URL! });
-
-const out = await lab.runChain([
-  {
-    name: "Generate numbers",
-    body: "return [1, 2, 3]",
-    capabilities: [],
-  },
-  {
-    name: "Count items",
-    body: "return input.length",
-    capabilities: [],
-  },
-  {
-    name: "Format result",
-    body: 'return { count: input, items: "1, 2, 3" }',
-    capabilities: [],
-  },
-]);
-
-console.log(out.result); // { count: 3, items: "1, 2, 3" }
-console.log(out.traceId); // clu01abc...`;
-
-export const TUTORIAL_STEP2_CURL = `curl -X POST https://lab.coey.dev/run/chain \\
-  -H 'Content-Type: application/json' \\
-  -d '{"steps":[{"body":"return [1,2,3]","capabilities":[]},{"body":"return input.length","capabilities":[]}]}'`;
-
-export const TUTORIAL_STEP3_LAB_CLIENT = `import { createLabClient } from "@acoyfellow/lab";
-
-const lab = createLabClient({ baseUrl: process.env.LAB_URL! });
-
-const out = await lab.runChain([
-  { body: "return [1,2,3]", capabilities: [] },
-  { body: "return input.reduce((a, n) => a + n, 0)", capabilities: [] },
-]);
-
-console.log(out.traceId, out.result);`;
-
-export const TUTORIAL_STEP3_FETCH_TRACE = `curl -s "$LAB_URL/t/$TRACE_ID.json" | jq .`;
+export const TUTORIAL_FETCH_RESULT = `curl -s "$LAB_URL/t/$TRACE_ID.json" | jq .`;

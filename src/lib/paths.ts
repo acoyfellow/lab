@@ -13,8 +13,7 @@ export const paths = {
 	docsWhenToUse: '/docs/when-to-use',
 	docsFaq: '/docs/faq',
 	docsPatterns: '/docs/patterns',
+	docsPetri: '/docs/petri',
 	tutorial: '/tutorial',
-	tutorialStep1: '/tutorial/step-1',
-	tutorialStep2: '/tutorial/step-2',
-	tutorialStep3: '/tutorial/step-3'
+	docsSelfHost: '/docs/self-host'
 } as const;
