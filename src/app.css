@@ -172,11 +172,11 @@
   .shiki-code-block pre.shiki {
     margin: 0;
     padding: 1rem;
-    overflow-x: hidden;
+    overflow-x: auto;
     max-width: 100%;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    white-space: pre;
+    overflow-wrap: normal;
+    word-break: normal;
     font-family: var(--mono);
     font-size: 0.8125rem;
     line-height: 1.5;

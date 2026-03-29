@@ -12,33 +12,54 @@ Every run saves a result. For successful runs, that result can also serve as the
 
 **How it works:**
 
-1. Agent writes the function
-2. Agent writes test cases with expected outputs
-3. Each test case runs in its own sandbox
-4. Final step asserts every result and returns a verdict
+1. Agent defines the edge cases and expected outputs
+2. Agent implements the function in a fresh sandbox and runs every case
+3. Final step asserts every result and returns a verdict
 
-**In a successful Prove It run, the result shows** the inputs, outputs, assertions, and final verdict. That run's URL is the proof artifact you can share.
+**In a successful Prove It run, the result shows** the cases, actual outputs, pass flags, and final verdict. That run's JSON is the proof artifact you can share.
 
 ```js
 const out = await lab.runChain([
-  { name: "Specify", body: `return {
-    cases: [
-      { input: "$1,234.56", expected: 1234.56 },
-      { input: "free", expected: null },
-      { input: null, expected: null },
-    ]
-  }`, capabilities: [] },
-  { name: "Execute", body: `return input.cases.map(c => {
-    const result = parseAmount(c.input);
-    return { ...c, actual: result };
-  })`, capabilities: [] },
-  { name: "Assert", body: `const results = input.map(r => ({
-    ...r, pass: r.actual === r.expected
-  }));
-  return {
-    verdict: results.every(r => r.pass) ? "PASS" : "FAIL",
-    score: results.filter(r => r.pass).length + "/" + results.length,
-  }`, capabilities: [] },
+  {
+    name: "Spec",
+    body: `
+      return {
+        cases: [
+          { input: "$1,234.56", expected: 1234.56 },
+          { input: "free", expected: null },
+          { input: null, expected: null },
+        ],
+      };
+    `,
+    capabilities: []
+  },
+  {
+    name: "Implement + test",
+    body: `
+      function parseAmount(raw) {
+        if (!raw) return null;
+        const n = parseFloat(String(raw).replace(/[^\d.\-]/g, ""));
+        return Number.isNaN(n) ? null : Math.round(n * 100) / 100;
+      }
+
+      return input.cases.map((c) => {
+        const actual = parseAmount(c.input);
+        return { ...c, actual, pass: actual === c.expected };
+      });
+    `,
+    capabilities: []
+  },
+  {
+    name: "Verdict",
+    body: `
+      const results = input;
+      return {
+        verdict: results.every((r) => r.pass) ? "PASS" : "FAIL",
+        score: results.filter((r) => r.pass).length + "/" + results.length,
+      };
+    `,
+    capabilities: []
+  },
 ]);
 
 // Agent's response: "Proof JSON: $LAB_URL/results/<resultId>.json"
@@ -67,25 +88,51 @@ This follows the same principle as [closed-loop control systems](https://en.wiki
 
 ```js
 const out = await lab.runChain([
-  { name: "Try parse", body: `try {
-    return { ok: true, data: JSON.parse(input.raw) };
-  } catch(e) {
-    return { ok: false, error: e.message, raw: input.raw };
-  }`, capabilities: [] },
-  { name: "Diagnose", body: `if (input.ok) return input;
-  const issues = [];
-  if (input.raw.match(/\\w+:/)) issues.push("unquoted_keys");
-  if (input.raw.match(/,\\s*[}\\]]/)) issues.push("trailing_commas");
-  return { ...input, issues, strategy: "apply regex fixes" };
-  `, capabilities: [] },
-  { name: "Heal", body: `if (input.ok) return input;
-  let fixed = input.raw;
-  if (input.issues.includes("unquoted_keys"))
-    fixed = fixed.replace(/(\\w+):/g, '"$1":');
-  if (input.issues.includes("trailing_commas"))
-    fixed = fixed.replace(/,\\s*([}\\]])/g, '$1');
-  return { ok: true, data: JSON.parse(fixed), healed: true };
-  `, capabilities: [] },
+  {
+    name: "Try parse",
+    body: `
+      try {
+        return { ok: true, data: JSON.parse(input.raw) };
+      } catch (e) {
+        return { ok: false, error: e.message, raw: input.raw };
+      }
+    `,
+    capabilities: []
+  },
+  {
+    name: "Diagnose",
+    body: `
+      if (input.ok) return input;
+
+      const issues = [];
+      if (input.raw.match(/\\w+:/)) issues.push("unquoted_keys");
+      if (input.raw.match(/,\\s*[}\\]]/)) issues.push("trailing_commas");
+
+      return {
+        ...input,
+        issues,
+        strategy: "apply regex fixes",
+      };
+    `,
+    capabilities: []
+  },
+  {
+    name: "Heal",
+    body: `
+      if (input.ok) return input;
+
+      let fixed = input.raw;
+      if (input.issues.includes("unquoted_keys")) {
+        fixed = fixed.replace(/(\\w+):/g, '"$1":');
+      }
+      if (input.issues.includes("trailing_commas")) {
+        fixed = fixed.replace(/,\\s*([}\\]])/g, '$1');
+      }
+
+      return { ok: true, data: JSON.parse(fixed), healed: true };
+    `,
+    capabilities: []
+  },
 ]);
 ```
 
@@ -110,24 +157,50 @@ This is a [pipeline architecture](https://en.wikipedia.org/wiki/Pipeline_(comput
 
 ```js
 const out = await lab.runChain([
-  { name: "Agent A: Research", body: `return {
-    findings: [
-      { source: "API", data: { users: 1200, active: 890 } },
-      { source: "DB",  data: { users: 1198, active: 887 } },
-    ],
-    note: "Sources roughly agree. Minor discrepancy."
-  }`, capabilities: [] },
-  { name: "Agent B: Reconcile", body: `const avg = {
-    users: Math.round(input.findings.reduce((s,f) => s + f.data.users, 0) / input.findings.length),
-    active: Math.round(input.findings.reduce((s,f) => s + f.data.active, 0) / input.findings.length),
-  };
-  return { reconciled: avg, sources: input.findings.length, confidence: "high" };
-  `, capabilities: [] },
-  { name: "Agent C: Report", body: `return {
-    summary: input.reconciled.active + " active users of " + input.reconciled.users + " total",
-    confidence: input.confidence,
-    sources: input.sources,
-  }`, capabilities: [] },
+  {
+    name: "Agent A: Research",
+    body: `
+      return {
+        findings: [
+          { source: "API", data: { users: 1200, active: 890 } },
+          { source: "DB", data: { users: 1198, active: 887 } },
+        ],
+        note: "Sources roughly agree. Minor discrepancy.",
+      };
+    `,
+    capabilities: []
+  },
+  {
+    name: "Agent B: Reconcile",
+    body: `
+      const avg = {
+        users: Math.round(
+          input.findings.reduce((s, f) => s + f.data.users, 0) / input.findings.length
+        ),
+        active: Math.round(
+          input.findings.reduce((s, f) => s + f.data.active, 0) / input.findings.length
+        ),
+      };
+
+      return {
+        reconciled: avg,
+        sources: input.findings.length,
+        confidence: "high",
+      };
+    `,
+    capabilities: []
+  },
+  {
+    name: "Agent C: Report",
+    body: `
+      return {
+        summary: input.reconciled.active + " active users of " + input.reconciled.users + " total",
+        confidence: input.confidence,
+        sources: input.sources,
+      };
+    `,
+    capabilities: []
+  },
 ]);
 ```
 
@@ -179,18 +252,26 @@ const results = [];
 
 for (let i = 0; i < 10; i++) {
   const out = await lab.runChain([
-    { name: "Generate", body: `
-      // your skill/prompt logic here
-      return parseUserInput("$1,234.56");
-    `, capabilities: [] },
-    { name: "Verify", body: `
-      const expected = 1234.56;
-      return {
-        run: ${i + 1},
-        output: input,
-        pass: input === expected,
-      };
-    `, capabilities: [] },
+    {
+      name: "Generate",
+      body: `
+        // your skill/prompt logic here
+        return parseUserInput("$1,234.56");
+      `,
+      capabilities: []
+    },
+    {
+      name: "Verify",
+      body: `
+        const expected = 1234.56;
+        return {
+          run: ${i + 1},
+          output: input,
+          pass: input === expected,
+        };
+      `,
+      capabilities: []
+    },
   ]);
 
   results.push({

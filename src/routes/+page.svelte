@@ -166,7 +166,7 @@
           <p class="text-[0.875rem] text-(--text) m-0 font-medium">
             {pattern.whatItDoes}
           </p>
-          <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-x-auto text-[0.8125rem]">
+          <div class="text-[0.8125rem]">
             {@html pattern.html}
           </div>
         </div>

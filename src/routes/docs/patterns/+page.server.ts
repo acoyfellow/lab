@@ -3,6 +3,7 @@ import { docsHeadingId } from '$lib/docs-heading-id';
 import patternsSource from '$lib/content/docs/patterns.svelte.md?raw';
 import { marked } from 'marked';
 import { highlightCode, type ShikiLang } from '$lib/shiki.server';
+import { renderLabChainSnippet } from '$lib/lab-chain-snippet.server';
 
 const FENCE = /```(\w*)\r?\n([\s\S]*?)```/g;
 
@@ -25,10 +26,18 @@ async function renderPatternsHtml(source: string): Promise<string> {
 			parts.push(marked.parse(before, { async: false }) as string);
 		}
 		const code = m[2].replace(/\n$/, '');
-		const html = await highlightCode(code, mapFenceLang(m[1] ?? ''));
-		parts.push(
-			`<div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">${html}</div>`
-		);
+		const rendered =
+			(m[1] ?? '').match(/^(js|javascript|ts|typescript)$/) && code.includes('runChain([')
+				? await renderLabChainSnippet(code)
+				: null;
+		if (rendered) {
+			parts.push(rendered);
+		} else {
+			const html = await highlightCode(code, mapFenceLang(m[1] ?? ''));
+			parts.push(
+				`<div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">${html}</div>`
+			);
+		}
 		last = m.index + m[0].length;
 	}
 	const tail = source.slice(last);
