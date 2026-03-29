@@ -8,9 +8,11 @@
 
 ## Poor fit
 
-- **Long CPU-heavy batch jobs** where a single process should churn for minutes—Workers CPU limits and the isolate model are the wrong default; use batch elsewhere or split work explicitly.
-- **Arbitrary system access** (full filesystem, raw sockets, unrestricted outbound). Lab is built around **declared capabilities** and Loader isolates—not a general-purpose server.
-- **One large trusted monolith** with no need for untrusted code or per-step attenuation—plain [Cloudflare Workers](https://developers.cloudflare.com/workers/) or your existing stack may be simpler.
+- **Long-running task queues** where jobs churn for minutes or run in the background. Workers CPU limits and the sandbox model are the wrong shape. Try [Chomp](https://github.com/acoyfellow/chomp) for agent task queues.
+- **Full system access** (filesystem, raw sockets, shell commands, browser automation). Lab runs in a locked-down sandbox on purpose. Try [Cloudshell](https://github.com/acoyfellow/cloudshell) for terminal access or [Filepath](https://github.com/acoyfellow/filepath) for a full dev environment.
+- **Persistent memory across runs.** Lab runs are stateless — each one starts fresh. If agents need to learn from previous runs and recall that knowledge later, use [Deja](https://github.com/acoyfellow/deja) alongside Lab.
+- **E2E browser testing** with assertions against live UI. Lab proves code ran correctly; [Gateproof](https://github.com/acoyfellow/gateproof) proves the UI works correctly.
+- **One large trusted monolith** with no need for untrusted code or per-step permissions — plain [Cloudflare Workers](https://developers.cloudflare.com/workers/) or your existing stack may be simpler.
 
 ## Relationship to “plain” Workers
 
