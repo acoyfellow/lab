@@ -143,7 +143,7 @@
 
 <SEO
   title="Examples — lab"
-  description="Runnable workflows for trace-first agents: open in Compose, run a chain, and share the trace as the proof."
+  description="Runnable workflows for agents: open in Compose, run a chain, and share the saved result URL."
   path="/examples"
   type="website"
 />

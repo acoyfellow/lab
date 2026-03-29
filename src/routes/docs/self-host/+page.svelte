@@ -18,10 +18,10 @@
   ];
 
   const resources = [
-    { name: 'D1 Database', detail: 'Better Auth user sessions (optional)', required: false },
-    { name: 'R2 Bucket', detail: 'Object storage for large outputs', required: false },
-    { name: 'KV Namespace', detail: 'Trace storage and chain state', required: true },
-    { name: 'Worker', detail: 'V8 isolate execution environment', required: true },
+    { name: 'D1 Database', detail: 'Auth sessions and user accounts (Better Auth)', required: true },
+    { name: 'KV Namespace', detail: 'Saved results (traces) and guest KV read data', required: true },
+    { name: 'Worker', detail: 'Sandbox execution environment', required: true },
+    { name: 'R2 Bucket', detail: 'Guest file storage (r2Read capability)', required: false },
     { name: 'AI Binding', detail: 'Workers AI for generate mode', required: false },
   ];
 
@@ -81,8 +81,7 @@
   <header id="overview" class="space-y-3">
     <h1 class="text-2xl font-semibold tracking-tight">Self-Hosting Guide</h1>
     <p class="leading-relaxed">
-      Deploy Lab to your own Cloudflare account. You control the infrastructure, data, and capabilities. Perfect for
-      production workloads and compliance requirements.
+      Deploy Lab to your own Cloudflare account. You control the infrastructure, data, and capabilities.
     </p>
   </header>
 

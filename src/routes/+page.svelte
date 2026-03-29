@@ -44,7 +44,7 @@
 
 <SEO
   title="Lab — Run agent code. Get proof it worked."
-  description="Agents write code. Lab runs it in a sandbox and returns a trace — a full record of what happened. The agent reads the trace, fixes what broke, and runs again."
+  description="Agents write code. Lab runs it in a Cloudflare sandbox and saves the result at a permanent URL. The agent reads the result, fixes what broke, and runs again."
   path="/"
   type="website"
 />
@@ -83,7 +83,7 @@
         </h1>
 
         <p class="text-[1.0625rem] text-(--text-2) leading-relaxed max-w-[60ch]">
-          An agent writes code. Lab runs it in a <strong class="text-(--text)">Cloudflare sandbox</strong> and returns a <strong class="text-(--text)">trace</strong> — a full record of what happened. The agent reads the trace, fixes what broke, and runs again.
+          An agent writes code. Lab runs it in a <strong class="text-(--text)">Cloudflare sandbox</strong> and saves the result at a <strong class="text-(--text)">permanent URL</strong>. Successful runs include full step data — code, inputs, outputs, timing. The agent reads the result, fixes what broke, and runs again.
         </p>
         <div class="flex items-center gap-3 flex-wrap">
           <Button href="/compose" variant="default">Open Compose</Button>
@@ -135,11 +135,11 @@
 
   <!-- What you get back -->
   <section class="space-y-4">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Every run records everything</h2>
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Every run gets a saved result</h2>
     <div class="grid gap-3 sm:grid-cols-2">
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Proof, not promises</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Every piece of code that ran, every input, every output, every timing. "I fixed the data" becomes a URL you can verify.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Successful runs include code, inputs, outputs, and timing for each step. Failed runs include the error and reason. "I fixed the data" becomes a URL you can verify.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Agents can pick up where others left off</div>
@@ -151,7 +151,7 @@
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Shareable</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Every run has a permanent URL. Send it to a teammate, attach it to a PR, or feed it to another agent.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Every run gets a permanent URL. Send it to a teammate, attach it to a PR, or feed it to another agent.</p>
       </div>
     </div>
   </section>

@@ -1,6 +1,6 @@
 # Run result format
 
-When you run code on Lab, the result is saved as JSON at a permanent URL (`/t/:id`). This page describes what that JSON looks like.
+When you run code on Lab, the result is saved as JSON at a URL (`/t/:id`). Successful runs include full step data. Failed or aborted runs include the error and reason, but per-step detail may be partial — see [Failures & traces](/docs/failures). This page describes the result schema.
 
 ## Top-level fields
 

@@ -2,7 +2,7 @@
 
 The feedback loop for AI agents.
 
-An agent writes code. Lab runs it in a sandbox and returns a **trace** — a full record of what happened. The agent reads the trace, fixes what broke, and runs again. Same loop a developer uses, except the agent does it.
+An agent writes code. Lab runs it in a Cloudflare sandbox and saves the result at a **permanent URL**. Successful runs include full step data — code, inputs, outputs, timing. The agent reads the result, fixes what broke, and runs again. Same loop a developer uses, except the agent does it.
 
 ```
 agent writes code  →  Lab runs it  →  trace (what happened)  →  agent reads, fixes, reruns
@@ -37,20 +37,19 @@ console.log(out.result);   // { valid: true, healed: true, users: 1 }
 console.log(out.traceId);  // → $LAB_URL/t/<id> (the receipt)
 ```
 
-Each step runs in its own sandbox. Step 2's output flows to Step 3's `input`. The trace records everything — share the URL to show exactly what happened.
+Each step runs in its own sandbox. Step 2's output flows to Step 3's `input`. The result is saved at a URL — share it to show what happened.
 
 ## Patterns
 
-These are the workflows agents build with Lab. Every pattern produces a trace. The trace is always the point.
+These are the workflows agents build with Lab. Every pattern saves a result. The result is the point.
 
-| Pattern | What happens | The trace proves |
+| Pattern | What happens | The result shows |
 |---|---|---|
 | **[Prove It](https://lab.coey.dev/docs/patterns#prove-it)** | Agent writes code + edge cases, runs them all | 10/10 pass — the receipt |
-| **[Self-Healing](https://lab.coey.dev/docs/patterns#self-healing-loop)** | Step fails → agent reads trace → patches → retries | The full reasoning chain |
+| **[Self-Healing](https://lab.coey.dev/docs/patterns#self-healing-loop)** | Step fails → agent reads result → patches → retries | The reasoning chain |
 | **[Agent Handoff](https://lab.coey.dev/docs/patterns#agent-handoff)** | Agent A → B → C, one chain | Who did what |
 | **[Canary Deploy](https://lab.coey.dev/docs/patterns#canary-deploy)** | Old vs new logic, same inputs | What changed |
-| **[Compute Offload](https://lab.coey.dev/docs/patterns#compute-offload)** | Ship math to a sandbox | Exact answer, no hallucination |
-| **[Zero Bleed](https://lab.coey.dev/docs/patterns#zero-bleed-isolation-proof)** | Poison globals in step 1, step 2 is clean | Isolation works |
+| **[Stress Test](https://lab.coey.dev/docs/patterns#stress-test)** | Run N times, find where it breaks | Which runs failed and why |
 
 See all patterns: [lab.coey.dev/docs/patterns](https://lab.coey.dev/docs/patterns)
 
@@ -72,7 +71,7 @@ See all patterns: [lab.coey.dev/docs/patterns](https://lab.coey.dev/docs/pattern
 
 No capabilities = pure compute, no I/O. Denied capabilities produce clear errors recorded in the trace.
 
-**Traces** — every run produces a durable artifact at `/t/:id`. Code, capabilities, return values, timing — all recorded. Share the URL. Fork it into a new run. Hand it to another agent.
+**Results** — every run saves a JSON result at `/t/:id`. Successful runs include code, capabilities, return values, and timing. Failed runs include the error and reason. Share the URL. Fork it into a new run. Hand it to another agent.
 
 ## API
 
@@ -138,7 +137,7 @@ git clone https://github.com/acoyfellow/lab.git && cd lab
 bun install && bun run deploy
 ```
 
-Requires Cloudflare Workers Paid ($5/mo). Provisions KV, D1, R2, and the Worker via [Alchemy](https://github.com/sam-goodwin/alchemy).
+Requires Cloudflare Workers Paid ($5/mo). Provisions D1 (auth), KV (results), and the Worker via [Alchemy](https://github.com/sam-goodwin/alchemy). R2 and AI bindings are optional.
 
 ## Project structure
 

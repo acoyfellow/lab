@@ -24,7 +24,7 @@
     {
       number: 3,
       title: 'Authentication',
-      content: 'Get your Cloudflare API token with Workers Scripts:Edit and Account:Read permissions.',
+      content: 'Get your Cloudflare API token. See the permissions list below.',
     },
     {
       number: 4,
@@ -45,10 +45,10 @@
   ];
 
   const infrastructure = [
-    { name: 'D1 Database', purpose: 'Trace storage and metadata', required: true },
-    { name: 'R2 Bucket', purpose: 'Large trace outputs and artifacts', required: true },
-    { name: 'KV Namespace', purpose: 'Key-value storage for chains', required: false },
-    { name: 'Worker', purpose: 'Main execution environment', required: true },
+    { name: 'D1 Database', purpose: 'Auth sessions and user accounts (Better Auth)', required: true },
+    { name: 'KV Namespace', purpose: 'Saved results (traces) and guest KV read data', required: true },
+    { name: 'Worker', purpose: 'Sandbox execution environment', required: true },
+    { name: 'R2 Bucket', purpose: 'Guest file storage (r2Read capability)', required: false },
     { name: 'AI Binding', purpose: 'Workers AI for generate mode', required: false },
   ];
 </script>
@@ -140,9 +140,9 @@ npm install</pre>
           these permissions:
         </p>
         <ul class="list-disc pl-5 space-y-1 mb-3">
-          <li>Account: Cloudflare Pages:Edit</li>
           <li>Account: Workers Scripts:Edit</li>
-          <li>Zone: Workers Routes:Edit (if using custom domain)</li>
+          <li>Account: Cloudflare Pages:Edit</li>
+          <li>Zone: Workers Routes:Edit (optional — only if using a custom domain)</li>
         </ul>
       </div>
 

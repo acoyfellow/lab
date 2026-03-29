@@ -49,7 +49,7 @@
             <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Install</h3>
           </div>
           <p>
-            Deploy to Cloudflare. D1, R2, KV setup included.
+            Deploy to Cloudflare. D1, KV, and Worker provisioned automatically.
           </p>
         </a>
         <a
@@ -60,7 +60,7 @@
             <GraduationCap class="w-4 h-4 text-(--text-2) group-hover:text-(--accent)" />
             <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Tutorial</h3>
           </div>
-          <p>Three short steps with live runners. Learn by doing.</p>
+          <p>Install, connect your agent, run code, see the result.</p>
         </a>
         <a
           href="/compose"

@@ -51,7 +51,7 @@
 <section class="space-y-3">
   <h2 class="docs-section-label">3. Run code</h2>
   <p>
-    Send code to Lab. It runs in a Cloudflare Worker sandbox and returns the result plus a permanent URL.
+    Send code to Lab. It runs in a Cloudflare Worker sandbox and saves the result at a URL.
   </p>
   <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
     {@html data.codeHtml.runFromAgent}
@@ -69,7 +69,7 @@
 <section class="space-y-3">
   <h2 class="docs-section-label">4. See the result</h2>
   <p>
-    Every run saves a JSON result at a permanent URL. You can open it in a browser, fetch it programmatically, or hand it to another agent.
+    Every run saves a JSON result at a URL. You can open it in a browser, fetch it programmatically, or hand it to another agent. Successful runs include full step data; failed runs include the error and reason. See <AppLink to="/docs/failures" class="text-(--accent) hover:underline">Failures & traces</AppLink> for details.
   </p>
   <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
     {@html data.codeHtml.fetchResult}

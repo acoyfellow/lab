@@ -1,8 +1,8 @@
 # Agent Patterns
 
-Lab is built for agents. These patterns show how agents use sandboxed code and recorded results to do real work — not toy demos, but workflows that replace "trust me" with "here's the proof."
+Lab is built for agents. These patterns show how agents use sandboxed code and saved results to do real work — not toy demos, but workflows where "it works" becomes a URL you can verify.
 
-Every run saves a result. The result is always the point.
+Every run saves a result at a permanent URL. The result is the point.
 
 ---
 
@@ -17,7 +17,7 @@ Every run saves a result. The result is always the point.
 3. Each test case runs in its own sandbox
 4. Final step asserts every result and returns a verdict
 
-**The result shows:** every input, every output, every assertion. 10/10 pass. The URL is the proof — share it with a human or another agent.
+**In this example, the successful run shows:** each input, each output, each assertion. 10/10 pass. The URL is the evidence — share it with a human or another agent.
 
 ```js
 const out = await lab.runChain([
@@ -63,7 +63,7 @@ This follows the same principle as [closed-loop control systems](https://en.wiki
 3. Step 3 applies a targeted fix based on the diagnosis
 4. Step 4 validates the repair
 
-**The result shows:** the failure, the diagnosis, the fix, the success. A human opening this sees the agent's reasoning — not just the final answer.
+**For a successful heal, the result shows:** the failure, the diagnosis, the fix, the success. A human opening this URL sees the agent's reasoning — not just the final answer.
 
 ```js
 const out = await lab.runChain([
@@ -106,7 +106,7 @@ This is a [pipeline architecture](https://en.wikipedia.org/wiki/Pipeline_(comput
 1. Each "agent" is a step in the pipeline
 2. Agent A's output becomes Agent B's input automatically
 3. Agent C's output is the final result
-4. The saved result shows exactly what each agent contributed
+4. For successful runs, the saved result shows what each agent contributed
 
 ```js
 const out = await lab.runChain([
@@ -150,7 +150,7 @@ Named after the [canary release](https://en.wikipedia.org/wiki/Feature_toggle#Ca
 3. Step 3 runs the **new** logic against the same inputs
 4. Step 4 diffs the outputs
 
-**The result shows:** every input where v1 and v2 disagree. An agent (or human) reviews the diffs and decides: ship it, fix it, or roll back.
+**For a successful comparison, the result shows:** each input where v1 and v2 disagree. An agent (or human) reviews the diffs and decides: ship it, fix it, or roll back.
 
 **When to use:** Refactoring. Upgrading a dependency. Any time "it should behave the same" needs verification.
 
@@ -226,7 +226,7 @@ The real power is composition. An agent might:
 3. **Hand off** the results to a review agent
 4. **Compare** the new logic against the old before shipping
 
-Each run saves a result. The results link together into a story that any agent or human can follow.
+Each run saves a result at a URL. The URLs link together into a story that any agent or human can follow.
 
 ---
 

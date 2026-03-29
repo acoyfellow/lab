@@ -2,7 +2,7 @@
 
 ## You send code. Lab runs it. You get a record of what happened.
 
-That's the whole idea. Your agent (or script, or curl command) sends JavaScript to Lab. Lab runs it inside a Cloudflare sandbox — a fresh, isolated environment that starts in milliseconds. When it finishes, Lab saves everything: the code, the inputs, the outputs, the timing. That saved record has a permanent URL you can share, debug from, or feed to another agent.
+That's the whole idea. Your agent (or script, or curl command) sends JavaScript to Lab. Lab runs it inside a Cloudflare sandbox — a fresh, isolated environment that starts in milliseconds. When it finishes, Lab saves a result at a permanent URL. Successful runs include the code, inputs, outputs, and timing for each step. Failed runs include the error and reason, but per-step detail may be partial depending on where execution stopped.
 
 ---
 
@@ -49,12 +49,15 @@ There's a depth limit. Each level down gets the same or fewer permissions than i
 
 ## What gets saved
 
-Every run produces a JSON record stored at a permanent URL. It contains:
+Every run produces a JSON result stored at a permanent URL (`/t/:id`).
 
-- Every piece of code that ran
-- Every input and output
+For successful runs, it contains:
+
+- The code that ran in each step
+- Each step's input and output
 - Timing for each step
-- Whether it succeeded or failed (and why)
+
+For failed runs, it contains the error and reason. Per-step detail depends on where the run stopped — see [Failures & traces](/docs/failures).
 
 See [the full schema](/docs/trace-schema) for details.
 
