@@ -25,7 +25,7 @@ export type TraceEntry = {
   style: string;
   col: number;
   reason: string;
-  traceId: string | null;
+  resultId: string | null;
   generated: string;
 };
 
@@ -118,7 +118,7 @@ async function playGame(index: number): Promise<void> {
         style: currentStyle,
         col,
         reason: parsed?.r ?? '',
-        traceId: result.traceId ?? null,
+        resultId: result.resultId ?? null,
         generated: result.generated ?? '',
       });
 

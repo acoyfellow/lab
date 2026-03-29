@@ -25,7 +25,7 @@
     computeOffload,
     preflightCheck,
     coldBootSprint,
-    traceHandoff,
+    resultHandoff,
     iterativeRepair,
     selfImprovingLoop
   } from '$lib/examples';
@@ -57,7 +57,7 @@
     computeOffload,
     preflightCheck,
     coldBootSprint,
-    traceHandoff,
+    resultHandoff,
     iterativeRepair,
     selfImprovingLoop
   ];
@@ -71,8 +71,8 @@
     const agenticBoost = ex.complexity === 'agentic' ? 50 : 0;
     const featuredBoost = ex.featured ? 40 : 0;
     const startHereBoost = ex.startHere ? 15 : 0;
-    const traceBoost = ex.traceValue ? 8 : 0;
-    return agenticBoost + featuredBoost + startHereBoost + traceBoost + steps;
+    const resultBoost = ex.resultValue ? 8 : 0;
+    return agenticBoost + featuredBoost + startHereBoost + resultBoost + steps;
   }
 
   const filteredAll = $derived(() => {
@@ -84,7 +84,7 @@
         ex.description,
         ex.problem,
         ex.result,
-        ex.traceValue,
+        ex.resultValue,
         ...(ex.tags ?? [])
       ]
         .filter(Boolean)
@@ -213,7 +213,7 @@
             {/if}
           </div>
           <div class="text-[0.75rem] text-(--text-3) mt-3">
-            {ex.traceValue ?? ex.result}
+            {ex.resultValue ?? ex.result}
           </div>
           <div class="mt-4 text-[0.75rem] text-(--accent)">Open in Compose →</div>
         </button>
@@ -260,7 +260,7 @@
                     {ex.description}
                   </div>
                   <div class="text-[0.75rem] text-(--text-3)">
-                    {ex.traceValue ?? ex.result}
+                    {ex.resultValue ?? ex.result}
                   </div>
                 </div>
               </Table.Cell>

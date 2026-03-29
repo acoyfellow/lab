@@ -7,7 +7,7 @@ import type {
   RunResult,
   RunSpawnPayload,
   SeedResult,
-  TraceData,
+  SavedResult,
 } from './types.js';
 import { chainStepsForWire, guestWirePayload, normalizeBaseUrl, requestJSON } from './wire.js';
 
@@ -57,10 +57,8 @@ export type LabEffectClient = {
   readonly runSpawn: (payload: RunSpawnPayload) => Effect.Effect<RunResult, HttpError>;
   readonly runGenerate: (payload: RunGeneratePayload) => Effect.Effect<RunResult, HttpError>;
   readonly seed: () => Effect.Effect<SeedResult, HttpError>;
-  /** Fetch saved-result JSON from the canonical `GET /t/:id.json` path. */
-  readonly getTrace: (traceId: string) => Effect.Effect<TraceData | { error: string }, HttpError>;
-  /** Explicit alias for `getTrace`; always uses `GET /t/:id.json`. */
-  readonly getTraceJson: (traceId: string) => Effect.Effect<TraceData | { error: string }, HttpError>;
+  /** Fetch saved-result JSON from the canonical `GET /results/:id.json` path. */
+  readonly getResult: (resultId: string) => Effect.Effect<SavedResult | { error: string }, HttpError>;
 };
 
 export function createLabEffectClient(options: LabEffectClientOptions): LabEffectClient {
@@ -123,19 +121,11 @@ export function createLabEffectClient(options: LabEffectClientOptions): LabEffec
         method: 'POST',
       });
     },
-    getTrace(traceId) {
-      return tryRequestJSON<TraceData | { error: string }>(
+    getResult(resultId) {
+      return tryRequestJSON<SavedResult | { error: string }>(
         baseUrl,
         fetchImpl,
-        `/t/${traceId}.json`,
-        { method: 'GET' }
-      );
-    },
-    getTraceJson(traceId) {
-      return tryRequestJSON<TraceData | { error: string }>(
-        baseUrl,
-        fetchImpl,
-        `/t/${traceId}.json`,
+        `/results/${resultId}.json`,
         { method: 'GET' }
       );
     },

@@ -15,7 +15,7 @@ const cat = {
     spawn: { method: 'POST', path: '/run/spawn', body: {} },
     generate: { method: 'POST', path: '/run/generate', body: {} },
   },
-  trace: { get: '', getJson: '', note: '' },
+  result: { get: '', getJson: '', note: '' },
   seed: { method: 'POST', path: '/seed', note: '' },
 } as const satisfies LabCatalog;
 

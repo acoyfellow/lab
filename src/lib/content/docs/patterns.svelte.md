@@ -41,7 +41,7 @@ const out = await lab.runChain([
   }`, capabilities: [] },
 ]);
 
-// Agent's response: "Proof JSON: $LAB_URL/t/<traceId>.json"
+// Agent's response: "Proof JSON: $LAB_URL/results/<resultId>.json"
 ```
 
 **When to use:** Before shipping generated code. Before claiming correctness. Whenever "it works" needs to become "here's the receipt."
@@ -196,7 +196,7 @@ for (let i = 0; i < 10; i++) {
   results.push({
     run: i + 1,
     pass: out.result?.pass,
-    traceId: out.traceId,
+    resultId: out.resultId,
   });
 }
 
@@ -205,7 +205,7 @@ console.log(`${passed}/10 passed`);
 
 // Failed runs have saved-result JSON — read it to see where the output diverged
 results.filter(r => !r.pass).forEach(r =>
-  console.log(`Run ${r.run} failed: $LAB_URL/t/${r.traceId}.json`)
+  console.log(`Run ${r.run} failed: $LAB_URL/results/${r.resultId}.json`)
 );
 ```
 
@@ -264,4 +264,4 @@ curl -X POST $LAB_URL/run/chain \
   -d '{"steps":[{"body":"return 1+1","capabilities":[]}]}'
 ```
 
-The `traceId` in the response identifies the artifact. Agents read `/t/:id.json`. Humans open `/t/:id`. The rest is transport.
+The `resultId` in the response identifies the artifact. Agents read `/results/:id.json`. Humans open `/results/:id`. The rest is transport.

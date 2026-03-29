@@ -111,17 +111,17 @@ describe("Lab Worker", () => {
     const data = (await res.json()) as { 
       ok: boolean; 
       result?: number; 
-      trace?: Array<{ name: string }> 
+      steps?: Array<{ name: string }> 
     };
     
     expect(data.ok).toBe(true);
     expect(data.result).toBe(42);
-    expect(data.trace).toHaveLength(2);
-    expect(data.trace?.[0].name).toBe("Generate data");
-    expect(data.trace?.[1].name).toBe("Double it");
+    expect(data.steps).toHaveLength(2);
+    expect(data.steps?.[0].name).toBe("Generate data");
+    expect(data.steps?.[1].name).toBe("Double it");
   });
 
-  test("run creates durable trace", async () => {
+  test("run creates durable saved result", async () => {
     if (!workerAvailable) {
       expect(true).toBe(true);
       return;
@@ -136,26 +136,26 @@ describe("Lab Worker", () => {
     });
     const runData = (await runRes.json()) as { 
       ok: boolean; 
-      traceId?: string;
+      resultId?: string;
       result?: { test: boolean };
     };
     
     expect(runData.ok).toBe(true);
-    expect(runData.traceId).toBeDefined();
-    expect(runData.traceId!.length).toBeGreaterThan(5);
+    expect(runData.resultId).toBeDefined();
+    expect(runData.resultId!.length).toBeGreaterThan(5);
     
-    const traceRes = await fetch(`${baseUrl}/t/${runData.traceId}.json`);
-    const traceData = (await traceRes.json()) as {
+    const resultRes = await fetch(`${baseUrl}/results/${runData.resultId}.json`);
+    const resultData = (await resultRes.json()) as {
       id: string;
       outcome: { ok: boolean; result?: { test: boolean } };
     };
     
-    expect(traceData.id).toBe(runData.traceId);
-    expect(traceData.outcome.ok).toBe(true);
-    expect(traceData.outcome.result?.test).toBe(true);
+    expect(resultData.id).toBe(runData.resultId);
+    expect(resultData.outcome.ok).toBe(true);
+    expect(resultData.outcome.result?.test).toBe(true);
   });
 
-  test("worker bare trace path redirects to .json", async () => {
+  test("worker bare result path redirects to .json", async () => {
     if (!workerAvailable) {
       expect(true).toBe(true);
       return;
@@ -170,15 +170,15 @@ describe("Lab Worker", () => {
     });
     const runData = (await runRes.json()) as {
       ok: boolean;
-      traceId?: string;
+      resultId?: string;
     };
 
     expect(runData.ok).toBe(true);
-    expect(runData.traceId).toBeDefined();
+    expect(runData.resultId).toBeDefined();
 
-    const response = await fetch(`${baseUrl}/t/${runData.traceId}`, { redirect: "manual" });
+    const response = await fetch(`${baseUrl}/results/${runData.resultId}`, { redirect: "manual" });
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe(`${baseUrl}/t/${runData.traceId}.json`);
+    expect(response.headers.get("location")).toBe(`${baseUrl}/results/${runData.resultId}.json`);
   });
 
   test("chain step failure stops execution", async () => {
@@ -213,12 +213,12 @@ describe("Lab Worker", () => {
       ok: boolean; 
       error?: string; 
       reason?: string;
-      traceId?: string;
+      resultId?: string;
     };
     
     expect(data.ok).toBe(false);
     expect(data.error || data.reason).toContain("Intentional failure");
-    expect(data.traceId).toBeDefined();
+    expect(data.resultId).toBeDefined();
   });
 
   test("spawn capability requires explicit grant", async () => {

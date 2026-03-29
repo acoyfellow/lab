@@ -4,7 +4,7 @@
 
 If every step succeeds, the saved result includes full details for each step — code, inputs, outputs, and timing.
 
-If a step fails, Lab still saves a result, but the per-step details may be incomplete. Failed or aborted runs always include the top-level `error` and `reason`. The chain `trace` array may be partial or empty depending on where execution stopped.
+If a step fails, Lab still saves a result, but the per-step details may be incomplete. Failed or aborted runs always include the top-level `error` and `reason`. The chain `steps` array may be partial or empty depending on where execution stopped.
 
 **Don't assume you'll see partial results after a failure.** Check your deployment's behavior — the current implementation saves an empty step array when a pipeline aborts.
 

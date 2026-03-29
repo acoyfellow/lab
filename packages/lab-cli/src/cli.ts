@@ -1,167 +1,143 @@
 #!/usr/bin/env node
 /**
- * lab-cli — minimal CLI for Lab, built on Effect v4.
+ * lab-cli — minimal CLI for Lab.
  *
  * Usage:
  *   lab run 'return 1 + 1'
  *   lab chain '[{"body":"return [1,2,3]","capabilities":[]},{"body":"return input.map(n=>n*2)","capabilities":[]}]'
  *   lab spawn 'const a = await spawn("return 10", []); return a'
  *   lab generate 'Sum the numbers 1 to 10'
- *   lab trace <traceId>
+ *   lab result <resultId>
  *   lab seed
  *
  * Environment:
  *   LAB_URL  — Lab app origin (default: http://localhost:5173)
  *
  * Every command prints JSON to stdout. Agents parse it. Humans read it.
- * Every run includes a traceId — the saved-result identifier.
+ * Every run includes a resultId — the saved-result identifier.
  */
 
-import { Effect, Data } from 'effect';
-import {
-	createLabEffectClient,
-	HttpError,
-} from '@acoyfellow/lab/effect';
-import type { ChainStep } from '@acoyfellow/lab';
+import { createLabClient, type ChainStep } from '@acoyfellow/lab';
 
-// ── Errors ──────────────────────────────────────────────────────────────
+class CliError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'CliError';
+	}
+}
 
-class CliError extends Data.TaggedError('CliError')<{
-	readonly message: string;
-}> {}
-
-// ── Config ──────────────────────────────────────────────────────────────
-
-const getBaseUrl = Effect.sync(() => {
+function getBaseUrl(): string {
 	const raw = process.env.LAB_URL?.trim();
 	return raw ? raw.replace(/\/+$/, '') : 'http://localhost:5173';
-});
+}
 
-// ── Commands ────────────────────────────────────────────────────────────
+async function run(body: string) {
+	return createLabClient({ baseUrl: getBaseUrl() }).runSandbox({ body, capabilities: [] });
+}
 
-const run = (body: string) =>
-	Effect.gen(function* () {
-		const baseUrl = yield* getBaseUrl;
-		const lab = createLabEffectClient({ baseUrl });
-		return yield* lab.runSandbox({ body, capabilities: [] });
-	});
+async function chain(json: string) {
+	let steps: ChainStep[];
+	try {
+		const parsed = JSON.parse(json);
+		if (!Array.isArray(parsed)) throw new Error('chain argument must be a JSON array');
+		steps = parsed as ChainStep[];
+	} catch (error) {
+		throw new CliError(`Invalid chain JSON: ${error instanceof Error ? error.message : String(error)}`);
+	}
 
-const chain = (json: string) =>
-	Effect.gen(function* () {
-		const steps = yield* Effect.try({
-			try: () => {
-				const parsed = JSON.parse(json);
-				if (!Array.isArray(parsed)) throw new Error('chain argument must be a JSON array');
-				return parsed as ChainStep[];
-			},
-			catch: (e) => new CliError({ message: `Invalid chain JSON: ${e instanceof Error ? e.message : String(e)}` }),
-		});
-		const baseUrl = yield* getBaseUrl;
-		const lab = createLabEffectClient({ baseUrl });
-		return yield* lab.runChain(steps);
-	});
+	return createLabClient({ baseUrl: getBaseUrl() }).runChain(steps);
+}
 
-const spawn = (body: string, depth = 2) =>
-	Effect.gen(function* () {
-		const baseUrl = yield* getBaseUrl;
-		const lab = createLabEffectClient({ baseUrl });
-		return yield* lab.runSpawn({ body, capabilities: ['spawn'], depth });
-	});
+async function spawn(body: string, depth = 2) {
+	return createLabClient({ baseUrl: getBaseUrl() }).runSpawn({ body, capabilities: ['spawn'], depth });
+}
 
-const generate = (prompt: string) =>
-	Effect.gen(function* () {
-		const baseUrl = yield* getBaseUrl;
-		const lab = createLabEffectClient({ baseUrl });
-		return yield* lab.runGenerate({ prompt, capabilities: [] });
-	});
+async function generate(prompt: string) {
+	return createLabClient({ baseUrl: getBaseUrl() }).runGenerate({ prompt, capabilities: [] });
+}
 
-const trace = (traceId: string) =>
-	Effect.gen(function* () {
-		const baseUrl = yield* getBaseUrl;
-		const lab = createLabEffectClient({ baseUrl });
-		return yield* lab.getTraceJson(traceId);
-	});
+async function fetchSavedResultJson(baseUrl: string, resultId: string) {
+	const response = await fetch(`${baseUrl}/results/${resultId}.json`);
+	if (!response.ok) {
+		throw new Error(`GET /results/${resultId}.json failed with status ${response.status}`);
+	}
+	return response.json();
+}
 
-const seed = Effect.gen(function* () {
-	const baseUrl = yield* getBaseUrl;
-	const lab = createLabEffectClient({ baseUrl });
-	return yield* lab.seed();
-});
+async function result(resultId: string) {
+	return fetchSavedResultJson(getBaseUrl(), resultId);
+}
 
-// ── Router ──────────────────────────────────────────────────────────────
+async function seed() {
+	return createLabClient({ baseUrl: getBaseUrl() }).seed();
+}
 
 const USAGE = `Usage:
-  lab run <code>                   Run JS in a single isolate
-  lab chain <stepsJson>            Run a multi-step chain
-  lab spawn <code> [depth]         Run with spawn capability
-  lab generate <prompt>            AI generates code, then runs it
-  lab trace <traceId>              Fetch saved-result JSON
-  lab seed                         Seed demo KV data
+  lab run <code>                    Run JS in a single isolate
+  lab chain <stepsJson>             Run a multi-step chain
+  lab spawn <code> [depth]          Run with spawn capability
+  lab generate <prompt>             AI generates code, then runs it
+  lab result <resultId>             Fetch saved-result JSON
+  lab seed                          Seed demo KV data
 
 Environment:
   LAB_URL   Lab app origin (default: http://localhost:5173)
 
-Every command prints JSON to stdout. Every run includes a traceId.`;
+Every command prints JSON to stdout. Every run includes a resultId.`;
 
-const route = (args: string[]) => {
+async function route(args: string[]) {
 	const cmd = args[0];
 	const arg = args[1];
 
 	if (!cmd || cmd === '--help' || cmd === '-h') {
-		return Effect.sync(() => USAGE);
+		return USAGE;
 	}
 
 	switch (cmd) {
 		case 'run':
-			if (!arg) return Effect.fail(new CliError({ message: 'lab run <code>' }));
+			if (!arg) throw new CliError('lab run <code>');
 			return run(arg);
 		case 'chain':
-			if (!arg) return Effect.fail(new CliError({ message: 'lab chain <stepsJson>' }));
+			if (!arg) throw new CliError('lab chain <stepsJson>');
 			return chain(arg);
 		case 'spawn': {
-			if (!arg) return Effect.fail(new CliError({ message: 'lab spawn <code> [depth]' }));
+			if (!arg) throw new CliError('lab spawn <code> [depth]');
 			let depth = 2;
 			if (args[2]) {
 				depth = parseInt(args[2], 10);
 				if (!Number.isInteger(depth) || depth < 1) {
-					return Effect.fail(new CliError({ message: `Invalid depth: "${args[2]}". Must be a positive integer.` }));
+					throw new CliError(`Invalid depth: "${args[2]}". Must be a positive integer.`);
 				}
 			}
 			return spawn(arg, depth);
 		}
 		case 'generate':
-			if (!arg) return Effect.fail(new CliError({ message: 'lab generate <prompt>' }));
+			if (!arg) throw new CliError('lab generate <prompt>');
 			return generate(arg);
-		case 'trace':
-			if (!arg) return Effect.fail(new CliError({ message: 'lab trace <traceId>' }));
-			return trace(arg);
+		case 'result':
+			if (!arg) throw new CliError('lab result <resultId>');
+			return result(arg);
 		case 'seed':
-			return seed;
+			return seed();
 		default:
-			return Effect.fail(new CliError({ message: `Unknown command: ${cmd}\n\n${USAGE}` }));
+			throw new CliError(`Unknown command: ${cmd}\n\n${USAGE}`);
 	}
-};
+}
 
-// ── Main ────────────────────────────────────────────────────────────────
+async function main() {
+	try {
+		const output = await route(process.argv.slice(2));
+		console.log(typeof output === 'string' ? output : JSON.stringify(output, null, 2));
+	} catch (error) {
+		if (error instanceof CliError) {
+			console.error(error.message);
+		} else if (error instanceof Error) {
+			console.error(JSON.stringify({ error: error.message }, null, 2));
+		} else {
+			console.error(JSON.stringify({ error: String(error) }, null, 2));
+		}
+		process.exit(1);
+	}
+}
 
-const main = Effect.gen(function* () {
-	const args = process.argv.slice(2);
-	const result = yield* route(args);
-	const output = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
-	console.log(output);
-}).pipe(
-	Effect.catchTag('HttpError', (e: HttpError) => {
-		console.error(JSON.stringify({ error: e.message }, null, 2));
-		return Effect.sync(() => process.exit(1));
-	}),
-	Effect.catchTag('CliError', (e: CliError) => {
-		console.error(e.message);
-		return Effect.sync(() => process.exit(1));
-	}),
-	Effect.catchCause((cause) => {
-		console.error(JSON.stringify({ error: String(cause) }, null, 2));
-		return Effect.sync(() => process.exit(1));
-	}),
-);
-
-Effect.runPromise(main);
+void main();

@@ -19,7 +19,7 @@ body:
       placeholder: |
         1. Go to /compose
         2. Run Chain mode with ...
-        3. Open /t/:id
+        3. Open /results/:id
     validations:
       required: true
 

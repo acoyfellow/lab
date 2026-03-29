@@ -20,10 +20,10 @@ They should teach and seed usage, not define the main information architecture.
 
 Shipped baseline (keep tightening):
 
-- Homepage is marketing + curl; **Compose** (`/compose`) runs all five modes in the browser and returns `traceId` links to `/t/{id}`.
+- Homepage is marketing + curl; **Compose** (`/compose`) runs all five modes in the browser and returns `resultId` links to `/results/{id}`.
 - **Trace viewer** shows mode-specific sections (KV snapshot note, spawn depth note, collapsible JSON for large payloads).
 - **Fork** on a trace hydrates Compose via `sessionStorage`.
-- **Examples** (`/examples`) and **trace schema** (`/docs/trace-schema`, `docs/trace-schema.md`) support external consumers.
+- **Examples** (`/examples`) and **trace schema** (`/docs/result-schema`, `docs/result-schema.md`) support external consumers.
 - **Saved recipes** (named playbooks) and a richer **gallery** are still out of scope until trace URLs prove sticky.
 
 ## product thesis
@@ -150,13 +150,13 @@ Scope:
 
 - define a trace schema shared across run types
 - persist traces in KV with a short id
-- return `traceId` from run endpoints
+- return `resultId` from run endpoints
 - add a read-only trace viewer route
 - add share affordance in UI
 
 Acceptance criteria:
 
-- every successful run returns a `traceId`
+- every successful run returns a `resultId`
 - a trace URL renders without requiring editor context
 - viewer shows enough information to understand the run by itself
 - trace URLs can be copied and opened directly
@@ -304,8 +304,8 @@ Based on the current code:
 
 - **Trace creation** lives in [`worker/index.ts`](worker/index.ts): `respondWithTrace` + `saveTrace` + Effect-wrapped run paths.
 - **Chain** defines the richest `trace[]` execution shape; other modes use the same `StoredTrace` envelope with type-specific `request` fields.
-- **App shell** is SvelteKit: [`src/routes/compose/+page.svelte`](src/routes/compose/+page.svelte), [`src/routes/t/[id]/+page.svelte`](src/routes/t/[id]/+page.svelte), [`src/routes/data.remote.ts`](src/routes/data.remote.ts) for remote calls to the Worker.
-- **Docs:** [`docs/trace-schema.md`](docs/trace-schema.md) and [`README.md`](README.md) should stay aligned with the Worker’s persisted JSON.
+- **App shell** is SvelteKit: [`src/routes/compose/+page.svelte`](src/routes/compose/+page.svelte), [`src/routes/results/[id]/+page.svelte`](src/routes/results/[id]/+page.svelte), [`src/routes/data.remote.ts`](src/routes/data.remote.ts) for remote calls to the Worker.
+- **Docs:** [`docs/result-schema.md`](docs/result-schema.md) and [`README.md`](README.md) should stay aligned with the Worker’s persisted JSON.
 
 ## open product questions
 

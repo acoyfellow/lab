@@ -24,13 +24,13 @@ lab spawn 'const a = await spawn("return 10", []); return a'
 lab generate 'Sum the numbers 1 to 10'
 
 # Fetch saved-result JSON
-lab trace abc123
+lab result abc123
 
 # Seed demo KV data
 lab seed
 ```
 
-Every command prints JSON to stdout. Every run includes a `traceId` pointing to the saved result.
+Every command prints JSON to stdout. Every run includes a `resultId` pointing to the saved result.
 
 ## Environment
 
@@ -40,12 +40,12 @@ Every command prints JSON to stdout. Every run includes a `traceId` pointing to 
 
 ## For agents
 
-An agent shells out to `lab`, reads the JSON result, and uses the `traceId` as proof of execution:
+An agent shells out to `lab`, reads the JSON result, and uses the `resultId` as proof of execution:
 
 ```bash
 result=$(lab chain '[{"body":"return 42","capabilities":[]}]')
-traceId=$(echo "$result" | jq -r '.traceId')
-# traceId is now an inspectable saved-result identifier
+resultId=$(echo "$result" | jq -r '.resultId')
+# resultId is now an inspectable saved-result identifier
 ```
 
 Or from a script:
@@ -53,10 +53,6 @@ Or from a script:
 ```bash
 lab run 'return { computed: Math.pow(2, 32) }' | jq '.result'
 ```
-
-## Built with Effect
-
-Internals use [Effect v4](https://effect.website/) for structured error handling. The CLI interface is just stdin/stdout — Effect stays inside.
 
 ## License
 

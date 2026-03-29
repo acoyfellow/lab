@@ -42,13 +42,13 @@
   let generated = $state('');
   let hoverCol = $state<number | null>(null);
 
-  type TraceLog = { turn: number; col: number; reason: string; traceId: string | null; generated: string };
+  type TraceLog = { turn: number; col: number; reason: string; resultId: string | null; generated: string };
   let traces = $state<TraceLog[]>([]);
   let turnCount = $state(0);
   let gameId = $state(crypto.randomUUID());
 
   // Learning loop state — SSR loads history for everyone; client refresh after saves / New Game
-  type GameRecord = { id: string; outcome: string; moves: number; trace_ids: string; insight: string | null; created_at: string };
+  type GameRecord = { id: string; outcome: string; moves: number; result_ids: string; insight: string | null; created_at: string };
   /** Client-fetched list; cleared on navigation so `data.pastGames` wins after a new load. */
   let pastGamesClient = $state<GameRecord[] | null>(null);
   let pastGames = $derived(pastGamesClient ?? data.pastGames);
@@ -77,13 +77,13 @@
   async function saveGame(outcome: 'win' | 'loss' | 'draw') {
     // Only store games with enough moves to be meaningful
     if (turnCount < 4) return;
-    const traceIds = traces.map(t => t.traceId).filter(Boolean);
-    if (traceIds.length === 0) return;
+    const resultIds = traces.map(t => t.resultId).filter(Boolean);
+    if (resultIds.length === 0) return;
     try {
       await doSqlExec({
         doName: DO_NAME,
-        sql: 'INSERT INTO games (id, outcome, moves, trace_ids, insight) VALUES (?, ?, ?, ?, ?)',
-        params: [gameId, outcome, turnCount, JSON.stringify(traceIds), null],
+        sql: 'INSERT INTO games (id, outcome, moves, result_ids, insight) VALUES (?, ?, ?, ?, ?)',
+        params: [gameId, outcome, turnCount, JSON.stringify(resultIds), null],
       });
       void generateInsight(outcome);
       void loadInsights();
@@ -165,7 +165,7 @@
         turn: turnCount,
         col,
         reason: result.reason,
-        traceId: result.traceId,
+        resultId: result.resultId,
         generated: result.generated,
       });
 
@@ -262,7 +262,7 @@
 
 <SEO
   title="Versus — Lab"
-  description="1v1 Connect 4 against an AI that learns from traced losses. Tactics are search. The model is interchangeable."
+  description="1v1 Connect 4 against an AI that learns from saved-result history. Tactics are search. The model is interchangeable."
   path="/experiments/versus"
 />
 
@@ -270,7 +270,7 @@
   <header class="space-y-2">
     <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Versus</h1>
     <p class="text-sm text-(--text-3) max-w-2xl leading-relaxed">
-      Deterministic search plays the game. When moves are equal, a model breaks the tie. Swap it for any other model and the result barely changes. After each loss, the trace becomes a one-line insight that feeds the next game. The system improves through structure, not better prompts.
+      Deterministic search plays the game. When moves are equal, a model breaks the tie. Swap it for any other model and the result barely changes. After each loss, the saved result becomes a one-line insight that feeds the next game. The system improves through structure, not better prompts.
     </p>
   </header>
 
@@ -349,7 +349,7 @@
   {#if traces.length > 0}
     <div class="space-y-2">
       <h2 class="text-sm font-medium text-(--text-2)">
-        Trace Log ({traces.length} moves)
+        Result Log ({traces.length} moves)
       </h2>
       <div class="rounded-lg bg-(--code-bg) border border-(--border) overflow-hidden max-h-64 overflow-y-auto">
         <table class="w-full text-xs">
@@ -358,7 +358,7 @@
               <th class="text-left px-2 py-1.5 font-medium">Turn</th>
               <th class="text-left px-2 py-1.5 font-medium">Col</th>
               <th class="text-left px-2 py-1.5 font-medium">Reason</th>
-              <th class="text-left px-2 py-1.5 font-medium">Trace</th>
+              <th class="text-left px-2 py-1.5 font-medium">Result</th>
             </tr>
           </thead>
           <tbody>
@@ -368,8 +368,8 @@
                 <td class="px-2 py-1">{t.col}</td>
                 <td class="px-2 py-1 max-w-64 truncate">{t.reason || '—'}</td>
                 <td class="px-2 py-1">
-                  {#if t.traceId}
-                    <a href="/t/{t.traceId}" class="text-(--accent) underline hover:opacity-80">{t.traceId.slice(0, 8)}</a>
+                  {#if t.resultId}
+                    <a href="/results/{t.resultId}" class="text-(--accent) underline hover:opacity-80">{t.resultId.slice(0, 8)}</a>
                   {:else}
                     —
                   {/if}
@@ -390,7 +390,7 @@
       <div class="space-y-1.5">
         {#each pastGames as g}
           {@const expanded = expandedGame === g.id}
-          {@const traceIds = (() => { try { return JSON.parse(g.trace_ids || '[]') as string[] } catch { return [] } })()}
+          {@const resultIds = (() => { try { return JSON.parse(g.result_ids || '[]') as string[] } catch { return [] } })()}
           <button
             onclick={() => expandedGame = expanded ? null : g.id}
             class="w-full text-left rounded-lg bg-(--code-bg) border border-(--border) px-3 py-2 hover:border-(--accent)/40 transition-colors cursor-pointer"
@@ -413,12 +413,12 @@
                   <p class="text-(--text-2) m-0">{g.insight}</p>
                 </div>
               {/if}
-              {#if traceIds.length > 0}
+              {#if resultIds.length > 0}
                 <div>
-                  <div class="text-(--text-3) font-medium mb-0.5">Traces ({traceIds.length})</div>
+                  <div class="text-(--text-3) font-medium mb-0.5">Results ({resultIds.length})</div>
                   <div class="flex flex-wrap gap-1.5">
-                    {#each traceIds as tid}
-                      <a href="/t/{tid}" class="text-(--accent) underline hover:opacity-80">{tid.slice(0, 8)}</a>
+                    {#each resultIds as tid}
+                      <a href="/results/{tid}" class="text-(--accent) underline hover:opacity-80">{tid.slice(0, 8)}</a>
                     {/each}
                   </div>
                 </div>

@@ -5,7 +5,7 @@ import type {
   RunResult,
   RunSpawnPayload,
   SeedResult,
-  TraceData,
+  SavedResult,
 } from './types.js';
 import { chainStepsForWire, guestWirePayload, normalizeBaseUrl, requestJSON } from './wire.js';
 
@@ -23,10 +23,8 @@ export type LabClient = {
   runSpawn: (payload: RunSpawnPayload) => Promise<RunResult>;
   runGenerate: (payload: RunGeneratePayload) => Promise<RunResult>;
   seed: () => Promise<SeedResult>;
-  /** Fetch saved-result JSON from the canonical `GET /t/:id.json` path. */
-  getTrace: (traceId: string) => Promise<TraceData | { error: string }>;
-  /** Explicit alias for `getTrace`; always uses `GET /t/:id.json`. */
-  getTraceJson: (traceId: string) => Promise<TraceData | { error: string }>;
+  /** Fetch saved-result JSON from the canonical `GET /results/:id.json` path. */
+  getResult: (resultId: string) => Promise<SavedResult | { error: string }>;
 };
 
 export function createLabClient(options: LabClientOptions): LabClient {
@@ -89,13 +87,8 @@ export function createLabClient(options: LabClientOptions): LabClient {
         method: 'POST',
       });
     },
-    getTrace(traceId) {
-      return requestJSON<TraceData | { error: string }>(baseUrl, fetchImpl, `/t/${traceId}.json`, {
-        method: 'GET',
-      });
-    },
-    getTraceJson(traceId) {
-      return requestJSON<TraceData | { error: string }>(baseUrl, fetchImpl, `/t/${traceId}.json`, {
+    getResult(resultId) {
+      return requestJSON<SavedResult | { error: string }>(baseUrl, fetchImpl, `/results/${resultId}.json`, {
         method: 'GET',
       });
     },

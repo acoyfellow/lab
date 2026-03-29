@@ -27,7 +27,7 @@ interface Env {
 
 type RunType = "sandbox" | "kv" | "chain" | "generate" | "spawn"
 
-type TraceEntry = {
+type StepEntry = {
   step: number
   name?: string
   template?: string
@@ -47,10 +47,10 @@ type ChainStepStored = {
   input?: unknown
 }
 
-type TraceRequest = {
+type ResultRequest = {
   template?: string
   body?: string
-  /** @deprecated old traces */
+  /** @deprecated legacy guest field; use body */
   code?: string
   prompt?: string
   mode?: "code" | "json"
@@ -104,7 +104,7 @@ function normalizeChainSteps(steps: unknown): NormalizedChainStep[] | null {
   return out
 }
 
-function chainStepsForTrace(steps: NormalizedChainStep[]): ChainStepStored[] {
+function chainStepsForResult(steps: NormalizedChainStep[]): ChainStepStored[] {
   return steps.map((s) => ({
     name: s.name,
     template: s.template,
@@ -115,26 +115,26 @@ function chainStepsForTrace(steps: NormalizedChainStep[]): ChainStepStored[] {
   }))
 }
 
-type TraceOutcome = {
+type ResultOutcome = {
   ok: boolean
   result?: unknown
   error?: string
   reason?: string
 }
 
-type StoredTrace = {
+type StoredResult = {
   id: string
   type: RunType
   createdAt: string
-  request: TraceRequest
-  outcome: TraceOutcome
+  request: ResultRequest
+  outcome: ResultOutcome
   timing?: {
     totalMs?: number
     generateMs?: number
     runMs?: number
   }
   generated?: string
-  trace?: TraceEntry[]
+  steps?: StepEntry[]
 }
 
 // LabWorker class extending WorkerEntrypoint for proper RPC binding support
@@ -434,25 +434,25 @@ class LabWorker extends WorkerEntrypoint<Env> {
       return withCors(Response.json(buildLabCatalog()))
     }
 
-    // --- Saved-result JSON retrieval: /t/:id.json ---
-    const bareTraceMatch = url.pathname.match(/^\/t\/([a-z0-9]+)$/i)
-    if (req.method === "GET" && bareTraceMatch) {
+    // --- Saved-result JSON retrieval: /results/:id.json ---
+    const bareResultMatch = url.pathname.match(/^\/results\/([a-z0-9]+)$/i)
+    if (req.method === "GET" && bareResultMatch) {
       return withCors(
         new Response(null, {
           status: 307,
-          headers: { Location: `${url.origin}/t/${bareTraceMatch[1]}.json${url.search}` },
+          headers: { Location: `${url.origin}/results/${bareResultMatch[1]}.json${url.search}` },
         }),
       )
     }
 
-    const traceJsonMatch = url.pathname.match(/^\/t\/([a-z0-9]+)\.json$/i)
-    if (req.method === "GET" && traceJsonMatch) {
-      const traceId = traceJsonMatch[1]
-      const trace = await getTrace(env, traceId)
-      if (!trace) {
-        return withCors(Response.json({ error: "trace not found" }, { status: 404 }))
+    const resultJsonMatch = url.pathname.match(/^\/results\/([a-z0-9]+)\.json$/i)
+    if (req.method === "GET" && resultJsonMatch) {
+      const resultId = resultJsonMatch[1]
+      const savedResult = await getResult(env, resultId)
+      if (!savedResult) {
+        return withCors(Response.json({ error: "result not found" }, { status: 404 }))
       }
-      return withCors(Response.json(trace))
+      return withCors(Response.json(savedResult))
     }
 
     // --- Seed KV with demo data ---
@@ -498,7 +498,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
         onFailure: async (cause) => {
           const failure = getFailureDetails(cause)
           return withCors(
-            await respondWithTrace(
+            await respondWithResult(
               env,
               {
                 type: "sandbox",
@@ -513,7 +513,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
         },
         onSuccess: async (result) =>
           withCors(
-            await respondWithTrace(
+            await respondWithResult(
               env,
               {
                 type: "sandbox",
@@ -562,7 +562,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
         onFailure: async (cause) => {
           const failure = getFailureDetails(cause)
           return withCors(
-            await respondWithTrace(
+            await respondWithResult(
               env,
               {
                 type: "kv",
@@ -577,7 +577,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
         },
         onSuccess: async (result) =>
           withCors(
-            await respondWithTrace(
+            await respondWithResult(
               env,
               {
                 type: "kv",
@@ -598,11 +598,11 @@ class LabWorker extends WorkerEntrypoint<Env> {
       if (!normalized || normalized.length === 0) {
         return withCors(Response.json({ error: "no steps" }, { status: 400 }))
       }
-      const stepsForTrace = chainStepsForTrace(normalized)
+      const stepsForRequest = chainStepsForResult(normalized)
 
       const runChain = Effect.gen(function* () {
         const isolate = yield* Isolate
-        const trace: TraceEntry[] = []
+        const steps: StepEntry[] = []
         let stepInput: unknown = undefined
         for (let i = 0; i < normalized.length; i++) {
           const step = normalized[i]
@@ -616,7 +616,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
           const caps = buildCapabilitySet(step.capabilities, undefined)
           const output = yield* isolate.run(step.body, caps, inputForRun, step.template)
           const ms = Date.now() - t0
-          trace.push({
+          steps.push({
             step: i,
             name: step.name,
             template: step.template,
@@ -628,7 +628,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
           })
           stepInput = output
         }
-        return { result: stepInput, trace }
+        return { result: stepInput, steps }
       })
 
       const layer = isolateLayer()
@@ -640,32 +640,32 @@ class LabWorker extends WorkerEntrypoint<Env> {
         onFailure: async (cause) => {
           const failure = getFailureDetails(cause)
           return withCors(
-            await respondWithTrace(
+            await respondWithResult(
               env,
               {
                 type: "chain",
-                request: { steps: stepsForTrace },
+                request: { steps: stepsForRequest },
                 outcome: { ok: false, error: failure.error, reason: failure.reason },
                 timing: { totalMs },
-                trace: [],
+                steps: [],
               },
-              { ok: false, error: failure.error, reason: failure.reason, trace: [] },
+              { ok: false, error: failure.error, reason: failure.reason, steps: [] },
               failure.status,
             ),
           )
         },
-        onSuccess: async ({ result, trace }) =>
+        onSuccess: async ({ result, steps }) =>
           withCors(
-            await respondWithTrace(
+            await respondWithResult(
               env,
               {
                 type: "chain",
-                request: { steps: stepsForTrace },
+                request: { steps: stepsForRequest },
                 outcome: { ok: true, result },
                 timing: { totalMs },
-                trace,
+                steps,
               },
-              { ok: true, result, trace },
+              { ok: true, result, steps },
             ),
           ),
       })
@@ -734,7 +734,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
         onFailure: async (cause) => {
           const failure = getFailureDetails(cause)
           return withCors(
-            await respondWithTrace(
+            await respondWithResult(
               env,
               {
                 type: "spawn",
@@ -749,7 +749,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
         },
         onSuccess: async (result) =>
           withCors(
-            await respondWithTrace(
+            await respondWithResult(
               env,
               {
                 type: "spawn",
@@ -827,7 +827,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
       } catch (error) {
         const message = getErrorMessage(error)
         return withCors(
-          await respondWithTrace(
+          await respondWithResult(
             env,
             {
               type: "generate",
@@ -848,7 +848,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
         const parsed = normalizeGeneratedJson(raw)
         if (!parsed.ok) {
           return withCors(
-            await respondWithTrace(
+            await respondWithResult(
               env,
               {
                 type: "generate",
@@ -864,7 +864,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
         }
 
         return withCors(
-          await respondWithTrace(
+          await respondWithResult(
             env,
             {
               type: "generate",
@@ -882,7 +882,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
 
       if (!genCode) {
         return withCors(
-          await respondWithTrace(
+          await respondWithResult(
             env,
             {
               type: "generate",
@@ -912,7 +912,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
         onFailure: async (cause) => {
           const failure = getFailureDetails(cause)
           return withCors(
-            await respondWithTrace(
+            await respondWithResult(
               env,
               {
                 type: "generate",
@@ -935,7 +935,7 @@ class LabWorker extends WorkerEntrypoint<Env> {
         },
         onSuccess: async (result) =>
           withCors(
-            await respondWithTrace(
+            await respondWithResult(
               env,
               {
                 type: "generate",
@@ -1032,40 +1032,40 @@ async function runToResponse(
   })
 }
 
-async function respondWithTrace(
+async function respondWithResult(
   env: Env,
-  trace: Omit<StoredTrace, "id" | "createdAt">,
+  result: Omit<StoredResult, "id" | "createdAt">,
   body: Record<string, unknown>,
   status = 200,
 ): Promise<Response> {
-  const stored = await saveTrace(env, trace)
-  return Response.json({ ...body, traceId: stored.id }, { status })
+  const stored = await saveResult(env, result)
+  return Response.json({ ...body, resultId: stored.id }, { status })
 }
 
-async function saveTrace(
+async function saveResult(
   env: Env,
-  trace: Omit<StoredTrace, "id" | "createdAt">,
-): Promise<StoredTrace> {
-  const stored: StoredTrace = {
-    ...trace,
-    id: makeTraceId(),
+  result: Omit<StoredResult, "id" | "createdAt">,
+): Promise<StoredResult> {
+  const stored: StoredResult = {
+    ...result,
+    id: makeResultId(),
     createdAt: new Date().toISOString(),
   }
-  await env.KV.put(getTraceKey(stored.id), JSON.stringify(stored))
+  await env.KV.put(getResultKey(stored.id), JSON.stringify(stored))
   return stored
 }
 
-async function getTrace(env: Env, traceId: string): Promise<StoredTrace | null> {
-  const raw = await env.KV.get(getTraceKey(traceId))
+async function getResult(env: Env, resultId: string): Promise<StoredResult | null> {
+  const raw = await env.KV.get(getResultKey(resultId))
   if (!raw) return null
-  return JSON.parse(raw) as StoredTrace
+  return JSON.parse(raw) as StoredResult
 }
 
-function getTraceKey(traceId: string): string {
-  return `trace:${traceId}`
+function getResultKey(resultId: string): string {
+  return `result:${resultId}`
 }
 
-function makeTraceId(): string {
+function makeResultId(): string {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 10)
 }
 

@@ -15,7 +15,7 @@
       title: 'Code mode — but verified',
       badge: '10/10',
       href: '/docs/patterns#prove-it',
-      description: 'Agent writes a function, generates edge cases, runs them all. 10/10 pass — this run\'s result URL shows the cases, assertions, and verdict.'
+      description: 'Agent writes a function, generates edge cases, runs them all. 10/10 pass — the saved result JSON shows the cases, assertions, and verdict.'
     },
     {
       title: 'Auto-fix pipeline',
@@ -27,7 +27,7 @@
       title: 'Multi-agent relay',
       badge: 'URL',
       href: '/docs/patterns#agent-handoff',
-      description: 'Agent A researches. Agent B synthesizes. Agent C delivers. Each one picks up where the last left off — one result URL ties the run together.'
+      description: 'Agent A researches. Agent B synthesizes. Agent C delivers. Each one picks up where the last left off — one saved result ties the run together.'
     },
     {
       title: 'Compare before you ship',
@@ -193,8 +193,8 @@
       <div class="rounded-(--radius) border border-emerald-500/25 bg-(--surface) p-4 space-y-2">
         <div class="flex items-center justify-between flex-wrap gap-2">
           <span class="text-[0.8125rem] font-semibold text-emerald-500">Ran successfully</span>
-          {#if result.traceId}
-            <a href="/t/{result.traceId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">
+          {#if result.resultId}
+            <a href="/results/{result.resultId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">
               Open the saved result →
             </a>
           {/if}
@@ -206,8 +206,8 @@
     {#if result && !result.ok}
       <div class="rounded-(--radius) border border-red-500/30 bg-red-500/5 p-4 space-y-2">
         <span class="text-[0.8125rem] font-semibold text-red-400">Failed</span>
-        {#if result.traceId}
-          <a href="/t/{result.traceId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium block">
+        {#if result.resultId}
+          <a href="/results/{result.resultId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium block">
             Open the result to see what happened →
           </a>
         {/if}
@@ -222,15 +222,15 @@
 
   <!-- What you get back -->
   <section class="space-y-4">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Every run gets a saved result URL</h2>
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Every run gets a saved result</h2>
     <div class="grid gap-3 sm:grid-cols-2">
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Proof, not promises</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Successful runs include step data, inputs, outputs, and timing. Every run saves a result URL you can inspect or hand off.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Successful runs include step data, inputs, outputs, and timing. Every run saves canonical JSON for agents and a viewer URL for humans.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Agents can pick up where others left off</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Agent A finishes and produces a result URL. Agent B reads that URL and continues the work. No message queue, no shared database.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Agent A finishes and produces a resultId. Agent B reads <code class="text-[0.75rem]">/results/:id.json</code> and continues the work. No message queue, no shared database.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Debugging built in</div>
@@ -238,7 +238,7 @@
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Shareable</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Every run saves a result at a URL. Send it to a teammate, attach it to a PR, or feed it to another agent.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Every run saves JSON and a viewer URL. Send <code class="text-[0.75rem]">/results/:id</code> to a teammate, or feed <code class="text-[0.75rem]">/results/:id.json</code> to another agent.</p>
       </div>
     </div>
   </section>

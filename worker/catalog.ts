@@ -64,10 +64,10 @@ export function buildLabCatalog() {
         },
       },
     },
-    trace: {
-      get: "GET /t/:id",
-      getJson: "GET /t/:id.json",
-      note: "Use traceId from persisted run responses. `GET /t/:id.json` is the canonical machine-readable saved-result JSON. On the public app, `GET /t/:id` is the human viewer over that same saved result.",
+    result: {
+      get: "GET /results/:id",
+      getJson: "GET /results/:id.json",
+      note: "Use resultId from persisted run responses. `GET /results/:id.json` is the canonical machine-readable saved-result JSON. On the public app, `GET /results/:id` is the human viewer over that same saved result.",
     },
     seed: {
       method: "POST",

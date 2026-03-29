@@ -4,7 +4,7 @@
 
 <SEO
   title="Guides — lab"
-  description="Workflow-focused guides: chains, spawn, traces, and how to use Lab effectively."
+  description="Workflow-focused guides: chains, spawn, saved results, and how to use Lab effectively."
   path="/guides"
   type="website"
 />
@@ -22,7 +22,7 @@
     <li>
       <a href="/guides/chains" class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)">
         <span class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1">Chains</span>
-        <span class="text-[0.8125rem] text-(--text-2)">Multi-step pipelines, <code class="font-(family-name:--mono) text-[0.7rem]">POST /run/chain</code>, per-step traces.</span>
+        <span class="text-[0.8125rem] text-(--text-2)">Multi-step pipelines, <code class="font-(family-name:--mono) text-[0.7rem]">POST /run/chain</code>, per-step step data.</span>
       </a>
     </li>
     <li>
@@ -32,9 +32,9 @@
       </a>
     </li>
     <li>
-      <a href="/guides/traces" class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)">
-        <span class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1">Traces</span>
-        <span class="text-[0.8125rem] text-(--text-2)"><code class="font-(family-name:--mono) text-[0.7rem]">/t/&#123;id&#125;</code>, JSON export, fork back to Compose.</span>
+      <a href="/guides/results" class="block rounded-(--radius) border border-(--border) bg-(--surface) p-4 no-underline hover:bg-(--surface-alt) text-(--text)">
+        <span class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block mb-1">Saved Results</span>
+        <span class="text-[0.8125rem] text-(--text-2)"><code class="font-(family-name:--mono) text-[0.7rem]">/results/&#123;id&#125;</code>, JSON export, fork back to Compose.</span>
       </a>
     </li>
   </ul>

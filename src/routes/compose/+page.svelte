@@ -129,15 +129,15 @@
 
       if (!r.ok) {
         lastError = JSON.stringify(r.error ?? r.reason ?? 'Unknown error', null, 2);
-        lastTraceId = r.traceId ?? null;
+        lastTraceId = r.resultId ?? null;
         loading = false;
         return;
       }
 
-      lastTraceId = r.traceId ?? null;
+      lastTraceId = r.resultId ?? null;
       lastResult = r.result ?? null;
-      if (mode === 'chain' && r.trace && Array.isArray(r.trace)) {
-        lastSteps = r.trace.map((t: any) => ({
+      if (mode === 'chain' && r.steps && Array.isArray(r.steps)) {
+        lastSteps = r.steps.map((t: any) => ({
           name: t.name || `Step ${t.step + 1}`,
           status: t.error ? 'error' : 'success',
           ms: t.ms || 0,
@@ -180,7 +180,7 @@
 
 <SEO
   title="Compose — lab"
-  description="Build execution chains with explicit capabilities. Every run saves a result URL you can inspect, share, or hand off."
+  description="Build execution chains with explicit capabilities. Every run saves canonical JSON for agents and a viewer URL for humans."
   path="/compose"
   type="website"
 />
@@ -189,7 +189,7 @@
   <header class="space-y-1">
     <h1 class="text-lg font-semibold tracking-tight">Compose</h1>
     <p class="text-[0.8125rem] text-(--text-2)">
-      Build a chain, pick capabilities, execute. Every run saves a result URL you can inspect, share, or hand off.
+      Build a chain, pick capabilities, execute. Every run saves canonical JSON for agents and a viewer URL for humans.
     </p>
   </header>
 
@@ -330,7 +330,7 @@
 
   <ResponsePanel
     status={loading ? 'loading' : lastError ? 'error' : lastTraceId ? 'success' : 'idle'}
-    traceId={lastTraceId}
+    resultId={lastTraceId}
     result={lastResult}
     steps={lastSteps}
     error={lastError}

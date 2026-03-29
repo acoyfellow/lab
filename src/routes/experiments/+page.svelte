@@ -20,7 +20,7 @@
       <AuthButton />
     </div>
     <p class="text-sm text-(--text-3) max-w-xl leading-relaxed">
-      Each experiment tests a different runtime pattern — game loops, learning from traces, spawning isolates.
+      Each experiment tests a different runtime pattern — game loops, learning from saved results, spawning isolates.
       {#if !authed}
         <span class="text-(--accent)">Sign in with GitHub to play.</span>
       {/if}
@@ -61,7 +61,7 @@
     >
       <div class="text-sm font-medium text-(--text)">Versus</div>
       <div class="text-xs text-(--text-3) mt-1">
-        1v1 Connect 4. Search handles tactics, any model breaks ties, traced losses feed the next game.
+        1v1 Connect 4. Search handles tactics, any model breaks ties, saved-result history feeds the next game.
       </div>
     </AppLink>
   </section>

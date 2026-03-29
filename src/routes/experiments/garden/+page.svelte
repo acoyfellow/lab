@@ -599,14 +599,14 @@ Type lifecycle: seed→sprout→bloom→tree→fallen (one step only, server rej
         }
       });
 
-      lastTraceId = result.traceId ?? null;
+      lastTraceId = result.resultId ?? null;
       lastCode = result.generated ?? '';
       consecutiveErrors = 0;
 
       if (!result.ok) {
         logEvent('error', result.error ?? 'unknown error');
       } else {
-        logEvent('agent', `done${lastTraceId ? ` /t/${lastTraceId}` : ''}`, lastTraceId ? `/t/${lastTraceId}` : undefined);
+        logEvent('agent', `done${lastTraceId ? ` /results/${lastTraceId}` : ''}`, lastTraceId ? `/results/${lastTraceId}` : undefined);
       }
     } catch (e) {
       consecutiveErrors++;
@@ -965,8 +965,8 @@ Type lifecycle: seed→sprout→bloom→tree→fallen (one step only, server rej
         <pre class="p-3 text-xs text-(--text-2) overflow-x-auto max-h-64"><code>{lastCode}</code></pre>
       </div>
       {#if lastTraceId}
-        <a href="/t/{lastTraceId}" class="text-xs text-(--accent) underline hover:opacity-80">
-          View trace /t/{lastTraceId}
+        <a href="/results/{lastTraceId}" class="text-xs text-(--accent) underline hover:opacity-80">
+          View result /results/{lastTraceId}
         </a>
       {/if}
     </div>

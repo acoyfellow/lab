@@ -1,7 +1,7 @@
 <script lang="ts">
   import { slide, fade } from 'svelte/transition';
 
-  type TraceRow = {
+  type StepRow = {
     step: number;
     name?: string;
     template?: string;
@@ -14,7 +14,7 @@
   };
 
   type Props = {
-    trace: TraceRow[];
+    steps: StepRow[];
     selectedStep: number | null;
     onSelect: (step: number) => void;
     expandedSteps: Set<number>;
@@ -22,11 +22,11 @@
     filter: string | null;
   };
 
-  let { trace, selectedStep, onSelect, expandedSteps, onToggleExpand, filter }: Props = $props();
+  let { steps, selectedStep, onSelect, expandedSteps, onToggleExpand, filter }: Props = $props();
 
   // Calculate total duration for Gantt scaling
-  const totalMs = $derived(trace.reduce((sum, row) => sum + row.ms, 0));
-  const maxMs = $derived(Math.max(...trace.map(r => r.ms), 1));
+  const totalMs = $derived(steps.reduce((sum, row) => sum + row.ms, 0));
+  const maxMs = $derived(Math.max(...steps.map(r => r.ms), 1));
 
   // Capability color mapping
   const capabilityColors: Record<string, { bg: string; text: string; border: string }> = {
@@ -45,10 +45,10 @@
   }
 
   // Filter steps based on capability filter
-  const filteredTrace = $derived(
+  const filteredSteps = $derived(
     filter 
-      ? trace.filter(row => row.capabilities.includes(filter))
-      : trace
+      ? steps.filter(row => row.capabilities.includes(filter))
+      : steps
   );
 
   function formatValue(value: unknown): string {
@@ -72,7 +72,7 @@
   </div>
 
   <!-- Step rows -->
-  {#each filteredTrace as row, index (row.step)}
+  {#each filteredSteps as row, index (row.step)}
     {@const isSelected = selectedStep === row.step}
     {@const isExpanded = expandedSteps.has(row.step)}
     {@const hasError = row.error || (typeof row.output === 'object' && row.output && 'error' in row.output)}
@@ -163,7 +163,7 @@
     {/if}
   {/each}
 
-  {#if filteredTrace.length === 0}
+  {#if filteredSteps.length === 0}
     <div class="text-center py-8 text-(--text-3) text-[0.8125rem]">
       No steps match the selected filter
     </div>

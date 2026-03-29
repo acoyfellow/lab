@@ -58,7 +58,7 @@ See [HTTP API](/docs/http-api) for all endpoints.
 
 `GET /lab/catalog` returns a machine-readable JSON document describing all available capabilities, endpoints, and how to call them. Point your agent at this URL instead of hardcoding API details.
 
-After a persisted run, agents should fetch `GET /t/:id.json`. `GET /t/:id` is the human viewer on the public app.
+After a persisted run, agents should fetch `GET /results/:id.json`. `GET /results/:id` is the human viewer on the public app.
 
 ## Security
 

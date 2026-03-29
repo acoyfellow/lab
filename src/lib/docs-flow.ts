@@ -18,6 +18,6 @@ export const DOCS_READING_ORDER: readonly { to: string; label: string }[] = [
 	{ to: paths.docsArchitecture, label: 'Architecture' },
 	{ to: paths.docsSecurity, label: 'Security' },
 	{ to: paths.docsLimits, label: 'Limits' },
-	{ to: paths.docsFailures, label: 'Failures & traces' },
-	{ to: paths.docsTraceSchema, label: 'Saved result schema' },
+	{ to: paths.docsFailures, label: 'Failures & step data' },
+	{ to: paths.docsResultSchema, label: 'Saved result schema' },
 ];

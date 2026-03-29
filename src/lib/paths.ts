@@ -5,7 +5,7 @@ export const paths = {
 	docsHttpApi: '/docs/http-api',
 	docsTypescript: '/docs/typescript',
 	docsCapabilities: '/docs/capabilities',
-	docsTraceSchema: '/docs/trace-schema',
+	docsResultSchema: '/docs/result-schema',
 	docsArchitecture: '/docs/architecture',
 	docsLimits: '/docs/limits',
 	docsSecurity: '/docs/security',

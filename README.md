@@ -2,7 +2,7 @@
 
 The feedback loop for AI agents.
 
-An agent writes code. Lab runs it in a Cloudflare sandbox and saves the result at a **shareable URL**. Successful runs include full step data — code, inputs, outputs, timing. The agent reads the result, fixes what broke, and runs again. Same loop a developer uses, except the agent does it.
+An agent writes code. Lab runs it in a Cloudflare sandbox and saves canonical result JSON plus a **shareable viewer URL**. Successful runs include full step data — code, inputs, outputs, timing. The agent reads the JSON, fixes what broke, and runs again. Same loop a developer uses, except the agent does it.
 
 ```
 agent writes code  →  Lab runs it  →  saved result (what happened)  →  agent reads, fixes, reruns
@@ -34,7 +34,7 @@ const out = await lab.runChain([
 ]);
 
 console.log(out.result);   // { valid: true, healed: true, users: 1 }
-console.log(out.traceId);  // → machine JSON: $LAB_URL/t/<id>.json; viewer: $LAB_URL/t/<id>
+console.log(out.resultId);  // → machine JSON: $LAB_URL/results/<id>.json; viewer: $LAB_URL/results/<id>
 ```
 
 Each step runs in its own sandbox. Step 2's output flows to Step 3's `input`. The result is saved at a URL — share it to show what happened.
@@ -71,7 +71,7 @@ See all patterns: [lab.coey.dev/docs/patterns](https://lab.coey.dev/docs/pattern
 
 No capabilities = pure compute, no I/O. Denied capabilities produce clear errors recorded in the saved result.
 
-**Results** — every run saves a JSON document. Agents and scripts should read `/t/:id.json`. Humans can open `/t/:id` as the viewer over that same saved result. Successful runs include code, capabilities, return values, and timing. Failed or aborted runs include the top-level error and reason; chain step detail may be partial or empty. Share the URL. Fork it into a new run. Hand it to another agent.
+**Results** — every run saves a JSON document. Agents and scripts should read `/results/:id.json`. Humans can open `/results/:id` as the viewer over that same saved result. Successful runs include code, capabilities, return values, and timing. Failed or aborted runs include the top-level error and reason; chain step detail may be partial or empty. Share the URL. Fork it into a new run. Hand it to another agent.
 
 ## API
 
@@ -87,8 +87,8 @@ No capabilities = pure compute, no I/O. Denied capabilities produce clear errors
 | `POST` | `/run/generate` | `{ prompt, capabilities }` |
 | `POST` | `/seed` | `{}` — writes demo KV data |
 | `GET` | `/lab/catalog` | capability + route metadata for agents |
-| `GET` | `/t/:id` | human saved-result viewer |
-| `GET` | `/t/:id.json` | canonical saved-result JSON |
+| `GET` | `/results/:id` | human saved-result viewer |
+| `GET` | `/results/:id.json` | canonical saved-result JSON |
 
 ### TypeScript client
 
@@ -104,8 +104,7 @@ npm install @acoyfellow/lab
 | `runSpawn(payload)` | Nested isolates |
 | `runGenerate(payload)` | AI-generated code + run |
 | `seed()` | Seed demo KV data |
-| `getTrace(traceId)` | Fetch canonical saved-result JSON |
-| `getTraceJson(traceId)` | Same JSON via the explicit `.json` path |
+| `getResult(resultId)` | Fetch canonical saved-result JSON |
 
 Effect client: `import { createLabEffectClient } from "@acoyfellow/lab/effect"` — same API, returns `Effect` instead of `Promise`.
 

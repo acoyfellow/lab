@@ -44,13 +44,13 @@ async function runLabOnlyDemo(messageCount: number) {
     console.error('lab.runChain failed:', out.error ?? out.reason ?? out);
     process.exit(1);
   }
-  if (!out.traceId) {
-    console.error('lab.runChain missing traceId:', out);
+  if (!out.resultId) {
+    console.error('lab.runChain missing resultId:', out);
     process.exit(1);
   }
-  const traceUrl = `${baseUrl.replace(/\/+$/, '')}/t/${out.traceId}`;
+  const resultUrl = `${baseUrl.replace(/\/+$/, '')}/results/${out.resultId}`;
   console.log('--- lab ---');
-  console.log('trace:', traceUrl);
+  console.log('result:', resultUrl);
   console.log('result:', out.result);
 }
 
@@ -85,12 +85,12 @@ if (!out.ok) {
   console.error('lab.runChain failed:', out.error ?? out.reason ?? out);
   process.exit(1);
 }
-if (!out.traceId) {
-  console.error('lab.runChain missing traceId:', out);
+if (!out.resultId) {
+  console.error('lab.runChain missing resultId:', out);
   process.exit(1);
 }
 
-const traceUrl = `${baseUrl.replace(/\/+$/, '')}/t/${out.traceId}`;
+const resultUrl = `${baseUrl.replace(/\/+$/, '')}/results/${out.resultId}`;
 console.log('--- lab ---');
-console.log('trace:', traceUrl);
+console.log('result:', resultUrl);
 console.log('result:', out.result);

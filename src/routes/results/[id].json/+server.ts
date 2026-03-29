@@ -3,14 +3,14 @@ import type { RequestHandler } from './$types';
 import { fetchLabWorker } from '$lib/server/lab-worker';
 
 export const GET: RequestHandler = async ({ params, platform }) => {
-  const traceId = params.id;
+  const resultId = params.id;
 
-  const response = await fetchLabWorker(platform, `/t/${traceId}.json`);
+  const response = await fetchLabWorker(platform, `/results/${resultId}.json`);
 
   if (!response.ok) {
-    error(404, `Saved result ${traceId} not found`);
+    error(404, `Saved result ${resultId} not found`);
   }
 
-  const trace = await response.json();
-  return json(trace);
+  const result = await response.json();
+  return json(result);
 };

@@ -35,7 +35,7 @@ export const docsHubCards: DocsHubCard[] = [
 		group: 'guides',
 		to: paths.docsFaq,
 		title: 'FAQ',
-		description: 'Agents, sandbox, traces, limits, why edge — for AI-curious SWEs.',
+		description: 'Agents, sandbox, saved results, limits, why edge — for AI-curious SWEs.',
 		tags: ['FAQ', 'AI']
 	},
 	{
@@ -49,7 +49,7 @@ export const docsHubCards: DocsHubCard[] = [
 		group: 'guides',
 		to: paths.docsPatterns,
 		title: 'Agent Patterns',
-		description: 'Prove it, self-heal, handoff, canary — traces as the protocol.',
+		description: 'Prove it, self-heal, handoff, canary — saved results as the protocol.',
 		tags: ['Agent', 'Patterns']
 	},
 	{
@@ -75,9 +75,9 @@ export const docsHubCards: DocsHubCard[] = [
 		},
 		{
 			group: 'reference',
-			to: paths.docsTraceSchema,
+			to: paths.docsResultSchema,
 			title: 'Saved Result Schema',
-			description: 'Saved-result JSON, viewer semantics, and `traceId`.',
+			description: 'Saved-result JSON, viewer semantics, and `resultId`.',
 			tags: ['Schema']
 		},
 	{
@@ -97,8 +97,8 @@ export const docsHubCards: DocsHubCard[] = [
 	{
 		group: 'reference',
 		to: paths.docsFailures,
-		title: 'Failures & traces',
-		description: 'Chain errors, empty trace on failure, isolate reasons.',
+		title: 'Failures & step data',
+		description: 'Chain errors, partial-or-empty step data on failure, isolate reasons.',
 		tags: ['Reference']
 	}
 ];

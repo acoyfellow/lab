@@ -33,8 +33,7 @@ const out = await lab.runChain([
 | `runSpawn(opts)` | Run code that can launch nested sandboxes | [POST /run/spawn](/docs/http-api#post-runspawn) |
 | `runGenerate(opts)` | Have an AI write and run code from a prompt | [POST /run/generate](/docs/http-api#post-rungenerate) |
 | `seed()` | Load demo data into KV | [POST /seed](/docs/http-api#post-seed) |
-| `getTrace(id)` | Fetch canonical saved-result JSON | [GET /t/:id.json](/docs/http-api#get-tidjson) |
-| `getTraceJson(id)` | Same as `getTrace` (explicit `.json` alias) | [GET /t/:id.json](/docs/http-api#get-tidjson) |
+| `getResult(id)` | Fetch canonical saved-result JSON | [GET /results/:id.json](/docs/http-api#get-resultsidjson) |
 
 ## Important notes
 

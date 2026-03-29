@@ -34,20 +34,14 @@ if (!chain.ok) {
   console.error('runChain failed:', chain);
   process.exit(1);
 }
-if (!chain.traceId) {
-  console.error('runChain missing traceId (persistence / routing issue):', chain);
+if (!chain.resultId) {
+  console.error('runChain missing resultId (persistence / routing issue):', chain);
   process.exit(1);
 }
 
-const doc = await lab.getTrace(chain.traceId);
-if (!('id' in doc) || doc.id !== chain.traceId) {
-  console.error('getTrace failed or id mismatch', doc);
-  process.exit(1);
-}
-
-const docJson = await lab.getTraceJson(chain.traceId);
-if (!('id' in docJson) || docJson.id !== chain.traceId) {
-  console.error('getTraceJson failed or id mismatch', docJson);
+const doc = await lab.getResult(chain.resultId);
+if (!('id' in doc) || doc.id !== chain.resultId) {
+  console.error('getResult failed or id mismatch', doc);
   process.exit(1);
 }
 
@@ -66,5 +60,5 @@ console.log('dogfood @acoyfellow/lab OK', baseUrl, {
   sandbox: sand.result,
   chain: chain.result,
   d1: d1run.result,
-  traceId: chain.traceId,
+  resultId: chain.resultId,
 });

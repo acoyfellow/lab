@@ -96,7 +96,7 @@ return { ok: true, data: JSON.parse(fixed), healed: true };\`,
 
 // The saved result is the proof. Share it with another agent or a reviewer.
 console.log(out.result);   // { ok: true, data: {...}, healed: true }
-console.log(out.traceId);  // → JSON: /t/<id>.json, viewer: /t/<id>`;
+console.log(out.resultId);  // → JSON: /results/<id>.json, viewer: /results/<id>`;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // "You've used these before" — recognizable agent patterns mapped to Lab
@@ -304,13 +304,13 @@ return { action: "would-comment", flagged: input.flagged, body: "## Review\\n" +
   ],
 };
 
-/** Illustrative RunResult.trace shape for seeded KV + Load → Pack → Line. */
+/** Illustrative RunResult.steps shape for seeded KV + Load → Pack → Line. */
 export const EXAMPLE_RUN_RESULT_SHAPE = JSON.stringify(
 	{
 		ok: true,
 		result: 'Roll call: Alice, Bob, Carol (3)',
-		traceId: 'clu01example00shape00only',
-		trace: [
+		resultId: 'clu01example00shape00only',
+		steps: [
 			{
 				step: 0,
 				name: 'Load',

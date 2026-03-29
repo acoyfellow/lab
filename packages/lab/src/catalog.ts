@@ -40,7 +40,7 @@ export type LabCatalog = {
   readonly capabilities: readonly LabCatalogCapability[];
   readonly templates: readonly LabCatalogTemplate[];
   readonly execute: LabCatalogExecute;
-  readonly trace: {
+  readonly result: {
     readonly get: string;
     readonly getJson: string;
     readonly note: string;

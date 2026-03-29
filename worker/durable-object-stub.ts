@@ -21,7 +21,7 @@ export class LabStubDurableObject extends DurableObject {
         id TEXT PRIMARY KEY,
         outcome TEXT NOT NULL,
         moves INTEGER NOT NULL,
-        trace_ids TEXT NOT NULL,
+        result_ids TEXT NOT NULL,
         insight TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )

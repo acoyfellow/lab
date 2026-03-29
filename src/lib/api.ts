@@ -5,5 +5,5 @@ export {
   runSpawn,
   runGenerate,
   seedKv,
-  getTrace,
+  getResult,
 } from '../routes/data.remote';

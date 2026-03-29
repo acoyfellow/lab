@@ -15,10 +15,10 @@
         'Explicit permissions. Code only gets kvRead, workersAi, spawn, r2Read, d1Read, durableObjectFetch, containerHttp, or petri if you declare it. Least privilege by default.',
     },
     {
-      id: 'traces',
-      title: 'Traces',
+      id: 'results',
+      title: 'Saved Results',
       content:
-        'Every run saves a result at /t/:id. Successful runs include step-by-step inputs and outputs. Failed or aborted runs include the error and reason; per-step detail may be partial. You can inspect, fork, and rerun from that result.',
+        'Every run returns a resultId. Agents read /results/:id.json. Humans open /results/:id in the viewer. Successful runs include step-by-step inputs and outputs. Failed or aborted runs include the error and reason; per-step detail may be partial. You can inspect, fork, and rerun from that saved result.',
     },
     {
       id: 'chains',
@@ -30,7 +30,7 @@
       id: 'spawn',
       title: 'Spawn',
       content:
-        'Launch parallel isolates from within an isolate. Great for fan-out operations. Spawn runs save the top-level request, outcome, and timing; they do not currently persist child trace entries.',
+        'Launch parallel isolates from within an isolate. Great for fan-out operations. Spawn runs save the top-level request, outcome, and timing; they do not currently persist child step entries.',
     },
   ];
 
@@ -43,7 +43,7 @@
 <DocsArticle
   pageTitle="How It Works"
   segment="How It Works"
-  description="Lab execution model: isolates, capabilities, traces, chains, and spawn."
+  description="Lab execution model: isolates, capabilities, saved results, chains, and spawn."
   {tocItems}
   mdDoc={false}
 >

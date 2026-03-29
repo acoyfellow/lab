@@ -27,11 +27,11 @@ console.log(result.result); // 4
 console.log(result.ok);     // true
 
 // Every run saves a result:
-// JSON for agents: $LAB_URL/t/\${result.traceId}.json
-// Viewer for humans: $LAB_URL/t/\${result.traceId}`;
+// JSON for agents: $LAB_URL/results/\${result.resultId}.json
+// Viewer for humans: $LAB_URL/results/\${result.resultId}`;
 
 export const TUTORIAL_RUN_CURL = `curl -X POST $LAB_URL/run \\
   -H 'Content-Type: application/json' \\
   -d '{"body":"return 2 + 2","capabilities":[]}'`;
 
-export const TUTORIAL_FETCH_RESULT = `curl -s "$LAB_URL/t/$TRACE_ID.json" | jq .`;
+export const TUTORIAL_FETCH_RESULT = `curl -s "$LAB_URL/results/$RESULT_ID.json" | jq .`;

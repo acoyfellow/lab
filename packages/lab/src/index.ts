@@ -18,6 +18,6 @@ export type {
   RunResult,
   RunSpawnPayload,
   SeedResult,
-  TraceData,
-  TraceStep,
+  SavedResult,
+  SavedResultStep,
 } from './types.js';

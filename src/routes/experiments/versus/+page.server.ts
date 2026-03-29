@@ -5,7 +5,7 @@ export type VersusGameRecord = {
 	id: string;
 	outcome: string;
 	moves: number;
-	trace_ids: string;
+	result_ids: string;
 	insight: string | null;
 	created_at: string;
 };

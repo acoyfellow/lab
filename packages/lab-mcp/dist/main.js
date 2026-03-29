@@ -64,33 +64,35 @@ function mapHttpToError(err) {
     const msg = err.cause ? `${err.message} (${String(err.cause)})` : err.message;
     return new Error(msg);
 }
+async function fetchSavedResultJson(baseUrl, resultId) {
+    const response = await fetch(`${baseUrl}/results/${resultId}.json`);
+    if (!response.ok) {
+        throw new Error(`GET /results/${resultId}.json failed with status ${response.status}`);
+    }
+    return response.json();
+}
 const mcpServer = new McpServer({
     name: 'lab',
     version: '0.0.3',
 });
 mcpServer.registerTool('find', {
-    description: 'Discover lab API: full GET /lab/catalog JSON, a dot-path slice (e.g. execute.chain), or GET /t/:id.json raw saved-result JSON when traceId is set.',
+    description: 'Discover lab API: full GET /lab/catalog JSON, a dot-path slice (e.g. execute.chain), or GET /results/:id.json raw saved-result JSON when resultId is set.',
     inputSchema: {
         path: z
             .string()
             .optional()
-            .describe('Dot path into catalog: capabilities, execute.chain, templates, … Ignored if traceId is set.'),
-        traceId: z.string().optional().describe('If set, returns raw saved-result JSON for this id (GET /t/:id.json).'),
+            .describe('Dot path into catalog: capabilities, execute.chain, templates, … Ignored if resultId is set.'),
+        resultId: z.string().optional().describe('If set, returns raw saved-result JSON for this id (GET /results/:id.json).'),
     },
 }, async (args) => {
-    const program = Effect.gen(function* () {
-        const baseUrl = yield* Effect.sync(requireBaseUrl);
-        const lab = createLabEffectClient({ baseUrl });
-        if (args.traceId?.trim()) {
-            return yield* lab.getTraceJson(args.traceId.trim());
-        }
-        const catalog = yield* fetchLabCatalogEffect({ baseUrl });
-        if (args.path?.trim()) {
-            return catalogAtPath(catalog, args.path.trim());
-        }
-        return catalog;
-    }).pipe(Effect.catchTag('HttpError', (e) => Effect.fail(mapHttpToError(e))));
-    const data = await Effect.runPromise(program);
+    const baseUrl = requireBaseUrl();
+    if (args.resultId?.trim()) {
+        return toolJson(await fetchSavedResultJson(baseUrl, args.resultId.trim()));
+    }
+    const catalog = await Effect.runPromise(fetchLabCatalogEffect({ baseUrl }).pipe(Effect.mapError(mapHttpToError)));
+    const data = args.path?.trim()
+        ? catalogAtPath(catalog, args.path.trim())
+        : catalog;
     return toolJson(data);
 });
 mcpServer.registerTool('execute', {
@@ -138,7 +140,7 @@ mcpServer.registerTool('execute', {
                 return _x;
             }
         }
-    }).pipe(Effect.catchTag('HttpError', (e) => Effect.fail(mapHttpToError(e))));
+    }).pipe(Effect.mapError(mapHttpToError));
     const data = await Effect.runPromise(program);
     return toolJson(data);
 });

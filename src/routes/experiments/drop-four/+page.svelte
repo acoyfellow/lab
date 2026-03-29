@@ -130,7 +130,7 @@ Return JSON: {"col": <0-6>, "r": "<why>"}`;
         input: { board: chalBoard },
       });
 
-      lastTraceId = result.traceId ?? null;
+      lastTraceId = result.resultId ?? null;
       const parsed = (result.ok ? result.result : null) as { col: number; r?: string } | null;
       let col = parsed?.col;
       chalReason = parsed?.r ?? '';
@@ -391,7 +391,7 @@ Return JSON: {"col": <0-6>, "r": "<why>"}`;
     {#if tournament.traces.length > 0}
       <div class="space-y-2">
         <h2 class="text-sm font-medium text-(--text-2)">
-          Trace Log ({tournament.traces.length} moves)
+          Result Log ({tournament.traces.length} moves)
         </h2>
         <div class="rounded-lg bg-(--code-bg) border border-(--border) overflow-hidden max-h-64 overflow-y-auto">
           <table class="w-full text-xs">
@@ -414,8 +414,8 @@ Return JSON: {"col": <0-6>, "r": "<why>"}`;
                   <td class="px-2 py-1">{t.col}</td>
                   <td class="px-2 py-1 max-w-48 truncate">{t.reason || '—'}</td>
                   <td class="px-2 py-1">
-                    {#if t.traceId}
-                      <a href="/t/{t.traceId}" class="text-(--accent) underline hover:opacity-80">{t.traceId.slice(0, 8)}</a>
+                    {#if t.resultId}
+                      <a href="/results/{t.resultId}" class="text-(--accent) underline hover:opacity-80">{t.resultId.slice(0, 8)}</a>
                     {:else}
                       —
                     {/if}
@@ -481,8 +481,8 @@ Return JSON: {"col": <0-6>, "r": "<why>"}`;
     {/if}
 
     {#if lastTraceId}
-      <a href="/t/{lastTraceId}" class="text-xs text-(--accent) underline hover:opacity-80">
-        View trace /t/{lastTraceId}
+      <a href="/results/{lastTraceId}" class="text-xs text-(--accent) underline hover:opacity-80">
+        View result /results/{lastTraceId}
       </a>
     {/if}
   {/if}

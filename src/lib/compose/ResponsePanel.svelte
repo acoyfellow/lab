@@ -14,7 +14,7 @@
 
   let {
     status = 'idle' as 'idle' | 'loading' | 'success' | 'error',
-    traceId = null as string | null,
+    resultId = null as string | null,
     result = null as unknown,
     steps = [] as Step[],
     error = null as string | null
@@ -36,8 +36,8 @@
   }
 
   function traceUrl(): string {
-    if (!traceId || typeof window === 'undefined') return '';
-    return `${window.location.origin}/t/${traceId}`;
+    if (!resultId || typeof window === 'undefined') return '';
+    return `${window.location.origin}/results/${resultId}`;
   }
 
   function copyTraceUrl() {
@@ -67,13 +67,13 @@
       </CardHeader>
       <CardContent class="space-y-3">
         <pre class="text-xs font-mono whitespace-pre-wrap text-(--text) m-0">{error}</pre>
-        {#if traceId}
+        {#if resultId}
           <p class="text-[0.75rem] text-(--text-2) m-0">
             The saved result still includes the top-level failure. Open it to review the saved result or share it for debugging.
           </p>
           <div class="flex flex-wrap gap-2 pt-1">
             <a
-              href="/t/{traceId}"
+              href="/results/{resultId}"
               class="inline-flex items-center gap-1.5 rounded-(--radius) bg-(--accent) px-3 py-2 text-xs font-medium text-white no-underline hover:opacity-90"
             >
               <ExternalLink class="w-3.5 h-3.5" />
@@ -104,10 +104,10 @@
             <Check class="w-4 h-4 shrink-0" />
             Result ready
           </CardTitle>
-          {#if traceId}
+          {#if resultId}
             <div class="flex flex-wrap gap-2">
               <a
-                href="/t/{traceId}"
+                href="/results/{resultId}"
                 class="inline-flex items-center gap-1.5 rounded-(--radius) bg-(--accent) px-3 py-2 text-xs font-medium text-white no-underline hover:opacity-90"
               >
                 <ExternalLink class="w-3.5 h-3.5" />
@@ -124,7 +124,7 @@
             </div>
           {/if}
         </div>
-        {#if traceId}
+        {#if resultId}
           <p class="text-[0.75rem] text-(--text-2) m-0">
             Share this URL with another agent or a reviewer. It points to the saved result for the run.
           </p>

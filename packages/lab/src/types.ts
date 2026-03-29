@@ -4,14 +4,14 @@ export type RunResult = {
   result?: unknown;
   error?: string;
   reason?: string;
-  traceId?: string;
-  trace?: TraceStep[];
+  resultId?: string;
+  steps?: SavedResultStep[];
   generated?: string;
   generateMs?: number;
   runMs?: number;
 };
 
-export type TraceStep = {
+export type SavedResultStep = {
   step: number;
   name?: string;
   template?: string;
@@ -76,8 +76,8 @@ export type SeedResult = {
   seeded: number;
 };
 
-/** Stored saved-result JSON from `GET /t/:id.json` (aligned with worker `StoredTrace`). */
-export type TraceData = {
+/** Stored saved-result JSON from `GET /results/:id.json` (aligned with worker `StoredResult`). */
+export type SavedResult = {
   id: string;
   type: string;
   createdAt: string;
@@ -85,5 +85,5 @@ export type TraceData = {
   outcome: Record<string, unknown>;
   timing?: Record<string, number>;
   generated?: string;
-  trace?: Array<Record<string, unknown>>;
+  steps?: Array<Record<string, unknown>>;
 };

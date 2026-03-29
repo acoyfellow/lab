@@ -20,7 +20,7 @@ const SEARCH_DEPTH = 8;
 export type AiResult = {
   col: number;
   reason: string;
-  traceId: string | null;
+  resultId: string | null;
   generated: string;
 };
 
@@ -138,7 +138,7 @@ export async function aiMove(board: Board, player: Player, insights: string[] = 
   // If multiple columns are equally good, let the LLM pick among them
   let col = best.col;
   let llmReason = '';
-  let traceId: string | null = null;
+  let resultId: string | null = null;
   let generated = '';
 
   const valid = getValidColumns(board);
@@ -155,7 +155,7 @@ You:${player} Valid:${valid.join(',')}${insightBlock}
     input: { board },
   });
 
-  traceId = result.traceId ?? null;
+  resultId = result.resultId ?? null;
   generated = result.generated ?? '';
 
   const parsed = (result.ok ? result.result : null) as { col: number; r?: string } | null;
@@ -173,5 +173,5 @@ You:${player} Valid:${valid.join(',')}${insightBlock}
       ? `Losing — playing best delay`
       : `Search score ${topScore}${ties.length > 1 ? ` (${ties.length} tied)` : ''}${llmReason ? ` — LLM: ${llmReason}` : ''}`;
 
-  return { col, reason, traceId, generated };
+  return { col, reason, resultId, generated };
 }

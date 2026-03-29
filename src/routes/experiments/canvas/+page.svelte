@@ -204,7 +204,7 @@ Return JSON: {"x": <col 0-2>, "y": <row 0-2>, "r": "<why>"}`;
       });
 
       agentCode = result.generated ?? '';
-      lastTraceId = result.traceId ?? null;
+      lastTraceId = result.resultId ?? null;
 
       const move = (result.ok ? result.result : null) as { x: number; y: number; r?: string } | null;
 
@@ -328,8 +328,8 @@ Return JSON: {"x": <col 0-2>, "y": <row 0-2>, "r": "<why>"}`;
         <pre class="p-3 text-xs text-(--text-2) overflow-x-auto"><code>{agentCode}</code></pre>
       </div>
       {#if lastTraceId}
-        <a href="/t/{lastTraceId}" class="text-xs text-(--accent) underline hover:opacity-80">
-          View trace /t/{lastTraceId}
+        <a href="/results/{lastTraceId}" class="text-xs text-(--accent) underline hover:opacity-80">
+          View result /results/{lastTraceId}
         </a>
       {/if}
     </div>

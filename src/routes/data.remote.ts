@@ -5,7 +5,7 @@ import type {
   RunResult,
   RunSpawnPayload,
   SeedResult,
-  TraceData,
+  SavedResult,
 } from '@acoyfellow/lab';
 import { query, command, getRequestEvent } from '$app/server';
 import { error } from '@sveltejs/kit';
@@ -135,9 +135,9 @@ export const seedKv = command(
 );
 
 // Get a saved result by ID
-export const getTrace = query('unchecked', async (traceId: string): Promise<TraceData | { error: string }> => {
+export const getResult = query('unchecked', async (resultId: string): Promise<SavedResult | { error: string }> => {
   const platform = getRequestEvent().platform;
-  return callWorkerJSON<TraceData | { error: string }>(platform, `/t/${traceId}.json`);
+  return callWorkerJSON<SavedResult | { error: string }>(platform, `/results/${resultId}.json`);
 });
 
 // Durable Object SQL helpers

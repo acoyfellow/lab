@@ -38,7 +38,7 @@ First published **0.0.x** line: public demo and integration surface, not a stabi
 ### Added
 
 - **Edge runtime:** chainable guest JavaScript on Cloudflare **Worker Loaders**; per-step **capabilities** (KV, spawn, Workers AI, R2, D1, Durable Objects, containers, etc.).
-- **Runs:** sandbox, KV, chain, spawn, generate; persisted **traces** with shareable `traceId` (`GET /t/:id`).
+- **Runs:** sandbox, KV, chain, spawn, generate; persisted **traces** with shareable `resultId` (`GET /results/:id`).
 - **Clients:** [`@acoyfellow/lab`](packages/lab) npm package; **`@acoyfellow/lab-mcp`** (stdio MCP: catalog + execute).
 - **Site:** Compose, Examples (fork to Compose via `sessionStorage`), docs (HTTP API, architecture, limits, security, failures, FAQ, etc.).
 

@@ -11,7 +11,7 @@ export const SIMPLE_CHAIN_STEPS: ChainStep[] = [
 	{ body: 'return input.map((n) => n * 2)', capabilities: [] },
 ];
 
-/** JSON Healer example: demonstrates automatic JSON repair with trace */
+/** JSON Healer example: demonstrates automatic JSON repair with saved-result step data */
 export const JSON_HEALER_STEPS: ChainStep[] = [
 	{
 		name: 'Load Broken JSON',

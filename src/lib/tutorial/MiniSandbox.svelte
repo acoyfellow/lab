@@ -126,8 +126,8 @@ try {
     <div class="rounded-(--radius) border border-emerald-500/25 bg-white p-4 space-y-2">
       <div class="flex items-center justify-between">
         <span class="text-[0.8125rem] font-semibold text-emerald-500">Healed and validated</span>
-        {#if result.traceId}
-          <a href="/t/{result.traceId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">
+        {#if result.resultId}
+          <a href="/results/{result.resultId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">
             Open the saved result — follow the full story →
           </a>
         {/if}
@@ -139,8 +139,8 @@ try {
   {#if result && !result.ok}
     <div class="rounded-(--radius) border border-red-500/30 bg-red-500/5 p-4 space-y-2">
       <span class="text-[0.8125rem] font-semibold text-red-400">Failed</span>
-      {#if result.traceId}
-        <a href="/t/{result.traceId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium block">
+      {#if result.resultId}
+        <a href="/results/{result.resultId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium block">
           Open the saved result to see what happened →
         </a>
       {/if}

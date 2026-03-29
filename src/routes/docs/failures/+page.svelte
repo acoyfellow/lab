@@ -3,6 +3,6 @@
   import Failures from '$lib/content/docs/failures.svelte.md';
 </script>
 
-<DocsArticle pageTitle="Failures and traces" segment="Failures">
+<DocsArticle pageTitle="Failures and step data" segment="Failures">
   <Failures />
 </DocsArticle>

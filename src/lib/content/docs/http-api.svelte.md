@@ -17,8 +17,8 @@ Related: [Permissions](/docs/capabilities) · [Limits](/docs/limits) · [Failure
 | POST | `/run/spawn` | Run code that can launch nested sandboxes |
 | POST | `/run/generate` | AI writes code from a prompt, then runs it |
 | POST | `/seed` | Load demo data into KV |
-| GET | `/t/:id` | Open the saved-result viewer |
-| GET | `/t/:id.json` | Fetch canonical saved-result JSON |
+| GET | `/results/:id` | Open the saved-result viewer |
+| GET | `/results/:id.json` | Fetch canonical saved-result JSON |
 | GET | `/lab/catalog` | Machine-readable API description (for agents) |
 
 ## Quick examples
@@ -52,7 +52,7 @@ Run a single piece of JavaScript in a sandbox.
 
 **Body:** `{ body, capabilities? }`
 
-**Response:** `{ ok, result }` — plus `traceId`. `POST /seed` is the only endpoint that does not create a saved result.
+**Response:** `{ ok, result }` — plus `resultId`. `POST /seed` is the only endpoint that does not create a saved result.
 
 ---
 
@@ -75,7 +75,7 @@ Run multiple pieces of code in sequence. Each one's output becomes the next one'
 
 **Body:** `{ steps: [{ body, capabilities, name?, input? }] }`
 
-Each step can have different permissions. Successful chain runs include timing and I/O for every step. Failed or aborted chain runs still save the top-level `error` and `reason`, but the `trace` array may be partial or empty.
+Each step can have different permissions. Successful chain runs include timing and I/O for every step. Failed or aborted chain runs still save the top-level `error` and `reason`, but the `steps` array may be partial or empty.
 
 ---
 
@@ -107,13 +107,13 @@ Loads demo data into KV for testing. No saved result is created.
 
 ---
 
-## GET /t/:id
+## GET /results/:id
 
-Open the saved result in the public app viewer. Agents and scripts should read `GET /t/:id.json` instead.
+Open the saved result in the public app viewer. Agents and scripts should read `GET /results/:id.json` instead.
 
-## GET /t/:id.json
+## GET /results/:id.json
 
-Fetch the canonical saved-result JSON. See [result schema](/docs/trace-schema) for the full format.
+Fetch the canonical saved-result JSON. See [result schema](/docs/result-schema) for the full format.
 
 ---
 

@@ -6,7 +6,7 @@
 
 <SEO
   title="Chains — lab"
-  description="Run multi-step pipelines where each step gets the prior output as input, with per-step capabilities and full trace arrays."
+  description="Run multi-step pipelines where each step gets the prior output as input, with per-step capabilities and full step arrays."
   path="/guides/chains"
   type="website"
 />
@@ -20,7 +20,7 @@
   <h1 class="text-lg font-semibold text-(--text) tracking-tight mb-4">Chains</h1>
   <p class="max-w-[62ch] mb-6">
     Use a chain when each step needs the previous step&rsquo;s output as <code class="font-(family-name:--mono) text-[0.75rem]">input</code>, with different capabilities per step, and you want a full
-    <code class="font-(family-name:--mono) text-[0.75rem]">trace</code> array on the result.
+    <code class="font-(family-name:--mono) text-[0.75rem]">steps</code> array on the saved result.
   </p>
   <p class="max-w-[62ch] mb-6">
     Try it in <a href="/compose" class="underline underline-offset-2 hover:text-(--text)">Compose</a> (Chain mode) or call <code class="font-(family-name:--mono) text-[0.75rem]">POST /run/chain</code> from scripts.

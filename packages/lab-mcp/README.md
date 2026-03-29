@@ -34,7 +34,7 @@ LAB_URL=https://your-lab.example lab-mcp
 Discover capabilities and retrieve saved results.
 
 - `path` (optional) — dot-path into catalog, e.g. `capabilities`, `execute.chain`
-- `traceId` (optional) — fetch raw saved-result JSON for a specific id
+- `resultId` (optional) — fetch raw saved-result JSON for a specific id
 
 ### `execute`
 

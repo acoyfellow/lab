@@ -83,7 +83,7 @@ export const proofOfCorrectness: ExampleData = {
 	complexity: 'workflow',
 	startHere: true,
 	featured: true,
-	traceValue: 'In this successful example run, the saved result records the cases, assertions, and final verdict so the proof artifact is inspectable and shareable.',
+	resultValue: 'In this successful example run, the saved result records the cases, assertions, and final verdict so the proof artifact is inspectable and shareable.',
 	steps: [
 		{ name: 'Specify', description: '10 edge cases with expected outputs', code: '{ input: "$1,234.56", expected: 1234.56 }', input: {}, output: { totalCases: 10 }, capabilities: [], ms: 1 },
 		{ name: 'Execute', description: 'Run parseAmount() against every case', code: 'parseAmount("$1,234.56") → 1234.56', input: { cases: '...' }, output: { executed: 10 }, capabilities: [], ms: 3 },
@@ -178,7 +178,7 @@ export const canaryRun: ExampleData = {
 	tags: ['canary', 'diff', 'refactor', 'safety', 'agent'],
 	complexity: 'workflow',
 	featured: true,
-	traceValue: 'In this successful comparison run, the saved result becomes a review artifact: same inputs, old output, new output, exact diff.',
+	resultValue: 'In this successful comparison run, the saved result becomes a review artifact: same inputs, old output, new output, exact diff.',
 	steps: [
 		{ name: 'Test Data', description: '6 emails including edge cases', code: '{ cases: [{ email: "alice@example.com" }, ...] }', input: {}, output: { cases: 6 }, capabilities: [], ms: 1 },
 		{ name: 'Old Logic (v1)', description: 'email.toLowerCase()', code: '"  BOB@EXAMPLE.COM  " → "  bob@example.com  "', input: { cases: '...' }, output: { version: 'v1' }, capabilities: [], ms: 1 },
@@ -254,7 +254,7 @@ export const zeroBleed: ExampleData = {
 	tags: ['security', 'isolation', 'zero-trust', 'v8', 'agent'],
 	complexity: 'workflow',
 	featured: true,
-	traceValue: 'The saved result proves the security model step by step: poison first, inspect second, confirm nothing leaked.',
+	resultValue: 'The saved result proves the security model step by step: poison first, inspect second, confirm nothing leaked.',
 	steps: [
 		{ name: 'Poison', description: 'Globals, prototypes, fake process.env', code: 'globalThis.__leaked = "POISONED"', input: {}, output: { poisoned: true, targets: 4 }, capabilities: [], ms: 2 },
 		{ name: 'Clean Room', description: 'Fresh isolate checks every vector', code: 'typeof globalThis.__leaked → "undefined"', input: {}, output: { clean: true, leaked: 0 }, capabilities: [], ms: 1 },
@@ -467,10 +467,10 @@ return [...prev, { isolate: ${i + 1}, primes: primes.length, ms: Date.now() % 10
 }));
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 7. TRACE HANDOFF — Agent A produces work, Agent B picks it up via trace
+// 7. RESULT HANDOFF — Agent A produces work, Agent B picks it up via saved result
 // ═══════════════════════════════════════════════════════════════════════════
 
-export const TRACE_HANDOFF_STEPS: ChainStep[] = [
+export const RESULT_HANDOFF_STEPS: ChainStep[] = [
 	{
 		name: 'Agent A: Research',
 		body: `// Agent A gathers and structures data
@@ -517,8 +517,8 @@ return {
 	},
 ];
 
-export const traceHandoff: ExampleData = {
-	id: 'trace-handoff',
+export const resultHandoff: ExampleData = {
+	id: 'result-handoff',
 	title: 'Saved Result Handoff',
 	description: 'Three agents in a relay. Each picks up where the last left off. The saved result is the handoff protocol.',
 	problem: 'How do agents share work? Custom APIs? Shared databases? Message queues?',
@@ -529,7 +529,7 @@ export const traceHandoff: ExampleData = {
 	complexity: 'agentic',
 	startHere: true,
 	featured: true,
-	traceValue: 'In this handoff example, one saved result URL preserves the research, synthesis, and final draft for the next agent.',
+	resultValue: 'In this handoff example, one saved result URL preserves the research, synthesis, and final draft for the next agent.',
 	steps: [
 		{ name: 'Agent A: Research', description: 'Gather and structure findings', code: '{ sources: 3, summary: "All consistent" }', input: {}, output: { sources: 3, handoff: 'Ready for Agent B' }, capabilities: [], ms: 2 },
 		{ name: 'Agent B: Synthesize', description: 'Filter and conclude', code: '{ conclusion: "3/3 high-confidence" }', input: { sources: '...' }, output: { recommendation: 'Proceed' }, capabilities: [], ms: 1 },
@@ -556,7 +556,7 @@ try {
 	{
 		name: 'Diagnose failure',
 		body: `if (input.ok) return { ...input, diagnosis: 'No repair needed' };
-// Agent reads the error and raw data from the trace
+// Agent reads the error and raw data from the saved result
 const diagnosis = [];
 if (input.raw.match(/\\b\\w+:/)) diagnosis.push('unquoted_keys');
 if (input.raw.match(/'/)) diagnosis.push('single_quotes');
@@ -619,7 +619,7 @@ export const iterativeRepair: ExampleData = {
 	complexity: 'agentic',
 	startHere: true,
 	featured: true,
-	traceValue: 'In this successful example run, the saved result captures the failure, diagnosis, repair strategy, and retry so the debugging loop is auditable.',
+	resultValue: 'In this successful example run, the saved result captures the failure, diagnosis, repair strategy, and retry so the debugging loop is auditable.',
 	steps: [
 		{ name: 'Attempt 1', description: 'Naive JSON.parse', code: 'JSON.parse(raw) → throws', input: {}, output: { ok: false, error: 'Unexpected token' }, capabilities: [], ms: 1 },
 		{ name: 'Diagnose', description: 'Read error + raw data', code: '{ diagnosis: ["unquoted_keys"] }', input: { error: '...' }, output: { strategy: 'Quote all keys' }, capabilities: [], ms: 1 },
@@ -643,7 +643,7 @@ export const iterativeRepair: ExampleData = {
  * Task: implement a fuzzy string matcher.
  * Two candidates take different approaches.
  * Same test cases. Same scoring. Best score wins.
- * The trace is the lab notebook for this experiment.
+ * The saved result is the lab notebook for this experiment.
  */
 export const SELF_IMPROVING_LOOP_STEPS: ChainStep[] = [
 	{
@@ -786,7 +786,7 @@ export const selfImprovingLoop: ExampleData = {
 	icon: 'repeat',
 	tags: ['agent', 'self-improving', 'evolution', 'evaluation', 'meta'],
 	complexity: 'agentic',
-	traceValue: 'The saved result acts as the lab notebook for one generation: same harness, two candidates, measured winner.',
+	resultValue: 'The saved result acts as the lab notebook for one generation: same harness, two candidates, measured winner.',
 	steps: [
 		{ name: 'Test Cases', description: '8 string pairs with minimum similarity thresholds', code: '{ a: "kitten", b: "sitting", minScore: 0.5 }', input: {}, output: { cases: 8 }, capabilities: [], ms: 1 },
 		{ name: 'Candidate A', description: 'Trigram overlap — fast, approximate', code: 'trigramSimilarity("kitten", "sitting")', input: { cases: '...' }, output: { fitness: 63, passed: '5/8' }, capabilities: [], ms: 2 },

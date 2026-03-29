@@ -45,8 +45,8 @@ function buildSections(pathname: string): DocsNavSection[] {
 				{ label: 'Architecture', to: paths.docsArchitecture },
 				{ label: 'Security', to: paths.docsSecurity },
 				{ label: 'Limits', to: paths.docsLimits },
-				{ label: 'Failures & traces', to: paths.docsFailures },
-				{ label: 'Saved Result Schema', to: paths.docsTraceSchema },
+				{ label: 'Failures & step data', to: paths.docsFailures },
+				{ label: 'Saved Result Schema', to: paths.docsResultSchema },
 			],
 		},
 	];
