@@ -23,7 +23,7 @@ const result = await lab.runSandbox({
 console.log(result.result); // 4
 console.log(result.ok);     // true
 
-// Every run gets a permanent URL:
+// Every run saves a result at a URL:
 // $LAB_URL/t/\${result.traceId}`;
 
 export const TUTORIAL_RUN_CURL = `curl -X POST $LAB_URL/run \\

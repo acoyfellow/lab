@@ -154,7 +154,7 @@
       Examples
     </h1>
     <p class="text-[1.0625rem] text-(--text-2) max-w-[60ch]">
-      Pick a workflow, open it in Compose, run it, and follow the trace.
+      Pick a workflow, open it in Compose, run it, and inspect the saved result.
     </p>
     <div class="mt-6">
       <input

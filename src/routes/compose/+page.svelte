@@ -187,7 +187,7 @@
 
 <SEO
   title="Compose — lab"
-  description="Build execution chains with explicit capabilities. Every run saves a result at a permanent URL."
+  description="Build execution chains with explicit capabilities. Every run saves a result URL you can inspect, share, or hand off."
   path="/compose"
   type="website"
 />
@@ -196,7 +196,7 @@
   <header class="space-y-1">
     <h1 class="text-lg font-semibold tracking-tight">Compose</h1>
     <p class="text-[0.8125rem] text-(--text-2)">
-      Build a chain, pick capabilities, execute. Every run produces a trace you can share or hand off.
+      Build a chain, pick capabilities, execute. Every run saves a result URL you can inspect, share, or hand off.
     </p>
   </header>
 

@@ -18,7 +18,7 @@
       id: 'traces',
       title: 'Traces',
       content:
-        'Every run produces a saved result at a permanent URL (/t/:id). Successful runs include step-by-step inputs and outputs. Failed or aborted runs include the error and reason, but per-step detail may be partial. Share links. Inspect, fork, rerun.',
+        'Every run saves a result at /t/:id. Successful runs include step-by-step inputs and outputs. Failed or aborted runs include the error and reason; per-step detail may be partial. You can inspect, fork, and rerun from that result.',
     },
     {
       id: 'chains',

@@ -4,7 +4,7 @@ Short answers for folks who like agents, MCP, and shipping real integrations. De
 
 ## 1. How do agents actually call this?
 
-**MCP** (stdio server in `@acoyfellow/lab-mcp`) or **raw HTTP**: `GET /lab/catalog` for capability and execute metadata, then `POST /run`, `/run/chain`, etc. See [Agent integration](/docs/agent-integration) and [HTTP API](/docs/http-api). A minimal loop is: discover paths from the catalog, run, read `traceId`, open `GET /t/:id`.
+**MCP** (stdio server in `@acoyfellow/lab-mcp`) or **raw HTTP**: `GET /lab/catalog` for capability and execute metadata, then `POST /run`, `/run/chain`, etc. See [Agent integration](/docs/agent-integration) and [HTTP API](/docs/http-api). A minimal loop is: discover paths from the catalog, run, read `traceId`, open `GET /t/:id`. Successful runs include full step data; failed or aborted runs may include partial step detail.
 
 ## 2. How tight is the sandbox for LLM-generated or user-supplied JS?
 

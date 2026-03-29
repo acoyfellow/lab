@@ -30,7 +30,7 @@
       number: 4,
       title: 'Deploy',
       content:
-        'Run the deploy command. Alchemy creates D1 databases, R2 buckets, and KV namespaces automatically.',
+        'Run the deploy command. Alchemy creates the required bindings automatically. In the default setup: D1 is used for auth data, KV stores saved results, and R2 is optional for guest file reads.',
     },
     {
       number: 5,
@@ -63,7 +63,7 @@
   <header id="overview" class="space-y-3">
     <h1 class="text-2xl font-semibold tracking-tight">Installation</h1>
     <p class="leading-relaxed">
-      Deploy Lab to your own Cloudflare account. You control the data, infrastructure, and capabilities.
+      Deploy Lab to your own Cloudflare account. You control the deployment, bindings, and capability configuration.
     </p>
   </header>
 
@@ -97,6 +97,19 @@
           {/each}
         </tbody>
       </table>
+    </div>
+    <div class="mt-4 space-y-2 text-[0.875rem] leading-relaxed">
+      <p class="font-semibold text-(--text) m-0">Default bindings</p>
+      <ul class="list-disc pl-5 space-y-1 m-0 text-(--text-2)">
+        <li><strong class="text-(--text)">D1</strong>: auth sessions and user accounts (Better Auth)</li>
+        <li><strong class="text-(--text)">KV</strong>: saved results and guest KV read data</li>
+        <li><strong class="text-(--text)">Worker</strong>: sandbox execution environment</li>
+        <li><strong class="text-(--text)">R2</strong>: optional guest file storage for <code class="font-mono text-[0.8125rem]">r2Read</code></li>
+        <li><strong class="text-(--text)">Workers AI</strong>: optional for generate mode</li>
+      </ul>
+      <p class="text-(--text-3) m-0 mt-2">
+        Same summary on <a href="/docs/self-host#infrastructure-created" class="text-(--accent) hover:underline">Self-hosting → Infrastructure</a>.
+      </p>
     </div>
   </section>
 
@@ -166,7 +179,7 @@ bun run deploy</pre>
         <p class="docs-section-label mb-2">Verify</p>
         <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">curl https://lab.YOUR-SUBDOMAIN.workers.dev</pre>
         <p class="text-(--text-3) mt-2">
-          Should return: <code class="font-mono text-[0.8125rem]">{'{"ok":true,"version":"0.x.x"}'}</code>
+          Should return: <code class="font-mono text-[0.8125rem]">{'{"ok":true,"version":"0.0.2"}'}</code>
         </p>
       </div>
     </div>

@@ -50,7 +50,7 @@
   {#if status === 'idle'}
     <Card class="h-full flex items-center justify-center border-dashed border-(--border) bg-(--surface-alt)/30">
       <CardContent class="text-center py-10 px-4">
-        <p class="text-(--text-3) text-sm m-0">Hit <strong class="text-(--text-2)">Run</strong> to execute and get a trace</p>
+        <p class="text-(--text-3) text-sm m-0">Hit <strong class="text-(--text-2)">Run</strong> to execute and get a result URL</p>
         <p class="text-(--text-3) text-xs mt-1.5 m-0"><kbd class="px-1.5 py-0.5 rounded bg-(--surface) font-mono text-[0.7rem]">Cmd+Enter</kbd></p>
       </CardContent>
     </Card>
@@ -69,7 +69,7 @@
         <pre class="text-xs font-mono whitespace-pre-wrap text-(--text) m-0">{error}</pre>
         {#if traceId}
           <p class="text-[0.75rem] text-(--text-2) m-0">
-            The trace still captured the failure. Open it to inspect the step that broke or share it for debugging.
+            The saved result still includes the failure. Open it to inspect the step that broke or share it for debugging.
           </p>
           <div class="flex flex-wrap gap-2 pt-1">
             <a
@@ -77,7 +77,7 @@
               class="inline-flex items-center gap-1.5 rounded-(--radius) bg-(--accent) px-3 py-2 text-xs font-medium text-white no-underline hover:opacity-90"
             >
               <ExternalLink class="w-3.5 h-3.5" />
-              Open failure trace
+              Open saved result
             </a>
             <button
               type="button"
@@ -85,7 +85,7 @@
               class="inline-flex items-center gap-1.5 rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2 text-xs text-(--text) hover:bg-(--surface-alt)"
             >
               <Link2 class="w-3.5 h-3.5" />
-              Copy trace URL
+              Copy result URL
             </button>
           </div>
           <p class="text-[0.65rem] font-mono text-(--text-3) m-0 break-all">{traceUrl()}</p>
@@ -102,7 +102,7 @@
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <CardTitle class="text-sm text-emerald-500 flex items-center gap-2 m-0">
             <Check class="w-4 h-4 shrink-0" />
-            Trace ready
+            Result ready
           </CardTitle>
           {#if traceId}
             <div class="flex flex-wrap gap-2">
@@ -111,7 +111,7 @@
                 class="inline-flex items-center gap-1.5 rounded-(--radius) bg-(--accent) px-3 py-2 text-xs font-medium text-white no-underline hover:opacity-90"
               >
                 <ExternalLink class="w-3.5 h-3.5" />
-                Open trace
+                Open saved result
               </a>
               <button
                 type="button"
@@ -119,14 +119,14 @@
                 class="inline-flex items-center gap-1.5 rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2 text-xs text-(--text) hover:bg-(--surface-alt)"
               >
                 <Link2 class="w-3.5 h-3.5" />
-                Copy trace URL
+                Copy result URL
               </button>
             </div>
           {/if}
         </div>
         {#if traceId}
           <p class="text-[0.75rem] text-(--text-2) m-0">
-            Share this URL with another agent or a reviewer. It contains the full receipt for the run.
+            Share this URL with another agent or a reviewer. It points to the saved result for the run.
           </p>
           <p class="text-[0.65rem] font-mono text-(--text-3) m-0 break-all leading-snug">{traceUrl()}</p>
         {/if}

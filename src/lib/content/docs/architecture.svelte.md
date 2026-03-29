@@ -1,8 +1,8 @@
 # How Lab works
 
-## You send code. Lab runs it. You get a record of what happened.
+## You send code. Lab runs it. You get a saved result.
 
-That's the whole idea. Your agent (or script, or curl command) sends JavaScript to Lab. Lab runs it inside a Cloudflare sandbox — a fresh, isolated environment that starts in milliseconds. When it finishes, Lab saves a result at a permanent URL. Successful runs include the code, inputs, outputs, and timing for each step. Failed runs include the error and reason, but per-step detail may be partial depending on where execution stopped.
+That's the whole idea. Your agent (or script, or curl command) sends JavaScript to Lab. Lab runs it inside a Cloudflare sandbox — a fresh, isolated environment that starts in milliseconds. When you run code on Lab, the result is saved as JSON at a URL (`/t/:id`). Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial.
 
 ---
 
@@ -49,7 +49,7 @@ There's a depth limit. Each level down gets the same or fewer permissions than i
 
 ## What gets saved
 
-Every run produces a JSON result stored at a permanent URL (`/t/:id`).
+Every run saves a JSON result at a URL (`/t/:id`).
 
 For successful runs, it contains:
 

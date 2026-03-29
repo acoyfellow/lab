@@ -15,19 +15,19 @@
       title: 'Code mode — but verified',
       badge: '10/10',
       href: '/docs/patterns#prove-it',
-      description: 'Agent writes a function, generates edge cases, runs them all. 10/10 pass — here\'s the URL to prove it.'
+      description: 'Agent writes a function, generates edge cases, runs them all. 10/10 pass — this run\'s result URL shows the cases, assertions, and verdict.'
     },
     {
       title: 'Auto-fix pipeline',
       badge: 'Fix',
       href: '/docs/patterns#self-healing-loop',
-      description: 'Something fails. Agent sees what broke, patches the code, reruns. Watch it debug itself.'
+      description: 'A run fails. The saved result includes the error. The agent uses that result to patch the code and rerun.'
     },
     {
       title: 'Multi-agent relay',
       badge: 'URL',
       href: '/docs/patterns#agent-handoff',
-      description: 'Agent A researches. Agent B synthesizes. Agent C delivers. Each one picks up where the last left off — one URL ties it together.'
+      description: 'Agent A researches. Agent B synthesizes. Agent C delivers. Each one picks up where the last left off — one result URL ties the run together.'
     },
     {
       title: 'Compare before you ship',
@@ -90,7 +90,7 @@
 
 <SEO
   title="Lab — Run agent code. Get proof it worked."
-  description="Agents write code. Lab runs it in a Cloudflare sandbox and saves the result at a permanent URL. The agent reads the result, fixes what broke, and runs again."
+  description="Agents write code. Lab runs it in a Cloudflare sandbox and saves a result at a URL. Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial."
   path="/"
   type="website"
 />
@@ -129,7 +129,7 @@
         </h1>
 
         <p class="text-[1.0625rem] text-(--text-2) leading-relaxed max-w-[60ch]">
-          An agent writes code. Lab runs it in a <strong class="text-(--text)">Cloudflare sandbox</strong> and saves the result at a <strong class="text-(--text)">permanent URL</strong>. Successful runs include full step data — code, inputs, outputs, timing. The agent reads the result, fixes what broke, and runs again.
+          An agent writes code. Lab runs it in a <strong class="text-(--text)">Cloudflare sandbox</strong> and saves a result at a <strong class="text-(--text)">URL</strong>. Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial.
         </p>
         <div class="flex items-center gap-3 flex-wrap">
           <Button href="/compose" variant="default">Open Compose</Button>
@@ -222,23 +222,23 @@
 
   <!-- What you get back -->
   <section class="space-y-4">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Every run gets a saved result</h2>
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Every run gets a saved result URL</h2>
     <div class="grid gap-3 sm:grid-cols-2">
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Proof, not promises</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Successful runs include code, inputs, outputs, and timing for each step. Failed runs include the error and reason. "I fixed the data" becomes a URL you can verify.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Successful runs include step data, inputs, outputs, and timing. Every run saves a result URL you can inspect or hand off.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Agents can pick up where others left off</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Agent A finishes and produces a URL. Agent B reads that URL and continues the work. No message queue, no shared database.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Agent A finishes and produces a result URL. Agent B reads that URL and continues the work. No message queue, no shared database.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Debugging built in</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">When something fails, you see exactly what input caused it. Agents use this to fix their own mistakes. You use it to understand what happened.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">When something fails, the saved result includes the error and reason. Depending on where execution stopped, step detail may be partial. Agents can use that result to retry or debug.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Shareable</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Every run gets a permanent URL. Send it to a teammate, attach it to a PR, or feed it to another agent.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Every run saves a result at a URL. Send it to a teammate, attach it to a PR, or feed it to another agent.</p>
       </div>
     </div>
   </section>

@@ -2,7 +2,7 @@
 
 Lab is built for agents. These patterns show how agents use sandboxed code and saved results to do real work — not toy demos, but workflows where "it works" becomes a URL you can verify.
 
-Every run saves a result at a permanent URL. The result is the point.
+Every run saves a result. For successful runs, that result can also serve as the proof artifact, handoff artifact, or review artifact.
 
 ---
 
@@ -17,7 +17,7 @@ Every run saves a result at a permanent URL. The result is the point.
 3. Each test case runs in its own sandbox
 4. Final step asserts every result and returns a verdict
 
-**In this example, the successful run shows:** each input, each output, each assertion. 10/10 pass. The URL is the evidence — share it with a human or another agent.
+**In a successful Prove It run, the result shows** the inputs, outputs, assertions, and final verdict. That run's URL is the proof artifact you can share.
 
 ```js
 const out = await lab.runChain([
@@ -63,7 +63,7 @@ This follows the same principle as [closed-loop control systems](https://en.wiki
 3. Step 3 applies a targeted fix based on the diagnosis
 4. Step 4 validates the repair
 
-**For a successful heal, the result shows:** the failure, the diagnosis, the fix, the success. A human opening this URL sees the agent's reasoning — not just the final answer.
+**In a successful self-healing run, the result shows** the failure path, the repair step, and the final outcome. Depending on where execution stops, failed runs may have partial step detail.
 
 ```js
 const out = await lab.runChain([
@@ -106,7 +106,7 @@ This is a [pipeline architecture](https://en.wikipedia.org/wiki/Pipeline_(comput
 1. Each "agent" is a step in the pipeline
 2. Agent A's output becomes Agent B's input automatically
 3. Agent C's output is the final result
-4. For successful runs, the saved result shows what each agent contributed
+4. In a successful handoff run, the saved result shows what each step contributed
 
 ```js
 const out = await lab.runChain([
@@ -150,7 +150,7 @@ Named after the [canary release](https://en.wikipedia.org/wiki/Feature_toggle#Ca
 3. Step 3 runs the **new** logic against the same inputs
 4. Step 4 diffs the outputs
 
-**For a successful comparison, the result shows:** each input where v1 and v2 disagree. An agent (or human) reviews the diffs and decides: ship it, fix it, or roll back.
+**In a successful canary run, the result shows** the inputs where v1 and v2 disagree. An agent (or human) reviews the diffs and decides: ship it, fix it, or roll back.
 
 **When to use:** Refactoring. Upgrading a dependency. Any time "it should behave the same" needs verification.
 
@@ -226,7 +226,7 @@ The real power is composition. An agent might:
 3. **Hand off** the results to a review agent
 4. **Compare** the new logic against the old before shipping
 
-Each run saves a result at a URL. The URLs link together into a story that any agent or human can follow.
+Each run saves a result. Successful runs can link together into a reviewable story for an agent or human to follow.
 
 ---
 
@@ -264,4 +264,4 @@ curl -X POST $LAB_URL/run/chain \
   -d '{"steps":[{"body":"return 1+1","capabilities":[]}]}'
 ```
 
-The URL in the response is the artifact. Everything else is just plumbing.
+The result URL in the response is the artifact. The rest is transport.

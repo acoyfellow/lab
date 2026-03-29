@@ -83,7 +83,7 @@ export const proofOfCorrectness: ExampleData = {
 	complexity: 'workflow',
 	startHere: true,
 	featured: true,
-	traceValue: 'Trace records every case, every assertion, and the final verdict so the proof is inspectable and shareable.',
+	traceValue: 'This successful example run records the cases, assertions, and final verdict so the proof artifact is inspectable and shareable.',
 	steps: [
 		{ name: 'Specify', description: '10 edge cases with expected outputs', code: '{ input: "$1,234.56", expected: 1234.56 }', input: {}, output: { totalCases: 10 }, capabilities: [], ms: 1 },
 		{ name: 'Execute', description: 'Run parseAmount() against every case', code: 'parseAmount("$1,234.56") → 1234.56', input: { cases: '...' }, output: { executed: 10 }, capabilities: [], ms: 3 },
@@ -786,7 +786,7 @@ export const selfImprovingLoop: ExampleData = {
 	icon: 'repeat',
 	tags: ['agent', 'self-improving', 'evolution', 'evaluation', 'meta'],
 	complexity: 'agentic',
-	traceValue: 'Trace is the lab notebook for one generation: same harness, two candidates, measured winner.',
+	traceValue: 'The saved result acts as the lab notebook for one generation: same harness, two candidates, measured winner.',
 	steps: [
 		{ name: 'Test Cases', description: '8 string pairs with minimum similarity thresholds', code: '{ a: "kitten", b: "sitting", minScore: 0.5 }', input: {}, output: { cases: 8 }, capabilities: [], ms: 1 },
 		{ name: 'Candidate A', description: 'Trigram overlap — fast, approximate', code: 'trigramSimilarity("kitten", "sitting")', input: { cases: '...' }, output: { fitness: 63, passed: '5/8' }, capabilities: [], ms: 2 },

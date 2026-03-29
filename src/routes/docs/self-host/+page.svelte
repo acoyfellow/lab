@@ -12,7 +12,7 @@
   ];
 
   const requirements = [
-    { name: 'Cloudflare Account', detail: 'Workers Paid plan ($5/month) for D1 and bindings' },
+    { name: 'Cloudflare Account', detail: 'Workers Paid plan for the required bindings' },
     { name: 'Node.js or Bun', detail: 'For running the deploy script' },
     { name: 'Git', detail: 'To clone the repository' },
   ];
@@ -66,7 +66,7 @@
       number: 6,
       title: 'Verify',
       code: 'curl https://lab.YOUR-SUBDOMAIN.workers.dev',
-      description: 'Should return: {"ok":true,"version":"0.x.x"}',
+      description: 'Should return: {"ok":true,"version":"0.0.2"}',
     },
   ];
 </script>
@@ -81,7 +81,7 @@
   <header id="overview" class="space-y-3">
     <h1 class="text-2xl font-semibold tracking-tight">Self-Hosting Guide</h1>
     <p class="leading-relaxed">
-      Deploy Lab to your own Cloudflare account. You control the infrastructure, data, and capabilities.
+      Deploy Lab to your own Cloudflare account. You control the deployment, bindings, and capability configuration.
     </p>
   </header>
 
@@ -131,6 +131,19 @@
           {/each}
         </tbody>
       </table>
+    </div>
+    <div class="mt-4 space-y-2 text-[0.875rem] leading-relaxed">
+      <p class="font-semibold text-(--text) m-0">Default bindings</p>
+      <ul class="list-disc pl-5 space-y-1 m-0 text-(--text-2)">
+        <li><strong class="text-(--text)">D1</strong>: auth sessions and user accounts (Better Auth)</li>
+        <li><strong class="text-(--text)">KV</strong>: saved results and guest KV read data</li>
+        <li><strong class="text-(--text)">Worker</strong>: sandbox execution environment</li>
+        <li><strong class="text-(--text)">R2</strong>: optional guest file storage for <code class="font-mono text-[0.8125rem]">r2Read</code></li>
+        <li><strong class="text-(--text)">Workers AI</strong>: optional for generate mode</li>
+      </ul>
+      <p class="text-(--text-3) m-0 mt-2">
+        Same summary on <a href="/docs/install#what-gets-created" class="text-(--accent) hover:underline">Installation → What gets created</a>.
+      </p>
     </div>
   </section>
 
