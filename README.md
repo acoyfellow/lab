@@ -1,11 +1,11 @@
 # Lab
 
-Codegen workflows with receipts.
+The feedback loop for AI agents.
 
-AI writes code. Lab chains each step into a workflow, runs it in a sandbox, and returns a **trace** — a permanent URL proving what ran, what returned, and what broke.
+An agent writes code. Lab runs it in a sandbox and returns a **trace** — a full record of what happened. The agent reads the trace, fixes what broke, and runs again. Same loop a developer uses, except the agent does it.
 
 ```
-agent writes code  →  Lab runs each step  →  trace URL (the receipt)
+agent writes code  →  Lab runs it  →  trace (what happened)  →  agent reads, fixes, reruns
 ```
 
 **Try it now:** [lab.coey.dev/compose](https://lab.coey.dev/compose) — run a chain, click the trace link.

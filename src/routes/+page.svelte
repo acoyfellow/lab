@@ -36,8 +36,8 @@
 </script>
 
 <SEO
-  title="Lab — Codegen workflows with receipts"
-  description="AI writes code. Lab chains each step into a workflow, runs it in a sandbox, and returns a trace — a permanent URL proving what ran, what returned, and what broke."
+  title="Lab — The feedback loop for AI agents"
+  description="Agents write code. Lab runs it, traces what happened, and hands the result back. The same loop a developer uses — write, run, see, fix — except the agent does it."
   path="/"
   type="website"
 />
@@ -71,12 +71,12 @@
         </div>
 
         <h1 class="text-[1.65rem] sm:text-[2.25rem] font-semibold tracking-tight leading-[1.15] text-(--text) drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
-          Codegen workflows<br />
-          <span class="text-(--text-2)">with receipts.</span>
+          The feedback loop<br />
+          <span class="text-(--text-2)">for AI agents.</span>
         </h1>
 
         <p class="text-[1.0625rem] text-(--text-2) leading-relaxed max-w-[60ch]">
-          AI writes code. Lab chains each step into a workflow, runs it in a sandbox, and returns a <strong class="text-(--text)">trace</strong> — a permanent URL proving what ran, what returned, and what broke.
+          An agent writes code. Lab runs it in a sandbox and returns a <strong class="text-(--text)">trace</strong> — a full record of what happened. The agent reads the trace, fixes what broke, and runs again. Same loop a developer uses, except the agent does it.
         </p>
         <div class="flex items-center gap-3 flex-wrap">
           <Button href="/compose" variant="default">Open Compose</Button>
