@@ -1,8 +1,8 @@
 # HTTP API
 
-Every Lab feature is available as an HTTP endpoint. You can call these with `curl`, any HTTP client, or the [TypeScript client](/docs/typescript).
+Every supported Lab run mode is available as an HTTP endpoint on the public app origin. You can call these with `curl`, any HTTP client, or the [TypeScript client](/docs/typescript).
 
-All examples use `$LAB_URL` — set this to your instance URL (e.g. `export LAB_URL=https://your-instance.example`).
+All examples use `$LAB_URL` — set this to your public app origin (e.g. `export LAB_URL=https://your-lab.example`). In the monorepo, that is `http://localhost:5173`.
 
 Related: [Permissions](/docs/capabilities) · [Limits](/docs/limits) · [Failures](/docs/failures) · [Security](/docs/security)
 
@@ -52,7 +52,7 @@ Run a single piece of JavaScript in a sandbox.
 
 **Body:** `{ body, capabilities? }`
 
-**Response:** `{ ok, result }` — plus `traceId` if the run was saved.
+**Response:** `{ ok, result }` — plus `traceId`. `POST /seed` is the only endpoint that does not create a saved result.
 
 ---
 
@@ -75,7 +75,7 @@ Run multiple pieces of code in sequence. Each one's output becomes the next one'
 
 **Body:** `{ steps: [{ body, capabilities, name?, input? }] }`
 
-Each step can have different permissions. The response includes timing and I/O for every step.
+Each step can have different permissions. Successful chain runs include timing and I/O for every step. Failed or aborted chain runs still save the top-level `error` and `reason`, but the `trace` array may be partial or empty.
 
 ---
 
@@ -109,9 +109,7 @@ Loads demo data into KV for testing. No saved result is created.
 
 ## GET /t/:id
 
-Fetch a saved run result. Returns JSON with the code, inputs, outputs, timing, and success/failure status. See [result schema](/docs/trace-schema) for the full format.
-
-`GET /t/:id.json` returns the same JSON.
+Fetch a saved run result. `GET /t/:id` is the shareable result URL, and `GET /t/:id.json` is the raw JSON document. See [result schema](/docs/trace-schema) for the full format.
 
 ---
 

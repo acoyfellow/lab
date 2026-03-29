@@ -12,7 +12,7 @@
       id: 'capabilities',
       title: 'Capabilities',
       content:
-        'Explicit permissions. Code only gets kvRead, workersAi, spawn, r2Read, d1Read, durableObjectFetch, or containerHttp if you declare it. Least privilege by default.',
+        'Explicit permissions. Code only gets kvRead, workersAi, spawn, r2Read, d1Read, durableObjectFetch, containerHttp, or petri if you declare it. Least privilege by default.',
     },
     {
       id: 'traces',
@@ -30,7 +30,7 @@
       id: 'spawn',
       title: 'Spawn',
       content:
-        'Launch parallel isolates from within an isolate. Great for fan-out operations. Each spawned isolate gets its own trace entry.',
+        'Launch parallel isolates from within an isolate. Great for fan-out operations. Spawn runs save the top-level request, outcome, and timing; they do not currently persist child trace entries.',
     },
   ];
 

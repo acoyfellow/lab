@@ -11,10 +11,10 @@
  *   lab seed
  *
  * Environment:
- *   LAB_URL  — Lab Worker origin (default: http://localhost:1337)
+ *   LAB_URL  — Lab app origin (default: http://localhost:5173)
  *
  * Every command prints JSON to stdout. Agents parse it. Humans read it.
- * Every run includes a traceId — the permanent artifact.
+ * Every run includes a traceId — the saved-result identifier.
  */
 
 import { Effect, Data } from 'effect';
@@ -34,7 +34,7 @@ class CliError extends Data.TaggedError('CliError')<{
 
 const getBaseUrl = Effect.sync(() => {
 	const raw = process.env.LAB_URL?.trim();
-	return raw ? raw.replace(/\/+$/, '') : 'http://localhost:1337';
+	return raw ? raw.replace(/\/+$/, '') : 'http://localhost:5173';
 });
 
 // ── Commands ────────────────────────────────────────────────────────────
@@ -95,11 +95,11 @@ const USAGE = `Usage:
   lab chain <stepsJson>            Run a multi-step chain
   lab spawn <code> [depth]         Run with spawn capability
   lab generate <prompt>            AI generates code, then runs it
-  lab trace <traceId>              Fetch a stored trace
+  lab trace <traceId>              Fetch saved-result JSON
   lab seed                         Seed demo KV data
 
 Environment:
-  LAB_URL   Lab Worker origin (default: http://localhost:1337)
+  LAB_URL   Lab app origin (default: http://localhost:5173)
 
 Every command prints JSON to stdout. Every run includes a traceId.`;
 

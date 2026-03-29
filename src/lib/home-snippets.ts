@@ -146,13 +146,11 @@ export const KNOWN_PATTERNS = [
     lines: 12,
     code: `const out = await lab.runChain([
   { name: "Gather", body: \`
-    const api  = await fetch("https://api.example.com/stats");
-    const data = await api.json();
     return { findings: [
-      { source: "API",      users: data.active },
-      { source: "Internal", users: 887 },
+      { source: "API export", users: 890 },
+      { source: "Warehouse",  users: 887 },
     ]};
-  \`, capabilities: ["fetch"] },
+  \`, capabilities: [] },
   { name: "Reconcile", body: \`
     const avg = Math.round(
       input.findings.reduce((s, f) => s + f.users, 0)
@@ -165,11 +163,11 @@ export const KNOWN_PATTERNS = [
     return {
       summary: input.activeUsers + " active users (avg of "
                + input.sources + " sources, " + input.confidence + " confidence)",
-      trace: "Open this trace to verify the data pipeline.",
+      resultUrl: "Open the saved result to verify the data pipeline.",
     };
   \`, capabilities: [] },
 ]);
-// → trace shows every source, the reconciliation math, the final report.`,
+// → saved result shows every source, the reconciliation math, the final report.`,
   },
   {
     id: 'pr-review',
@@ -179,12 +177,12 @@ export const KNOWN_PATTERNS = [
     lines: 10,
     code: `const out = await lab.runChain([
   { name: "Pull diff", body: \`
-    const res = await fetch(
-      "https://api.github.com/repos/org/repo/pulls/42/files",
-      { headers: { Authorization: "token " + env.GITHUB_TOKEN } }
-    );
-    return { files: await res.json() };
-  \`, capabilities: ["fetch"] },
+    return { files: [
+      { filename: "src/auth.ts", additions: 245, deletions: 12 },
+      { filename: "src/utils.ts", additions: 8, deletions: 3 },
+      { filename: "README.md", additions: 15, deletions: 2 },
+    ] };
+  \`, capabilities: [] },
   { name: "Analyze", body: \`
     const issues = input.files.map(f => ({
       file: f.filename,
@@ -198,16 +196,11 @@ export const KNOWN_PATTERNS = [
     const body = input.issues.filter(i => i.flag !== "ok")
       .map(i => "- " + i.file + ": " + i.additions + " additions")
       .join("\\n");
-    await fetch("https://api.github.com/repos/org/repo/issues/42/comments", {
-      method: "POST",
-      headers: { Authorization: "token " + env.GITHUB_TOKEN,
-                 "Content-Type": "application/json" },
-      body: JSON.stringify({ body: "## Review\\n" + body }),
-    });
-    return { action: "commented", flagged: input.flagged };
-  \`, capabilities: ["fetch"] },
+    return { action: "would-comment", flagged: input.flagged,
+             body: "## Review\\n" + body };
+  \`, capabilities: [] },
 ]);
-// → trace shows the diff, the analysis, and the posted comment.`,
+// → saved result shows the diff, the analysis, and the drafted comment.`,
   },
 ] as const;
 

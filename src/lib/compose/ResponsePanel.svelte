@@ -69,7 +69,7 @@
         <pre class="text-xs font-mono whitespace-pre-wrap text-(--text) m-0">{error}</pre>
         {#if traceId}
           <p class="text-[0.75rem] text-(--text-2) m-0">
-            The saved result still includes the failure. Open it to inspect the step that broke or share it for debugging.
+            The saved result still includes the top-level failure. Open it to review the saved result or share it for debugging.
           </p>
           <div class="flex flex-wrap gap-2 pt-1">
             <a

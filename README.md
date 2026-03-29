@@ -2,13 +2,13 @@
 
 The feedback loop for AI agents.
 
-An agent writes code. Lab runs it in a Cloudflare sandbox and saves the result at a **permanent URL**. Successful runs include full step data — code, inputs, outputs, timing. The agent reads the result, fixes what broke, and runs again. Same loop a developer uses, except the agent does it.
+An agent writes code. Lab runs it in a Cloudflare sandbox and saves the result at a **shareable URL**. Successful runs include full step data — code, inputs, outputs, timing. The agent reads the result, fixes what broke, and runs again. Same loop a developer uses, except the agent does it.
 
 ```
-agent writes code  →  Lab runs it  →  trace (what happened)  →  agent reads, fixes, reruns
+agent writes code  →  Lab runs it  →  saved result (what happened)  →  agent reads, fixes, reruns
 ```
 
-**Try it now:** [lab.coey.dev/compose](https://lab.coey.dev/compose) — run a chain, click the trace link.
+**Try it now:** [lab.coey.dev/compose](https://lab.coey.dev/compose) — run a chain, click the saved-result link.
 
 > **0.0.2** — API and trace shapes may still move. Pin to exact versions or self-host.
 
@@ -34,7 +34,7 @@ const out = await lab.runChain([
 ]);
 
 console.log(out.result);   // { valid: true, healed: true, users: 1 }
-console.log(out.traceId);  // → $LAB_URL/t/<id> (the receipt)
+console.log(out.traceId);  // → $LAB_URL/t/<id> (shareable result URL)
 ```
 
 Each step runs in its own sandbox. Step 2's output flows to Step 3's `input`. The result is saved at a URL — share it to show what happened.
@@ -46,7 +46,7 @@ These are the workflows agents build with Lab. Every pattern saves a result. The
 | Pattern | What happens | The result shows |
 |---|---|---|
 | **[Prove It](https://lab.coey.dev/docs/patterns#prove-it)** | Agent writes code + edge cases, runs them all | 10/10 pass — the receipt |
-| **[Self-Healing](https://lab.coey.dev/docs/patterns#self-healing-loop)** | Step fails → agent reads result → patches → retries | The reasoning chain |
+| **[Self-Healing](https://lab.coey.dev/docs/patterns#self-healing-loop)** | Step fails → agent reads result → patches → retries | The saved result, including any successful chain steps |
 | **[Agent Handoff](https://lab.coey.dev/docs/patterns#agent-handoff)** | Agent A → B → C, one chain | Who did what |
 | **[Canary Deploy](https://lab.coey.dev/docs/patterns#canary-deploy)** | Old vs new logic, same inputs | What changed |
 | **[Stress Test](https://lab.coey.dev/docs/patterns#stress-test)** | Run N times, find where it breaks | Which runs failed and why |
@@ -69,9 +69,9 @@ See all patterns: [lab.coey.dev/docs/patterns](https://lab.coey.dev/docs/pattern
 | `durableObjectFetch` | `labDo.fetch(name, { method, path, body })` — Durable Object RPC |
 | `containerHttp` | `labContainer.get(path)` — bound container service |
 
-No capabilities = pure compute, no I/O. Denied capabilities produce clear errors recorded in the trace.
+No capabilities = pure compute, no I/O. Denied capabilities produce clear errors recorded in the saved result.
 
-**Results** — every run saves a JSON result at `/t/:id`. Successful runs include code, capabilities, return values, and timing. Failed runs include the error and reason. Share the URL. Fork it into a new run. Hand it to another agent.
+**Results** — every run saves a JSON document. Use `/t/:id` as the shareable result URL and `/t/:id.json` for the raw JSON. Successful runs include code, capabilities, return values, and timing. Failed or aborted runs include the top-level error and reason; chain step detail may be partial or empty. Share the URL. Fork it into a new run. Hand it to another agent.
 
 ## API
 
@@ -79,6 +79,7 @@ No capabilities = pure compute, no I/O. Denied capabilities produce clear errors
 
 | Method | Path | Body |
 |---|---|---|
+| `GET` | `/health` | health check |
 | `POST` | `/run` | `{ body, capabilities? }` |
 | `POST` | `/run/kv` | same — always includes `kvRead` |
 | `POST` | `/run/chain` | `{ steps: [{ body, capabilities, name? }] }` |
@@ -86,7 +87,8 @@ No capabilities = pure compute, no I/O. Denied capabilities produce clear errors
 | `POST` | `/run/generate` | `{ prompt, capabilities }` |
 | `POST` | `/seed` | `{}` — writes demo KV data |
 | `GET` | `/lab/catalog` | capability + route metadata for agents |
-| `GET` | `/t/:id` | trace JSON |
+| `GET` | `/t/:id` | shareable saved-result URL |
+| `GET` | `/t/:id.json` | raw saved-result JSON |
 
 ### TypeScript client
 
@@ -102,13 +104,14 @@ npm install @acoyfellow/lab
 | `runSpawn(payload)` | Nested isolates |
 | `runGenerate(payload)` | AI-generated code + run |
 | `seed()` | Seed demo KV data |
-| `getTrace(traceId)` | Fetch a stored trace |
+| `getTrace(traceId)` | Fetch the saved result |
+| `getTraceJson(traceId)` | Fetch raw saved-result JSON |
 
 Effect client: `import { createLabEffectClient } from "@acoyfellow/lab/effect"` — same API, returns `Effect` instead of `Promise`.
 
 ## MCP integration
 
-Lab exposes two MCP tools — **`find`** (discover capabilities, fetch traces) and **`execute`** (run any mode). Give an agent access to Lab and it can execute code, read traces, and build on previous runs.
+Lab exposes two MCP tools — **`find`** (discover capabilities, fetch saved results) and **`execute`** (run any mode). Give an agent access to Lab and it can execute code, read saved results, and build on previous runs.
 
 ```bash
 npm install -g @acoyfellow/lab-mcp
@@ -120,7 +123,7 @@ npm install -g @acoyfellow/lab-mcp
     "lab": {
       "command": "npx",
       "args": ["-y", "@acoyfellow/lab-mcp"],
-      "env": { "LAB_URL": "https://your-lab.workers.dev" }
+      "env": { "LAB_URL": "https://your-lab.example" }
     }
   }
 }
@@ -137,7 +140,7 @@ git clone https://github.com/acoyfellow/lab.git && cd lab
 bun install && bun run deploy
 ```
 
-Requires Cloudflare Workers Paid ($5/mo). Provisions D1 (auth), KV (results), and the Worker via [Alchemy](https://github.com/sam-goodwin/alchemy). R2 and AI bindings are optional.
+Requires Cloudflare Workers Paid ($5/mo). Provisions the public app, the private Worker, auth D1, engine D1, KV, Worker Loader, Durable Objects, and optional R2/AI bindings via [Alchemy](https://github.com/sam-goodwin/alchemy).
 
 ## Project structure
 

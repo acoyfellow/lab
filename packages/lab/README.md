@@ -1,8 +1,8 @@
 # `@acoyfellow/lab`
 
-Typed HTTP client for the [Lab](https://github.com/acoyfellow/lab) Worker API — sandboxed isolates, capability chains, traces.
+Typed HTTP client for the [Lab](https://github.com/acoyfellow/lab) public app API — sandboxed isolates, capability chains, and saved results.
 
-> **0.0.1** — early feedback. API may change.
+> **0.0.2** — early feedback. API may change.
 
 ## Install
 
@@ -18,7 +18,7 @@ Requires Node 18+ or any runtime with global `fetch` (Cloudflare Workers, Deno, 
 import { createLabClient } from "@acoyfellow/lab";
 
 const lab = createLabClient({
-  baseUrl: "https://your-lab.workers.dev",
+  baseUrl: "https://your-lab.example",
 });
 
 const r = await lab.runChain([
@@ -29,7 +29,7 @@ const r = await lab.runChain([
 console.log(r.result);  // [2, 4, 6]
 ```
 
-`baseUrl` is the origin serving the Lab Worker — either the public hostname or your own deploy. See [Self-host](https://github.com/acoyfellow/lab#self-host).
+`baseUrl` is the public app origin for Lab — either your deployed app hostname or your own self-hosted origin. See [Self-host](https://github.com/acoyfellow/lab#self-host).
 
 ## API
 
@@ -42,6 +42,7 @@ console.log(r.result);  // [2, 4, 6]
 | `runGenerate({ prompt, capabilities })` | `POST /run/generate` |
 | `seed()` | `POST /seed` |
 | `getTrace(id)` | `GET /t/:id` |
+| `getTraceJson(id)` | `GET /t/:id.json` |
 
 Use `body` for guest JavaScript. `code` is a legacy alias. Default template: `guest@v1`.
 
@@ -58,7 +59,7 @@ Non-2xx responses with JSON bodies are parsed and returned (not thrown). Only no
 With `bun dev` running in the [Lab](https://github.com/acoyfellow/lab) repo:
 
 ```ts
-createLabClient({ baseUrl: "http://localhost:1337" });
+createLabClient({ baseUrl: "http://localhost:5173" });
 ```
 
 ## License

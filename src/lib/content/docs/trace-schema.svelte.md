@@ -1,12 +1,12 @@
 # Run result format
 
-When you run code on Lab, the result is saved as JSON at a URL (`/t/:id`). Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial. See [Failures & traces](/docs/failures). This page describes the result schema.
+When you run code on Lab, the saved result is a JSON document. The shareable result URL is usually `/t/:id`, and `/t/:id.json` always returns the raw JSON. Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial or empty. See [Failures & traces](/docs/failures). This page describes the saved-result schema.
 
 ## Top-level fields
 
 | Field | Type | What it is |
 |---|---|---|
-| `id` | string | Unique ID (same as the URL) |
+| `id` | string | Unique ID (same as the `traceId` and result URL) |
 | `type` | string | How the code was run: `sandbox`, `kv`, `chain`, `generate`, or `spawn` |
 | `createdAt` | string | When it ran (ISO 8601) |
 | `request` | object | What was sent in (code, permissions, prompt, etc.) |
@@ -38,9 +38,9 @@ When you run a pipeline (`/run/chain`), the `trace` array contains one entry per
 
 ## Getting the result
 
-Every run response includes a `traceId`. Use it to fetch the full result later:
+Every run response includes a `traceId`. Use it to fetch the saved result later:
 
-- `GET /t/:id` — JSON
-- `GET /t/:id.json` — same JSON (alternate URL)
+- `GET /t/:id` — shareable result URL; on the public app this opens the saved-result viewer in a browser
+- `GET /t/:id.json` — raw JSON document
 
 `POST /seed` is the only endpoint that doesn't create a saved result.

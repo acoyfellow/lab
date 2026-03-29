@@ -1,7 +1,7 @@
 {
   "name": "@acoyfellow/lab",
   "version": "0.0.2",
-  "description": "Typed HTTP client for the lab Cloudflare Worker (sandboxed isolates, chains, traces)",
+  "description": "Typed HTTP client for the Lab public app API (sandboxed isolates, chains, saved results)",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

@@ -1,14 +1,9 @@
 import { error, json } from '@sveltejs/kit';
-import { dev } from '$app/environment';
 import type { RequestHandler } from './$types';
+import { fetchLabWorker } from '$lib/server/lab-worker';
 
 export const GET: RequestHandler = async ({ platform }) => {
-  let response: Response;
-  if (dev) {
-    response = await fetch('http://localhost:1337/lab/catalog');
-  } else {
-    response = await platform!.env!.WORKER.fetch(new Request('http://worker/lab/catalog'));
-  }
+  const response = await fetchLabWorker(platform, '/lab/catalog');
 
   if (!response.ok) {
     error(response.status, 'Lab catalog unavailable');

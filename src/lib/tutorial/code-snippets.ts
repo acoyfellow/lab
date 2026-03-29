@@ -5,8 +5,11 @@ export const TUTORIAL_INSTALL = `npm install @acoyfellow/lab`;
 export const TUTORIAL_MCP_CONFIG = `{
   "mcpServers": {
     "lab": {
-      "type": "streamable-http",
-      "url": "$LAB_URL/mcp"
+      "command": "npx",
+      "args": ["-y", "@acoyfellow/lab-mcp"],
+      "env": {
+        "LAB_URL": "$LAB_URL"
+      }
     }
   }
 }`;

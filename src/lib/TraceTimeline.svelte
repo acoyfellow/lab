@@ -35,6 +35,9 @@
     d1Read: { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/30' },
     workersAi: { bg: 'bg-purple-500/15', text: 'text-purple-400', border: 'border-purple-500/30' },
     spawn: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+    durableObjectFetch: { bg: 'bg-cyan-500/15', text: 'text-cyan-400', border: 'border-cyan-500/30' },
+    containerHttp: { bg: 'bg-orange-500/15', text: 'text-orange-400', border: 'border-orange-500/30' },
+    petri: { bg: 'bg-pink-500/15', text: 'text-pink-400', border: 'border-pink-500/30' },
   };
 
   function getCapabilityStyle(cap: string) {

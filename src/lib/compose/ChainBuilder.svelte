@@ -3,20 +3,24 @@
   import { Textarea } from '$lib/components/ui/textarea';
   import type { ChainStep } from '@acoyfellow/lab';
 
+  type CapabilityView = {
+    id: string;
+    label: string;
+    binding: string;
+    summary: string;
+    denyMessage: string;
+    experimental: boolean;
+  };
+
   let {
+    capabilities,
     chainJson = $bindable(''),
     disabled = false
+  }: {
+    capabilities: CapabilityView[];
+    chainJson?: string;
+    disabled?: boolean;
   } = $props();
-
-  const CAPABILITIES = [
-    { id: 'kvRead', label: 'kvRead' },
-    { id: 'spawn', label: 'spawn' },
-    { id: 'workersAi', label: 'workersAi' },
-    { id: 'r2Read', label: 'r2Read' },
-    { id: 'd1Read', label: 'd1Read' },
-    { id: 'durableObjectFetch', label: 'durableObjectFetch' },
-    { id: 'containerHttp', label: 'containerHttp' },
-  ];
 
   function parseSteps(j: string): { steps: ChainStep[]; error: string | null } {
     try {
@@ -152,7 +156,7 @@
           </summary>
           <div class="px-3 pb-3">
             <div class="flex flex-wrap gap-2">
-              {#each CAPABILITIES as cap}
+              {#each capabilities as cap}
                 <label class="inline-flex items-center gap-1 text-[0.65rem] text-(--text-2) cursor-pointer rounded px-2 py-1 bg-(--surface-alt) hover:bg-(--border)">
                   <input
                     type="checkbox"

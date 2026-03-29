@@ -246,7 +246,7 @@ npm install @acoyfellow/lab
     "lab": {
       "command": "npx",
       "args": ["-y", "@acoyfellow/lab-mcp"],
-      "env": { "LAB_URL": "https://your-lab.workers.dev" }
+      "env": { "LAB_URL": "https://your-lab.example" }
     }
   }
 }

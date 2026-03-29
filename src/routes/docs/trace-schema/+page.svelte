@@ -3,6 +3,6 @@
   import TraceSchema from '$lib/content/docs/trace-schema.svelte.md';
 </script>
 
-<DocsArticle pageTitle="Trace schema" segment="Trace JSON">
+<DocsArticle pageTitle="Trace schema" segment="Saved Result">
   <TraceSchema />
 </DocsArticle>

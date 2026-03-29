@@ -27,7 +27,7 @@
   <DocFooterNav
     gridClass="sm:grid-cols-2"
     links={[
-      { label: 'Trace schema', to: paths.docsTraceSchema, description: 'GET /t/:id JSON shape and tables.' },
+      { label: 'Trace schema', to: paths.docsTraceSchema, description: 'Saved-result schema, `/t/:id`, and `/t/:id.json` semantics.' },
       { label: 'Compose', to: '/compose', description: 'Fork from a trace back into the runner.' },
     ]}
   />

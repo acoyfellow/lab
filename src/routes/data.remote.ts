@@ -8,8 +8,8 @@ import type {
   TraceData,
 } from '@acoyfellow/lab';
 import { query, command, getRequestEvent } from '$app/server';
-import { dev } from '$app/environment';
 import { error } from '@sveltejs/kit';
+import { fetchLabWorker } from '$lib/server/lab-worker';
 
 function requireAuth() {
   const event = getRequestEvent();
@@ -18,25 +18,13 @@ function requireAuth() {
   }
 }
 
-// Helper: call the lab worker
-async function callWorker(
-  platform: App.Platform | undefined,
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<Response> {
-  if (dev) {
-    return fetch(`http://localhost:1337${endpoint}`, options);
-  }
-  return platform!.env!.WORKER.fetch(new Request(`http://worker${endpoint}`, options));
-}
-
 async function callWorkerJSON<T>(
   platform: App.Platform | undefined,
   endpoint: string,
   options?: RequestInit
 ): Promise<T> {
   try {
-    const response = await callWorker(platform, endpoint, options);
+    const response = await fetchLabWorker(platform, endpoint, options);
     if (!response.ok) {
       const body = await response.json().catch(() => ({ error: 'Service error' }));
       return body as T;

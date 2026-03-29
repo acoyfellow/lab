@@ -3,36 +3,36 @@ import type { ExampleData } from '../types';
 export const apiRetry: ExampleData = {
 	id: 'api-retry',
 	title: 'API Retry with Backoff',
-	description: 'Handle flaky APIs with exponential backoff and circuit breaker pattern',
-	problem: 'External APIs fail intermittently. Blind retries overwhelm failing services.',
-	solution: 'Implement exponential backoff between retries. Track failures with circuit breaker.',
-	result: 'Resilient API calls that fail gracefully and recover automatically',
+	description: 'Handle flaky upstreams with deterministic retries, exponential backoff, and circuit breaker logic',
+	problem: 'Upstream services fail intermittently. Blind retries overwhelm failing dependencies.',
+	solution: 'Simulate a flaky upstream, retry with exponential backoff, and record when the circuit would fail fast.',
+	result: 'Stable retry behavior you can run locally and inspect in a saved result',
 	icon: 'refresh',
 	tags: ['api', 'resilience', 'retry', 'circuit-breaker'],
 	steps: [
 		{
 			name: 'Attempt API Call',
-			description: 'Try fetch with 5 second timeout',
-			code: 'fetch(url, { signal: AbortSignal.timeout(5000) })',
-			input: { url: 'https://api.example.com/data' },
-			output: { success: true, attempt: 1, data: {} },
+			description: 'Call a simulated flaky upstream; fail on attempts 1 and 2, succeed on attempt 3',
+			code: 'callWithRetry() -> simulateFlakyUpstream(attempt)',
+			input: { attempt: 1, maxRetries: 3 },
+			output: { success: true, attempt: 3, data: { source: 'simulated-upstream' } },
 			capabilities: [],
-			ms: 523
+			ms: 3004
 		},
 		{
 			name: 'Retry with Backoff',
-			description: 'Wait 1s, then retry. Wait 2s, then retry.',
+			description: 'Wait 1s, then 2s, before the final successful retry',
 			code: 'delay = 1000 * Math.pow(2, attempt - 1)',
-			input: { attempt: 2, delay: 1000 },
-			output: { success: true, attempt: 3, data: {} },
+			input: { failedAttempts: [1, 2], delaysMs: [1000, 2000] },
+			output: { totalDelayMs: 3000, finalAttempt: 3 },
 			capabilities: [],
-			ms: 3521
+			ms: 3000
 		},
 		{
 			name: 'Circuit Breaker Check',
-			description: 'Check if we should fail fast',
+			description: 'Record whether the circuit would fail fast after repeated upstream failures',
 			code: 'if (failures >= threshold) return circuitOpen',
-			input: { failures: 0 },
+			input: { failures: 2, threshold: 3 },
 			output: { circuitOpen: false, healthy: true },
 			capabilities: [],
 			ms: 1
@@ -132,17 +132,17 @@ export const dataTransformer: ExampleData = {
 export const multiSourceAggregator: ExampleData = {
 	id: 'multi-source-aggregator',
 	title: 'Multi-Source Aggregator',
-	description: 'Fetch data from multiple APIs in parallel, then merge and analyze',
-	problem: 'Need to combine data from multiple sources for unified reporting.',
-	solution: 'Parallel fetch from multiple APIs, merge results, compute aggregations.',
-	result: 'Unified dataset with computed metrics from all sources',
+	description: 'Merge multiple source snapshots, then combine and analyze them in one workflow',
+	problem: 'Need to combine related datasets from multiple upstream snapshots for unified reporting.',
+	solution: 'Load mocked source snapshots, merge them, and compute aggregated metrics in one saved result.',
+	result: 'Unified dataset with computed metrics across both source snapshots',
 	icon: 'aggregate',
 	tags: ['api', 'aggregation', 'parallel', 'analytics'],
 	steps: [
 		{
 			name: 'Fetch Source A',
-			description: 'Get user data from API A',
-			code: 'fetch("https://api-a.example.com/users")',
+			description: 'Load the first source snapshot of user data',
+			code: 'fetchSourceA()',
 			input: {},
 			output: { users: [{ id: 1, name: 'Alice' }] },
 			capabilities: [],
@@ -150,10 +150,10 @@ export const multiSourceAggregator: ExampleData = {
 		},
 		{
 			name: 'Fetch Source B',
-			description: 'Get order data from API B',
-			code: 'fetch("https://api-b.example.com/orders")',
-			input: {},
-			output: { orders: [{ userId: 1, total: 100 }] },
+			description: 'Load the second source snapshot of order data and pair it with source A',
+			code: 'fetchSourceB(); return { sourceA, sourceB }',
+			input: { sourceA: { users: [{ id: 1, name: 'Alice' }] } },
+			output: { sourceA: { users: [{ id: 1, name: 'Alice' }] }, sourceB: { orders: [{ userId: 1, total: 100 }] } },
 			capabilities: [],
 			ms: 189
 		},

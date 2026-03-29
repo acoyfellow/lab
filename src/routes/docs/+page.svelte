@@ -22,7 +22,7 @@
 
 <SEO
   title="Docs — lab"
-  description="HTTP API, architecture, limits, security, failures, TypeScript client, capabilities, and trace JSON."
+  description="HTTP API, architecture, limits, security, failures, TypeScript client, capabilities, and saved-result JSON."
   path="/docs"
   type="website"
 />
@@ -49,7 +49,7 @@
             <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Install</h3>
           </div>
           <p>
-            Deploy to Cloudflare. D1, KV, and Worker provisioned automatically.
+            Deploy the public app, private Worker, and backing Cloudflare resources.
           </p>
         </a>
         <a

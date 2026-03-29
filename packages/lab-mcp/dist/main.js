@@ -8,7 +8,7 @@ import { catalogAtPath } from './catalogPath.js';
 function requireBaseUrl() {
     const raw = process.env.LAB_URL?.trim();
     if (!raw) {
-        throw new Error('LAB_URL is required (e.g. http://localhost:1337). Set it in the MCP server env.');
+        throw new Error('LAB_URL is required (e.g. http://localhost:5173 or your public app URL). Set it in the MCP server env.');
     }
     return raw.replace(/\/+$/, '');
 }
@@ -66,16 +66,16 @@ function mapHttpToError(err) {
 }
 const mcpServer = new McpServer({
     name: 'lab',
-    version: '0.0.1',
+    version: '0.0.2',
 });
 mcpServer.registerTool('find', {
-    description: 'Discover lab API: full GET /lab/catalog JSON, a dot-path slice (e.g. execute.chain), or GET /t/:id.json when traceId is set.',
+    description: 'Discover lab API: full GET /lab/catalog JSON, a dot-path slice (e.g. execute.chain), or GET /t/:id.json raw saved-result JSON when traceId is set.',
     inputSchema: {
         path: z
             .string()
             .optional()
             .describe('Dot path into catalog: capabilities, execute.chain, templates, … Ignored if traceId is set.'),
-        traceId: z.string().optional().describe('If set, returns trace JSON for this id (GET /t/:id.json).'),
+        traceId: z.string().optional().describe('If set, returns raw saved-result JSON for this id (GET /t/:id.json).'),
     },
 }, async (args) => {
     const program = Effect.gen(function* () {

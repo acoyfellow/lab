@@ -1,6 +1,6 @@
 # `@acoyfellow/lab-cli`
 
-Minimal CLI for [Lab](https://github.com/acoyfellow/lab). Agents shell out, get traces back.
+Minimal CLI for [Lab](https://github.com/acoyfellow/lab). Agents shell out, get saved results back.
 
 ## Install
 
@@ -23,20 +23,20 @@ lab spawn 'const a = await spawn("return 10", []); return a'
 # AI generates code from a prompt, then runs it
 lab generate 'Sum the numbers 1 to 10'
 
-# Fetch a stored trace
+# Fetch saved-result JSON
 lab trace abc123
 
 # Seed demo KV data
 lab seed
 ```
 
-Every command prints JSON to stdout. Every run includes a `traceId` pointing to the permanent trace.
+Every command prints JSON to stdout. Every run includes a `traceId` pointing to the saved result.
 
 ## Environment
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LAB_URL` | `http://localhost:1337` | Lab Worker origin |
+| `LAB_URL` | `http://localhost:5173` | Public Lab app origin |
 
 ## For agents
 
@@ -45,7 +45,7 @@ An agent shells out to `lab`, reads the JSON result, and uses the `traceId` as p
 ```bash
 result=$(lab chain '[{"body":"return 42","capabilities":[]}]')
 traceId=$(echo "$result" | jq -r '.traceId')
-# traceId is now a permanent, inspectable artifact
+# traceId is now an inspectable saved-result identifier
 ```
 
 Or from a script:

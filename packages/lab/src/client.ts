@@ -23,9 +23,9 @@ export type LabClient = {
   runSpawn: (payload: RunSpawnPayload) => Promise<RunResult>;
   runGenerate: (payload: RunGeneratePayload) => Promise<RunResult>;
   seed: () => Promise<SeedResult>;
-  /** Worker / app: `GET /t/:id` */
+  /** Saved-result URL: `GET /t/:id` */
   getTrace: (traceId: string) => Promise<TraceData | { error: string }>;
-  /** Same document as `getTrace`; use when calling Worker origin with explicit `.json`. */
+  /** Same saved result as `getTrace`, but always uses the explicit `.json` URL. */
   getTraceJson: (traceId: string) => Promise<TraceData | { error: string }>;
 };
 

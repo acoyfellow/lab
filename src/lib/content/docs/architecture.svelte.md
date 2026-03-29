@@ -14,12 +14,14 @@ You unlock what it needs by declaring permissions:
 
 | Permission | What it unlocks |
 |---|---|
-| `fetch` | Make HTTP requests |
 | `kvRead` | Read from Cloudflare KV storage |
 | `workersAi` | Call Cloudflare AI models |
 | `r2Read` | Read files from Cloudflare R2 |
-| `d1Read` | Query a Cloudflare D1 database |
+| `d1Read` | Query the guest-readable engine D1 database |
 | `spawn` | Launch more sandboxed code (with equal or fewer permissions) |
+| `durableObjectFetch` | Call a Durable Object through the host Worker |
+| `containerHttp` | Call a configured container binding |
+| `petri` | Mutate and read a Petri dish (experimental) |
 
 If you don't declare it, the code can't use it. There's no "grant all" shortcut.
 
@@ -35,7 +37,7 @@ Step 2: Transform it   →  { cleaned: [...] }
 Step 3: Validate it    →  { valid: true, count: 42 }
 ```
 
-Each step runs in its own sandbox. Each step can have different permissions. Step 1 might need `fetch`. Step 2 might need nothing. Step 3 might need `d1Read`.
+Each step runs in its own sandbox. Each step can have different permissions. Step 1 might need `kvRead`. Step 2 might need nothing. Step 3 might need `d1Read`.
 
 ---
 
@@ -49,7 +51,7 @@ There's a depth limit. Each level down gets the same or fewer permissions than i
 
 ## What gets saved
 
-Every run saves a JSON result at a URL (`/t/:id`).
+Every run saves a JSON result document. The human-facing result URL is usually `/t/:id`, and `/t/:id.json` always returns the raw JSON.
 
 For successful runs, it contains:
 
@@ -57,7 +59,7 @@ For successful runs, it contains:
 - Each step's input and output
 - Timing for each step
 
-For failed runs, it contains the error and reason. Per-step detail depends on where the run stopped — see [Failures & traces](/docs/failures).
+For failed or aborted runs, it contains the top-level error and reason. Per-step detail depends on where the run stopped and may be partial or empty — see [Failures & traces](/docs/failures).
 
 See [the full schema](/docs/trace-schema) for details.
 

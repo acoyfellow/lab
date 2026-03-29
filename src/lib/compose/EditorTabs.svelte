@@ -3,7 +3,17 @@
   import { Textarea } from '$lib/components/ui/textarea';
   import { ChainBuilder } from './index.js';
 
+  type CapabilityView = {
+    id: string;
+    label: string;
+    binding: string;
+    summary: string;
+    denyMessage: string;
+    experimental: boolean;
+  };
+
   let {
+    capabilities = [] as CapabilityView[],
     view = $bindable<'builder' | 'raw'>('raw'),
     chainJson = $bindable(''),
     disabled = false,
@@ -33,7 +43,7 @@
     <div class="flex-1 min-h-0">
       <TabsContent value="builder" class="h-full mt-0">
         {#key `${chainResetKey}-${builderSwapKey}`}
-          <ChainBuilder bind:chainJson {disabled} />
+          <ChainBuilder {capabilities} bind:chainJson {disabled} />
         {/key}
       </TabsContent>
 

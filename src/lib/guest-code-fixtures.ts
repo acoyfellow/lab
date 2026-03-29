@@ -78,18 +78,26 @@ export const API_RETRY_STEPS: ChainStep[] = [
 		body: `const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1000;
 
-async function fetchWithRetry(url, options = {}, attempt = 1) {
+async function simulateFlakyUpstream(attempt) {
+  if (attempt < 3) {
+    throw new Error(\`Simulated upstream timeout on attempt \${attempt}\`);
+  }
+
+  return {
+    requestId: 'sim-upstream-001',
+    source: 'simulated-upstream',
+    users: [
+      { id: 1, name: 'Alice' },
+      { id: 2, name: 'Bob' }
+    ],
+    servedAtAttempt: attempt
+  };
+}
+
+async function callWithRetry(attempt = 1) {
   try {
-    const response = await fetch(url, {
-      ...options,
-      signal: AbortSignal.timeout(5000)
-    });
-    
-    if (!response.ok) {
-      throw new Error(\`HTTP \${response.status}\`);
-    }
-    
-    return { success: true, attempt, data: await response.json() };
+    const data = await simulateFlakyUpstream(attempt);
+    return { success: true, attempt, data };
   } catch (error) {
     if (attempt >= MAX_RETRIES) {
       return { success: false, attempts: attempt, error: error.message };
@@ -97,11 +105,11 @@ async function fetchWithRetry(url, options = {}, attempt = 1) {
     
     const delay = BASE_DELAY_MS * Math.pow(2, attempt - 1);
     await new Promise(resolve => setTimeout(resolve, delay));
-    return fetchWithRetry(url, options, attempt + 1);
+    return callWithRetry(attempt + 1);
   }
 }
 
-return await fetchWithRetry('https://httpbin.org/get');`,
+return await callWithRetry();`,
 		capabilities: []
 	},
 	{

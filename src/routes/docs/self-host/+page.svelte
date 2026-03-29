@@ -1,5 +1,6 @@
 <script lang="ts">
   import DocsArticle from '$lib/DocsArticle.svelte';
+  import { version as appVersion } from '$app/environment';
   import { paths } from '$lib/paths';
 
   const tocItems = [
@@ -18,11 +19,15 @@
   ];
 
   const resources = [
-    { name: 'D1 Database', detail: 'Auth sessions and user accounts (Better Auth)', required: true },
-    { name: 'KV Namespace', detail: 'Saved results (traces) and guest KV read data', required: true },
-    { name: 'Worker', detail: 'Sandbox execution environment', required: true },
-    { name: 'R2 Bucket', detail: 'Guest file storage (r2Read capability)', required: false },
-    { name: 'AI Binding', detail: 'Workers AI for generate mode', required: false },
+    { name: 'Public App', detail: 'Public origin for docs, saved-result viewer, and HTTP API proxy routes', required: true },
+    { name: 'Private Worker', detail: 'Sandbox execution engine and internal invoke routes', required: true },
+    { name: 'Auth D1 Database', detail: 'Auth sessions and user accounts (Better Auth)', required: true },
+    { name: 'Engine D1 Database', detail: 'Guest-readable D1 for d1Read demos and tests', required: true },
+    { name: 'KV Namespace', detail: 'Saved results and guest KV read data', required: true },
+    { name: 'Worker Loader', detail: 'Creates guest isolates at runtime', required: true },
+    { name: 'Durable Objects', detail: 'Lab stub DO and Petri dish backing state', required: true },
+    { name: 'R2 Bucket', detail: 'Optional guest file storage for r2Read', required: false },
+    { name: 'AI Binding', detail: 'Optional Workers AI for generate mode', required: false },
   ];
 
   const steps = [
@@ -54,19 +59,19 @@
       number: 4,
       title: 'Deploy',
       code: 'export CLOUDFLARE_API_TOKEN=your-token\nbun run deploy',
-      description: 'Creates all resources and deploys the Worker (takes 2-3 minutes)',
+      description: 'Creates the public app, private Worker, and required backing bindings (takes 2-3 minutes)',
     },
     {
       number: 5,
       title: 'Configure Environment',
-      code: 'echo "LAB_URL=https://lab.YOUR-SUBDOMAIN.workers.dev" >> .env',
-      description: 'Set your deployed URL for local development',
+      code: 'echo "LAB_URL=https://YOUR-LAB-APP-URL" >> .env',
+      description: 'Set your public app origin for local development and clients',
     },
     {
       number: 6,
       title: 'Verify',
-      code: 'curl https://lab.YOUR-SUBDOMAIN.workers.dev',
-      description: 'Should return: {"ok":true,"version":"0.0.2"}',
+      code: 'curl $LAB_URL/health\ncurl -s $LAB_URL/lab/catalog | jq \'.version\'',
+      description: `Should return: {"ok":true} and then "${appVersion}"`,
     },
   ];
 </script>
@@ -135,11 +140,13 @@
     <div class="mt-4 space-y-2 text-[0.875rem] leading-relaxed">
       <p class="font-semibold text-(--text) m-0">Default bindings</p>
       <ul class="list-disc pl-5 space-y-1 m-0 text-(--text-2)">
-        <li><strong class="text-(--text)">D1</strong>: auth sessions and user accounts (Better Auth)</li>
+        <li><strong class="text-(--text)">APP</strong>: public app origin and HTTP API proxy</li>
+        <li><strong class="text-(--text)">WORKER</strong>: private sandbox engine with invoke routes</li>
+        <li><strong class="text-(--text)">DB</strong>: Better Auth data</li>
+        <li><strong class="text-(--text)">ENGINE_D1</strong>: guest-readable D1 for <code class="font-mono text-[0.8125rem]">d1Read</code></li>
         <li><strong class="text-(--text)">KV</strong>: saved results and guest KV read data</li>
-        <li><strong class="text-(--text)">Worker</strong>: sandbox execution environment</li>
-        <li><strong class="text-(--text)">R2</strong>: optional guest file storage for <code class="font-mono text-[0.8125rem]">r2Read</code></li>
-        <li><strong class="text-(--text)">Workers AI</strong>: optional for generate mode</li>
+        <li><strong class="text-(--text)">LAB_DO / PETRI_DO</strong>: durable backing state</li>
+        <li><strong class="text-(--text)">R2 / Workers AI</strong>: optional feature bindings</li>
       </ul>
       <p class="text-(--text-3) m-0 mt-2">
         Same summary on <a href="/docs/install#what-gets-created" class="text-(--accent) hover:underline">Installation → What gets created</a>.

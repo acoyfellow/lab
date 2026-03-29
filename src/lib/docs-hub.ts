@@ -10,13 +10,13 @@ export type DocsHubCard = {
 };
 
 export const docsHubCards: DocsHubCard[] = [
-	{
-		group: 'guides',
-		to: '/docs/self-host',
-		title: 'Self-Hosting',
-		description: 'Deploy to Cloudflare. Infrastructure setup, configuration, deployment.',
-		tags: ['Production', 'Cloudflare']
-	},
+		{
+			group: 'guides',
+			to: '/docs/self-host',
+			title: 'Self-Hosting',
+			description: 'Deploy the public app, private Worker, and backing Cloudflare resources.',
+			tags: ['Production', 'Cloudflare']
+		},
 	{
 		group: 'guides',
 		to: paths.docsHttpApi,
@@ -24,13 +24,13 @@ export const docsHubCards: DocsHubCard[] = [
 		description: 'Run modes, endpoints, curl, request/response shapes.',
 		tags: ['REST', 'JSON']
 	},
-	{
-		group: 'guides',
-		to: paths.docsAgentIntegration,
-		title: 'Agents',
-		description: 'MCP find + execute, or GET /lab/catalog + HTTP runs.',
-		tags: ['MCP', 'AI']
-	},
+		{
+			group: 'guides',
+			to: paths.docsAgentIntegration,
+			title: 'Agents',
+			description: 'stdio MCP find + execute, or GET /lab/catalog + HTTP runs.',
+			tags: ['MCP', 'AI']
+		},
 	{
 		group: 'guides',
 		to: paths.docsFaq,
@@ -66,20 +66,20 @@ export const docsHubCards: DocsHubCard[] = [
 		description: 'Worker loaders, Effect, KV snapshot, spawn, chains.',
 		tags: ['Cloudflare', 'Effect']
 	},
-	{
-		group: 'reference',
-		to: paths.docsCapabilities,
-		title: 'Capabilities',
-		description: 'KV snapshot, spawn, why shims exist.',
-		tags: ['Security']
-	},
-	{
-		group: 'reference',
-		to: paths.docsTraceSchema,
-		title: 'Trace JSON',
-		description: 'GET /t/:id document — fields, tables, POST traceId.',
-		tags: ['Schema']
-	},
+		{
+			group: 'reference',
+			to: paths.docsCapabilities,
+			title: 'Capabilities',
+			description: 'Registry-backed capability IDs, denied errors, and runtime semantics.',
+			tags: ['Security']
+		},
+		{
+			group: 'reference',
+			to: paths.docsTraceSchema,
+			title: 'Trace Schema',
+			description: 'Saved-result viewer, `/t/:id.json`, and `traceId` semantics.',
+			tags: ['Schema']
+		},
 	{
 		group: 'reference',
 		to: paths.docsLimits,

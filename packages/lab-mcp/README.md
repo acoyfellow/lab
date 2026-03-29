@@ -13,7 +13,7 @@ Add to your MCP config (Claude Desktop, Cursor, etc.):
       "command": "npx",
       "args": ["-y", "@acoyfellow/lab-mcp"],
       "env": {
-        "LAB_URL": "https://your-lab.workers.dev"
+        "LAB_URL": "https://your-lab.example"
       }
     }
   }
@@ -24,21 +24,21 @@ Or install globally and run directly:
 
 ```bash
 npm install -g @acoyfellow/lab-mcp
-LAB_URL=https://your-lab.workers.dev lab-mcp
+LAB_URL=https://your-lab.example lab-mcp
 ```
 
 ## Tools
 
 ### `find`
 
-Discover capabilities and retrieve traces.
+Discover capabilities and retrieve saved results.
 
 - `path` (optional) — dot-path into catalog, e.g. `capabilities`, `execute.chain`
-- `traceId` (optional) — fetch a specific trace
+- `traceId` (optional) — fetch raw saved-result JSON for a specific id
 
 ### `execute`
 
-Run guest code on the Lab Worker.
+Run guest code through Lab.
 
 **Modes:** `sandbox` · `kv` · `chain` · `spawn` · `generate` · `seed`
 

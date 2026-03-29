@@ -1,8 +1,9 @@
 import { CAPABILITY_REGISTRY } from "./capabilities/registry"
 import { GUEST_TEMPLATE_IDS } from "./guest/templates"
+import pkg from "../package.json"
 
 /** Kept in sync with root package.json `version`. */
-export const LAB_PKG_VERSION = "0.0.1" as const
+export const LAB_PKG_VERSION = pkg.version
 
 export function buildLabCatalog() {
   return {
@@ -66,7 +67,7 @@ export function buildLabCatalog() {
     trace: {
       get: "GET /t/:id",
       getJson: "GET /t/:id.json",
-      note: "Same JSON for both paths on Worker; use traceId from run responses when persisted.",
+      note: "Worker returns the same saved-result JSON for both paths. On the public app, `/t/:id` is the shareable result URL/viewer and `/t/:id.json` is the explicit raw JSON document. Use traceId from persisted run responses.",
     },
     seed: {
       method: "POST",

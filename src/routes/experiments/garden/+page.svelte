@@ -589,7 +589,7 @@ Type lifecycle: seed→sprout→bloom→tree→fallen (one step only, server rej
       const result = await runGenerate({
         prompt,
         mode: 'code',
-        capabilities: ['petri', 'fetch'],
+        capabilities: ['petri'],
         maxTokens: 2048,
         input: {
           dishId,

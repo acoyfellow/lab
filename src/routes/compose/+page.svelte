@@ -6,6 +6,7 @@
   import { Textarea } from '$lib/components/ui/textarea';
   import { runSandbox, runKv, runChain, runSpawn, runGenerate, seedKv } from '../data.remote';
   import type { ChainStep } from '@acoyfellow/lab';
+  import type { PageData } from './$types';
   import { SIMPLE_CHAIN_STEPS } from '$lib/guest-code-fixtures';
   import { ChainBuilder } from '$lib/compose';
   import PlayIcon from '@lucide/svelte/icons/play';
@@ -13,15 +14,7 @@
 
   type ExecutionMode = 'once' | 'chain' | 'spawn' | 'generate';
 
-  const CAPABILITIES = [
-    { id: 'kvRead', label: 'kvRead' },
-    { id: 'spawn', label: 'spawn' },
-    { id: 'workersAi', label: 'workersAi' },
-    { id: 'r2Read', label: 'r2Read' },
-    { id: 'd1Read', label: 'd1Read' },
-    { id: 'durableObjectFetch', label: 'durableObjectFetch' },
-    { id: 'containerHttp', label: 'containerHttp' },
-  ];
+  let { data }: { data: PageData } = $props();
 
   let mode = $state<ExecutionMode>('once');
   let inputType = $state<'code' | 'prompt'>('code');
@@ -273,7 +266,7 @@
     </summary>
     <div class="px-3 pb-3 border-t border-(--border)">
       <div class="flex flex-wrap gap-2 pt-2">
-        {#each CAPABILITIES as cap}
+        {#each data.capabilities as cap}
           <label class="inline-flex items-center gap-1.5 text-[0.8125rem] text-(--text-2) cursor-pointer rounded px-2 py-1 bg-(--surface-alt) hover:bg-(--border) transition-colors">
             <input
               type="checkbox"
@@ -291,7 +284,7 @@
   <div class="space-y-2">
     {#if mode === 'chain'}
       <div class="pt-2">
-        <ChainBuilder bind:chainJson disabled={loading} />
+        <ChainBuilder capabilities={data.capabilities} bind:chainJson disabled={loading} />
       </div>
     {:else if mode === 'spawn'}
       <div class="pt-2">

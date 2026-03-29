@@ -33,7 +33,7 @@
 <section class="space-y-3">
   <h2 class="docs-section-label">2. Connect your agent</h2>
   <p>
-    Add Lab as an MCP server so your agent can run code and read results. Works with Claude Desktop, Cursor, or any MCP client.
+    Add Lab as a stdio MCP server so your agent can run code and read saved results. Works with Claude Desktop, Cursor, or any MCP client.
   </p>
   <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4">
     <div class="docs-section-label mb-2">MCP config</div>
@@ -42,7 +42,7 @@
     </div>
   </div>
   <p class="text-[0.8125rem] text-(--text-3)">
-    Replace <code class="font-mono text-[0.8125rem]">$LAB_URL</code> with your instance URL.
+    Replace <code class="font-mono text-[0.8125rem]">$LAB_URL</code> with your public app origin.
     Don't have one yet? <AppLink to={paths.docsSelfHost} class="text-(--accent) hover:underline">Self-host guide →</AppLink>
   </p>
 </section>

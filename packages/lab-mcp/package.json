@@ -1,7 +1,7 @@
 {
   "name": "@acoyfellow/lab-mcp",
   "version": "0.0.2",
-  "description": "MCP server for lab: find (catalog/trace) + execute (guest runs) via stdio",
+  "description": "MCP server for Lab: find (catalog/saved result) + execute (guest runs) via stdio",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -29,7 +29,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@acoyfellow/lab": "^0.0.1",
+    "@acoyfellow/lab": "^0.0.2",
     "@modelcontextprotocol/sdk": "1.28.0",
     "effect": "4.0.0-beta.40",
     "zod": "^4.0.0"

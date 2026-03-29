@@ -1,5 +1,6 @@
 <script lang="ts">
   import DocsArticle from '$lib/DocsArticle.svelte';
+  import { version as appVersion } from '$app/environment';
 
   const tocItems = [
     { id: 'overview', label: 'Overview' },
@@ -30,26 +31,30 @@
       number: 4,
       title: 'Deploy',
       content:
-        'Run the deploy command. Alchemy creates the required bindings automatically. In the default setup: D1 is used for auth data, KV stores saved results, and R2 is optional for guest file reads.',
+        'Run the deploy command. Alchemy creates the public app, the private Worker, and the backing bindings automatically.',
     },
     {
       number: 5,
       title: 'Environment Variables',
-      content: 'Set up your LAB_URL and any API keys for external services.',
+      content: 'Set up your public app URL as LAB_URL and add any external API keys separately.',
     },
     {
       number: 6,
       title: 'Verify',
-      content: 'Test your deployment with a simple curl command.',
+      content: 'Verify the public app origin and the catalog version.',
     },
   ];
 
   const infrastructure = [
-    { name: 'D1 Database', purpose: 'Auth sessions and user accounts (Better Auth)', required: true },
-    { name: 'KV Namespace', purpose: 'Saved results (traces) and guest KV read data', required: true },
-    { name: 'Worker', purpose: 'Sandbox execution environment', required: true },
-    { name: 'R2 Bucket', purpose: 'Guest file storage (r2Read capability)', required: false },
-    { name: 'AI Binding', purpose: 'Workers AI for generate mode', required: false },
+    { name: 'Public App', purpose: 'Public origin for docs, saved-result viewer, and HTTP API proxy routes', required: true },
+    { name: 'Private Worker', purpose: 'Sandbox execution engine and internal invoke routes', required: true },
+    { name: 'Auth D1 Database', purpose: 'Auth sessions and user accounts (Better Auth)', required: true },
+    { name: 'Engine D1 Database', purpose: 'Guest-readable D1 for d1Read demos and tests', required: true },
+    { name: 'KV Namespace', purpose: 'Saved results and guest KV read data', required: true },
+    { name: 'Worker Loader', purpose: 'Creates guest isolates at runtime', required: true },
+    { name: 'Durable Objects', purpose: 'Lab stub DO and Petri dish backing state', required: true },
+    { name: 'R2 Bucket', purpose: 'Optional guest file storage for r2Read', required: false },
+    { name: 'AI Binding', purpose: 'Optional Workers AI for generate mode', required: false },
   ];
 </script>
 
@@ -101,11 +106,13 @@
     <div class="mt-4 space-y-2 text-[0.875rem] leading-relaxed">
       <p class="font-semibold text-(--text) m-0">Default bindings</p>
       <ul class="list-disc pl-5 space-y-1 m-0 text-(--text-2)">
-        <li><strong class="text-(--text)">D1</strong>: auth sessions and user accounts (Better Auth)</li>
+        <li><strong class="text-(--text)">APP</strong>: public app origin and HTTP API proxy</li>
+        <li><strong class="text-(--text)">WORKER</strong>: private sandbox engine with invoke routes</li>
+        <li><strong class="text-(--text)">DB</strong>: Better Auth data</li>
+        <li><strong class="text-(--text)">ENGINE_D1</strong>: guest-readable D1 for <code class="font-mono text-[0.8125rem]">d1Read</code></li>
         <li><strong class="text-(--text)">KV</strong>: saved results and guest KV read data</li>
-        <li><strong class="text-(--text)">Worker</strong>: sandbox execution environment</li>
-        <li><strong class="text-(--text)">R2</strong>: optional guest file storage for <code class="font-mono text-[0.8125rem]">r2Read</code></li>
-        <li><strong class="text-(--text)">Workers AI</strong>: optional for generate mode</li>
+        <li><strong class="text-(--text)">LAB_DO / PETRI_DO</strong>: durable backing state</li>
+        <li><strong class="text-(--text)">R2 / Workers AI</strong>: optional feature bindings</li>
       </ul>
       <p class="text-(--text-3) m-0 mt-2">
         Same summary on <a href="/docs/self-host#infrastructure-created" class="text-(--accent) hover:underline">Self-hosting → Infrastructure</a>.
@@ -172,14 +179,19 @@ bun run deploy</pre>
         <p class="docs-section-label mb-2">
           Set environment variables
         </p>
-        <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">echo 'LAB_URL=https://lab.YOUR-SUBDOMAIN.workers.dev' >> .env</pre>
+        <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">echo 'LAB_URL=https://YOUR-LAB-APP-URL' >> .env</pre>
+        <p class="text-(--text-3) mt-2">
+          Use the public app URL that Alchemy prints after deploy, not the private Worker origin.
+        </p>
       </div>
 
       <div>
         <p class="docs-section-label mb-2">Verify</p>
-        <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">curl https://lab.YOUR-SUBDOMAIN.workers.dev</pre>
+        <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">curl $LAB_URL/health
+curl -s $LAB_URL/lab/catalog | jq '.version'</pre>
         <p class="text-(--text-3) mt-2">
-          Should return: <code class="font-mono text-[0.8125rem]">{'{"ok":true,"version":"0.0.2"}'}</code>
+          Expected: <code class="font-mono text-[0.8125rem]">{'{"ok":true}'}</code> and then
+          <code class="font-mono text-[0.8125rem]">{` "${appVersion}" `}</code> from the catalog.
         </p>
       </div>
     </div>

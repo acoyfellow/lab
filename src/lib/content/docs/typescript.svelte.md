@@ -21,7 +21,7 @@ const out = await lab.runChain([
 ]);
 ```
 
-`baseUrl` is the URL of your Lab instance — either your [self-hosted deploy](/docs/install) or a public one. If you're running the monorepo locally, that's `http://localhost:1337`.
+`baseUrl` is the public app origin for your Lab instance — either your [self-hosted deploy](/docs/install) or another public Lab app. If you're running the monorepo locally, that's `http://localhost:5173`.
 
 ## What you can do
 
