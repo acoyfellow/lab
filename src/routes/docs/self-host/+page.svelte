@@ -80,7 +80,7 @@
 >
   <header id="overview" class="space-y-3">
     <h1 class="text-2xl font-semibold tracking-tight">Self-Hosting Guide</h1>
-    <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
+    <p class="leading-relaxed">
       Deploy Lab to your own Cloudflare account. You control the infrastructure, data, and capabilities. Perfect for
       production workloads and compliance requirements.
     </p>
@@ -89,7 +89,7 @@
   <section id="requirements" class="space-y-4">
     <h2 class="text-lg font-semibold">Requirements</h2>
     <div class="rounded-(--radius) border border-(--border) overflow-hidden">
-      <table class="w-full text-[0.8125rem]">
+      <table class="w-full text-[0.875rem]">
         <tbody class="divide-y divide-(--border)">
           {#each requirements as req}
             <tr class="bg-(--surface)">
@@ -104,11 +104,11 @@
 
   <section id="infrastructure-created" class="space-y-4">
     <h2 class="text-lg font-semibold">Infrastructure Created</h2>
-    <p class="text-[0.8125rem] text-(--text-2)">
+    <p>
       The deploy script provisions these Cloudflare resources automatically:
     </p>
     <div class="rounded-(--radius) border border-(--border) overflow-hidden">
-      <table class="w-full text-[0.8125rem]">
+      <table class="w-full text-[0.875rem]">
         <thead class="bg-(--surface-alt)">
           <tr>
             <th class="text-left px-4 py-2 font-semibold text-(--text-3)">Resource</th>
@@ -148,12 +148,12 @@
           </span>
           <h3 class="font-semibold text-(--text)">{step.title}</h3>
         </div>
-        <p class="text-[0.8125rem] text-(--text-2) pl-11">{step.description}</p>
+        <p class="pl-11">{step.description}</p>
         {#if step.code}
-          <pre class="text-[0.75rem] bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto ml-11">{step.code}</pre>
+          <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto ml-11">{step.code}</pre>
         {/if}
         {#if step.list}
-          <ul class="text-[0.8125rem] text-(--text-2) list-disc pl-16 space-y-1">
+          <ul class="list-disc pl-16 space-y-1">
             {#each step.list as item}
               <li>{item}</li>
             {/each}
@@ -165,8 +165,8 @@
 
   <section id="configuration" class="rounded-(--radius) border border-(--border) bg-(--surface) p-5 space-y-3">
     <h2 class="font-semibold text-(--text)">Configuration Options</h2>
-    <p class="text-[0.8125rem] text-(--text-2)">After deployment, you can customize your Lab instance:</p>
-    <ul class="text-[0.8125rem] text-(--text-2) list-disc pl-5 space-y-1">
+    <p>After deployment, you can customize your Lab instance:</p>
+    <ul class="list-disc pl-5 space-y-1">
       <li>Add custom capabilities in worker configuration</li>
       <li>Configure rate limiting and quotas</li>
       <li>Set up custom domains</li>
@@ -176,7 +176,7 @@
 
   <section id="need-help" class="rounded-(--radius) border border-(--border) bg-(--surface-alt) p-4 space-y-2">
     <h3 class="font-semibold text-(--text)">Need Help?</h3>
-    <ul class="text-[0.8125rem] space-y-1">
+    <ul class="space-y-1">
       <li>
         <a href="https://github.com/acoyfellow/lab/issues" class="text-(--accent) hover:underline">GitHub Issues</a>
         — report bugs or ask questions

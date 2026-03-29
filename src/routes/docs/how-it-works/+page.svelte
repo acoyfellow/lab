@@ -49,7 +49,7 @@
 >
   <header id="overview" class="space-y-2">
     <h1 class="text-2xl font-semibold tracking-tight">How It Works</h1>
-    <p class="text-[0.9375rem] text-(--text-2)">
+    <p class="leading-relaxed">
       Lab's core concepts: execution model, security model, and observability.
     </p>
   </header>
@@ -57,7 +57,7 @@
   {#each sections as section}
     <section id={section.id} class="space-y-3">
       <h2 class="text-lg font-semibold text-(--text)">{section.title}</h2>
-      <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
+      <p class="leading-relaxed">
         {section.content}
       </p>
     </section>

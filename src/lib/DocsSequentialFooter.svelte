@@ -22,7 +22,7 @@
     <div class="min-w-0 flex-1 flex justify-start">
       {#if prev}
         <AppLink to={prev.to} class={linkClass}>
-          <span class="block text-[0.6875rem] font-medium uppercase tracking-wider text-(--text-3)">Previous</span>
+          <span class="block docs-section-label font-medium">Previous</span>
           <span class="block text-[0.9375rem] font-semibold text-(--text) mt-0.5">{prev.label}</span>
         </AppLink>
       {/if}
@@ -30,7 +30,7 @@
     <div class="min-w-0 flex-1 flex justify-end">
       {#if next}
         <AppLink to={next.to} class={`${linkClass} text-right`}>
-          <span class="block text-[0.6875rem] font-medium uppercase tracking-wider text-(--text-3)">Next</span>
+          <span class="block docs-section-label font-medium">Next</span>
           <span class="block text-[0.9375rem] font-semibold text-(--text) mt-0.5">{next.label}</span>
         </AppLink>
       {/if}

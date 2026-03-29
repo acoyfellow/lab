@@ -29,6 +29,12 @@
       badge: 'Diff',
       href: '/docs/patterns#canary-deploy',
       description: 'Old logic vs new logic, same inputs. See exactly what changed before you deploy.'
+    },
+    {
+      title: 'Stress test',
+      badge: 'N',
+      href: '/docs/patterns#stress-test',
+      description: 'Run it 10 times. If run 7 breaks, your instructions are ambiguous. Try with a dumber model to find the floor.'
     }
   ];
 
@@ -122,7 +128,7 @@
     {/each}
 
     <div class="flex items-center gap-4">
-      <a href="/docs/patterns" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">All 8 patterns →</a>
+      <a href="/docs/patterns" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">All 6 patterns →</a>
       <a href="/examples" class="text-[0.8125rem] text-(--text-3) hover:text-(--text) hover:underline">Run these examples →</a>
     </div>
   </section>
@@ -178,7 +184,7 @@
       {/each}
     </div>
     <div class="flex items-center gap-4 mt-1">
-      <a href="/docs/patterns" class="inline-block text-[0.8125rem] text-(--accent) hover:underline font-medium">All 8 patterns →</a>
+      <a href="/docs/patterns" class="inline-block text-[0.8125rem] text-(--accent) hover:underline font-medium">All 6 patterns →</a>
       <a href="/examples" class="inline-block text-[0.8125rem] text-(--text-3) hover:text-(--text) hover:underline">Browse runnable examples →</a>
     </div>
   </section>

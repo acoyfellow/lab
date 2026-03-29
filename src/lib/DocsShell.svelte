@@ -20,7 +20,7 @@
       <nav class="sticky top-8 space-y-6">
         {#each navSections as section}
           <div>
-            <h3 class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2 px-3">
+            <h3 class="docs-section-label mb-2 px-3">
               {section.title}
             </h3>
             <ul class="space-y-0.5">
@@ -28,7 +28,7 @@
                 <li>
                   <a
                     href={item.to}
-                    class="block px-3 py-1.5 text-[0.8125rem] rounded-(--radius) no-underline transition-colors {item.active
+                    class="block px-3 py-1.5 text-[0.875rem] rounded-(--radius) no-underline transition-colors {item.active
                       ? 'text-(--accent) bg-(--accent)/5 font-medium'
                       : 'text-(--text-2) hover:text-(--text) hover:bg-(--surface)'}"
                   >
@@ -49,7 +49,7 @@
     {#if tocItems.length > 0}
       <aside class="hidden xl:block w-48 shrink-0">
         <nav class="sticky top-8">
-          <h3 class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-3">
+          <h3 class="docs-section-label mb-3">
             On this page
           </h3>
           <ul class="space-y-1 border-l border-(--border)">
@@ -57,7 +57,7 @@
               <li>
                 <a
                   href="#{item.id}"
-                  class="block pl-3 py-1 text-[0.8125rem] text-(--text-2) hover:text-(--text) no-underline border-l-2 border-transparent hover:border-(--text-3) transition-colors"
+                  class="block pl-3 py-1 text-[0.875rem] text-(--text-2) hover:text-(--text) no-underline border-l-2 border-transparent hover:border-(--text-3) transition-colors"
                 >
                   {item.label}
                 </a>

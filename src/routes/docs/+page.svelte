@@ -28,17 +28,17 @@
 />
 
 <DocsShell {tocItems}>
-  <div class="space-y-8">
+  <div class="max-w-3xl space-y-8 docs-prose">
     <header id="overview" class="space-y-2">
       <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Documentation</h1>
-      <p class="text-[0.9375rem] text-(--text-2) max-w-2xl">
+      <p class="max-w-2xl">
         Everything you need to run JavaScript in Cloudflare isolates. From quick starts to deep dives on
         architecture and the HTTP API.
       </p>
     </header>
 
     <section id="quick-start" class="space-y-4">
-      <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Quick Start</h2>
+      <h2 class="docs-section-label">Quick Start</h2>
       <div class="grid gap-4 sm:grid-cols-3">
         <a
           href="/docs/install"
@@ -48,7 +48,7 @@
             <Zap class="w-4 h-4 text-(--text-2) group-hover:text-(--accent)" />
             <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Install</h3>
           </div>
-          <p class="text-[0.8125rem] text-(--text-2)">
+          <p>
             Deploy to Cloudflare. D1, R2, KV setup included.
           </p>
         </a>
@@ -60,7 +60,7 @@
             <GraduationCap class="w-4 h-4 text-(--text-2) group-hover:text-(--accent)" />
             <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Tutorial</h3>
           </div>
-          <p class="text-[0.8125rem] text-(--text-2)">Three short steps with live runners. Learn by doing.</p>
+          <p>Three short steps with live runners. Learn by doing.</p>
         </a>
         <a
           href="/compose"
@@ -70,14 +70,14 @@
             <Play class="w-4 h-4 text-(--text-2) group-hover:text-(--accent)" />
             <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Compose</h3>
           </div>
-          <p class="text-[0.8125rem] text-(--text-2)">Skip ahead and start building in the browser.</p>
+          <p>Skip ahead and start building in the browser.</p>
         </a>
       </div>
     </section>
 
     {#each hubSections as block}
       <section id={block.id} class="space-y-4">
-        <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">{block.heading}</h2>
+        <h2 class="docs-section-label">{block.heading}</h2>
         <div class="grid gap-4 sm:grid-cols-2">
           {#each block.cards as card}
             <AppLink
@@ -88,11 +88,11 @@
                 <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">{card.title}</h3>
                 <div class="flex gap-1">
                   {#each card.tags as tag}
-                    <span class="text-[0.625rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3)">{tag}</span>
+                    <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3)">{tag}</span>
                   {/each}
                 </div>
               </div>
-              <p class="text-[0.8125rem] text-(--text-2)">{card.description}</p>
+              <p>{card.description}</p>
             </AppLink>
           {/each}
         </div>

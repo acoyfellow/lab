@@ -95,15 +95,15 @@ try {
     {#each steps as step, i}
       {#if i > 0}
         <div class="flex items-center gap-2 px-4 py-1 bg-(--surface-alt)/50 border-t border-(--border)">
-          <span class="text-[0.625rem] text-(--text-3) font-mono">↓ output becomes <code class="text-(--text-2)">input</code></span>
+          <span class="text-[0.6875rem] text-(--text-3) font-mono">↓ output becomes <code class="text-(--text-2)">input</code></span>
         </div>
       {/if}
       <div class="px-4 py-3 {i > 0 ? 'border-t border-(--border)' : ''}">
         <div class="flex items-center gap-2.5 mb-1.5">
-          <span class="flex-shrink-0 w-5 h-5 rounded-full bg-(--surface-alt) flex items-center justify-center text-[0.625rem] font-bold {stepColors[i]}">{stepIcons[i]}</span>
-          <span class="text-[0.8125rem] font-medium text-(--text)">Step {i + 1}: {step.name}</span>
+          <span class="flex-shrink-0 w-5 h-5 rounded-full bg-(--surface-alt) flex items-center justify-center text-[0.6875rem] font-bold {stepColors[i]}">{stepIcons[i]}</span>
+          <span class="text-[0.875rem] font-medium text-(--text)">Step {i + 1}: {step.name}</span>
         </div>
-        <pre class="text-[0.7rem] font-mono text-(--text-2) pl-[1.875rem] leading-relaxed m-0 whitespace-pre-wrap">{step.body}</pre>
+        <pre class="text-[0.8125rem] font-mono text-(--text-2) pl-[1.875rem] leading-relaxed m-0 whitespace-pre-wrap">{step.body}</pre>
       </div>
     {/each}
   </div>
@@ -117,7 +117,7 @@ try {
         <PlayIcon class="w-4 h-4" />
       {/if}
     </Button>
-    <button onclick={openInCompose} class="text-[0.8125rem] text-(--text-2) hover:text-(--text) underline underline-offset-2 bg-transparent border-none cursor-pointer p-0">
+    <button onclick={openInCompose} class="text-[0.875rem] text-(--text-2) hover:text-(--text) underline underline-offset-2 bg-transparent border-none cursor-pointer p-0">
       Fork in Compose
     </button>
   </div>
@@ -125,26 +125,26 @@ try {
   {#if result && result.ok}
     <div class="rounded-(--radius) border border-emerald-500/25 bg-white p-4 space-y-2">
       <div class="flex items-center justify-between">
-        <span class="text-[0.75rem] font-semibold text-emerald-500">Healed and validated</span>
+        <span class="text-[0.8125rem] font-semibold text-emerald-500">Healed and validated</span>
         {#if result.traceId}
-          <a href="/t/{result.traceId}" class="text-[0.75rem] text-(--accent) hover:underline font-medium">
+          <a href="/t/{result.traceId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">
             Open the trace — follow the full story →
           </a>
         {/if}
       </div>
-      <pre class="font-mono text-xs text-(--text) m-0 overflow-x-auto">{JSON.stringify(result.result, null, 2)}</pre>
+      <pre class="font-mono text-[0.8125rem] text-(--text) m-0 overflow-x-auto">{JSON.stringify(result.result, null, 2)}</pre>
     </div>
   {/if}
 
   {#if result && !result.ok}
     <div class="rounded-(--radius) border border-red-500/30 bg-red-500/5 p-4 space-y-2">
-      <span class="text-[0.75rem] font-semibold text-red-400">Failed</span>
+      <span class="text-[0.8125rem] font-semibold text-red-400">Failed</span>
       {#if result.traceId}
-        <a href="/t/{result.traceId}" class="text-[0.75rem] text-(--accent) hover:underline font-medium block">
+        <a href="/t/{result.traceId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium block">
           Open the trace to see what happened →
         </a>
       {/if}
-      <pre class="font-mono text-xs text-red-500 m-0 overflow-x-auto">{JSON.stringify({ error: result.error, reason: result.reason }, null, 2)}</pre>
+      <pre class="font-mono text-[0.8125rem] text-red-500 m-0 overflow-x-auto">{JSON.stringify({ error: result.error, reason: result.reason }, null, 2)}</pre>
     </div>
   {/if}
 

@@ -11,7 +11,7 @@
 <DocsArticle
   pageTitle="Agent Patterns"
   segment="Patterns"
-  description="Agent patterns for isolated execution and traces: prove-it, self-improving loop, handoff, and more."
+  description="Agent patterns for sandboxed execution: prove-it, self-healing, handoff, canary deploy, stress test."
   {tocItems}
 >
   {@html data.articleHtml}

@@ -19,7 +19,7 @@
 >
   <header id="overview" class="space-y-2">
     <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Petri</h1>
-    <p class="text-sm text-(--text-3)">
+    <p class="text-(--text-3) leading-relaxed max-w-2xl">
       Shared state that persists across runs. Agents modify it. Browsers observe it in real-time.
     </p>
   </header>
@@ -36,7 +36,7 @@
       to build things like live dashboards, collaborative experiments, or games where agents
       make moves and humans watch.
     </p>
-    <pre class="bg-(--code-bg) p-4 rounded-lg text-sm text-(--text-2) overflow-x-auto leading-normal font-mono whitespace-pre">  ┌──────────────┐         ┌──────────────┐         ┌──────────────┐
+    <pre class="docs-pre bg-(--code-bg) p-4 rounded-lg text-(--text-2) overflow-x-auto leading-normal font-mono whitespace-pre">  ┌──────────────┐         ┌──────────────┐         ┌──────────────┐
   │    Agent     │ ◄────► │   Sandbox    │ ◄────► │  Shared State │
   │              │        │  (Lab run)   │        │  (Durable Obj)│
   └──────────────┘        └──────────────┘        └──────┬───────┘

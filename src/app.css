@@ -133,6 +133,41 @@
    * - Home TypeScript teaser + tutorial steps: Shiki SSR (.shiki-code-block) via highlightCode().
    * - mdsvex /docs *.svelte.md: plain pre/code (.md-doc pre) — except /docs/patterns (SSR Shiki via +page.server.ts).
    */
+  /* Doc column: DocsArticle, tutorial shell, hub main — base ~15px body */
+  .docs-prose {
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--text-2);
+  }
+  .docs-prose h1 {
+    color: var(--text);
+  }
+  .docs-prose h2:not(.docs-section-label) {
+    color: var(--text);
+  }
+
+  .docs-section-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  /* Tutorial step line (sentence case, not all-caps) */
+  .docs-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-3);
+  }
+
+  pre.docs-pre {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
   /* Shiki SSR (server + Workers): github-light + JS engine */
   .shiki-code-block pre.shiki {
     margin: 0;
@@ -143,40 +178,46 @@
     overflow-wrap: anywhere;
     word-break: break-word;
     font-family: var(--mono);
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     line-height: 1.5;
     background-color: var(--code-bg) !important;
   }
 
   /* mdsvex markdown — prose + undecorated fenced blocks (see policy above) */
+  .md-doc {
+    font-size: inherit;
+  }
   .md-doc :is(h1, h2, h3) {
     color: var(--text);
     font-weight: 600;
     letter-spacing: -0.02em;
   }
   .md-doc h1 {
-    font-size: 1.125rem;
+    font-size: 1.5rem;
+    line-height: 1.25;
     margin: 0 0 1rem;
   }
   .md-doc h2 {
-    font-size: 0.8125rem;
-    margin: 2rem 0 0.75rem;
+    font-size: 1.0625rem;
+    line-height: 1.35;
+    margin: 2.25rem 0 0.75rem;
   }
   .md-doc h3 {
-    font-size: 0.8125rem;
-    margin: 1.25rem 0 0.5rem;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    margin: 1.5rem 0 0.5rem;
   }
   .md-doc p {
-    margin: 0 0 0.75rem;
-    max-width: 62ch;
+    margin: 0 0 0.875rem;
+    max-width: 65ch;
   }
   .md-doc ul {
-    margin: 0 0 0.75rem;
+    margin: 0 0 0.875rem;
     padding-left: 1.25rem;
     list-style: disc;
   }
   .md-doc li {
-    margin: 0.25rem 0;
+    margin: 0.35rem 0;
   }
   .md-doc :is(strong) {
     color: var(--text);
@@ -184,7 +225,7 @@
   }
   .md-doc :is(code):not(pre code) {
     font-family: var(--mono);
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
   }
   .md-doc pre {
     margin: 0.5rem 0 1rem;
@@ -193,7 +234,8 @@
     border: 1px solid var(--border);
     background: var(--code-bg);
     font-family: var(--mono);
-    font-size: 0.7rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
     overflow-x: auto;
     white-space: pre-wrap;
     word-break: break-word;
@@ -214,7 +256,7 @@
     min-width: min(100%, 40rem);
     border-collapse: collapse;
     margin: 0.5rem 0 1rem;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
   }
   .md-doc :is(th, td) {
     border: 1px solid var(--border);

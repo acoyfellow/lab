@@ -41,7 +41,7 @@
 />
 
 <DocsShell {tocItems}>
-  <div class="max-w-3xl pb-16 text-[0.8125rem] text-(--text-2) leading-relaxed">
+  <div class="max-w-3xl pb-16 docs-prose leading-relaxed">
     <p class="mb-6">
       <AppLink to={paths.docs} class="text-(--text-3) no-underline hover:text-(--text)">Docs</AppLink>
       <span class="text-(--text-3)"> / </span>
