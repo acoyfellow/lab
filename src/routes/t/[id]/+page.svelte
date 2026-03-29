@@ -178,8 +178,8 @@
 </script>
 
 <SEO
-  title={`Trace ${trace.id} — lab`}
-  description="Execution trace — the full story of what ran, what returned, and how long it took. Inspect, fork, or share."
+  title={`Saved result ${trace.id} — lab`}
+  description="Saved result viewer — inspect what ran, what returned, and how long it took. Fork it or share it."
   path={page.url.pathname}
   type="website"
 />
@@ -189,7 +189,7 @@
   <header class="flex justify-between items-start gap-4 mb-6 max-sm:flex-col">
     <div>
       <div class="flex items-center gap-2">
-        <h1 class="text-lg font-semibold tracking-tight text-(--text) m-0">Trace</h1>
+        <h1 class="text-lg font-semibold tracking-tight text-(--text) m-0">Saved result</h1>
         <span class="text-[0.6875rem] font-mono text-(--text-3) bg-(--surface-alt) px-2 py-0.5 rounded">{trace.id}</span>
       </div>
       <p class="text-(--text-2) text-[0.8125rem] mt-1.5 mb-0 max-w-[52ch] leading-relaxed">

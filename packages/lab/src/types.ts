@@ -76,7 +76,7 @@ export type SeedResult = {
   seeded: number;
 };
 
-/** Stored trace document from `GET /t/:id` (aligned with worker `StoredTrace`). */
+/** Stored saved-result JSON from `GET /t/:id.json` (aligned with worker `StoredTrace`). */
 export type TraceData = {
   id: string;
   type: string;

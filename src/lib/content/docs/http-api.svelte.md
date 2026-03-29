@@ -17,8 +17,8 @@ Related: [Permissions](/docs/capabilities) · [Limits](/docs/limits) · [Failure
 | POST | `/run/spawn` | Run code that can launch nested sandboxes |
 | POST | `/run/generate` | AI writes code from a prompt, then runs it |
 | POST | `/seed` | Load demo data into KV |
-| GET | `/t/:id` | Fetch a saved run result |
-| GET | `/t/:id.json` | Same as above (JSON) |
+| GET | `/t/:id` | Open the saved-result viewer |
+| GET | `/t/:id.json` | Fetch canonical saved-result JSON |
 | GET | `/lab/catalog` | Machine-readable API description (for agents) |
 
 ## Quick examples
@@ -109,7 +109,11 @@ Loads demo data into KV for testing. No saved result is created.
 
 ## GET /t/:id
 
-Fetch a saved run result. `GET /t/:id` is the shareable result URL, and `GET /t/:id.json` is the raw JSON document. See [result schema](/docs/trace-schema) for the full format.
+Open the saved result in the public app viewer. Agents and scripts should read `GET /t/:id.json` instead.
+
+## GET /t/:id.json
+
+Fetch the canonical saved-result JSON. See [result schema](/docs/trace-schema) for the full format.
 
 ---
 

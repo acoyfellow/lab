@@ -57,7 +57,9 @@ export type LabEffectClient = {
   readonly runSpawn: (payload: RunSpawnPayload) => Effect.Effect<RunResult, HttpError>;
   readonly runGenerate: (payload: RunGeneratePayload) => Effect.Effect<RunResult, HttpError>;
   readonly seed: () => Effect.Effect<SeedResult, HttpError>;
+  /** Fetch saved-result JSON from the canonical `GET /t/:id.json` path. */
   readonly getTrace: (traceId: string) => Effect.Effect<TraceData | { error: string }, HttpError>;
+  /** Explicit alias for `getTrace`; always uses `GET /t/:id.json`. */
   readonly getTraceJson: (traceId: string) => Effect.Effect<TraceData | { error: string }, HttpError>;
 };
 
@@ -125,7 +127,7 @@ export function createLabEffectClient(options: LabEffectClientOptions): LabEffec
       return tryRequestJSON<TraceData | { error: string }>(
         baseUrl,
         fetchImpl,
-        `/t/${traceId}`,
+        `/t/${traceId}.json`,
         { method: 'GET' }
       );
     },

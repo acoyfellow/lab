@@ -128,7 +128,7 @@ try {
         <span class="text-[0.8125rem] font-semibold text-emerald-500">Healed and validated</span>
         {#if result.traceId}
           <a href="/t/{result.traceId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">
-            Open the trace — follow the full story →
+            Open the saved result — follow the full story →
           </a>
         {/if}
       </div>
@@ -141,7 +141,7 @@ try {
       <span class="text-[0.8125rem] font-semibold text-red-400">Failed</span>
       {#if result.traceId}
         <a href="/t/{result.traceId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium block">
-          Open the trace to see what happened →
+          Open the saved result to see what happened →
         </a>
       {/if}
       <pre class="font-mono text-[0.8125rem] text-red-500 m-0 overflow-x-auto">{JSON.stringify({ error: result.error, reason: result.reason }, null, 2)}</pre>

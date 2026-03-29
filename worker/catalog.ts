@@ -67,7 +67,7 @@ export function buildLabCatalog() {
     trace: {
       get: "GET /t/:id",
       getJson: "GET /t/:id.json",
-      note: "Worker returns the same saved-result JSON for both paths. On the public app, `/t/:id` is the shareable result URL/viewer and `/t/:id.json` is the explicit raw JSON document. Use traceId from persisted run responses.",
+      note: "Use traceId from persisted run responses. `GET /t/:id.json` is the canonical machine-readable saved-result JSON. On the public app, `GET /t/:id` is the human viewer over that same saved result.",
     },
     seed: {
       method: "POST",

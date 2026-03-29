@@ -27,10 +27,10 @@ return {
 export const sort: ExampleData = {
 	id: 'sort',
 	title: 'Sort 10k Items',
-	description: '10,000 random numbers sorted on the edge. Trace shows wall time.',
+	description: '10,000 random numbers sorted on the edge. The saved result shows wall time.',
 	problem: 'How fast is a sort in an isolate?',
 	solution: 'Generate → sort → verify. One step.',
-	result: '10k items sorted in ~2ms. Trace proves it.',
+	result: '10k items sorted in ~2ms. The saved result proves it.',
 	icon: 'arrow-up-down',
 	tags: ['simple', 'sort', 'benchmark', 'loop'],
 	steps: [
@@ -68,7 +68,7 @@ export const dedupe: ExampleData = {
 	description: '12 emails → 6 unique. One line of code, one isolate.',
 	problem: 'Remove duplicates from a list without guessing.',
 	solution: '[...new Set(raw)]',
-	result: '12 → 6. Removed 6 duplicates. Trace has the exact list.',
+	result: '12 → 6. Removed 6 duplicates. The saved result has the exact list.',
 	icon: 'filter',
 	tags: ['simple', 'dedupe', 'set', 'array'],
 	steps: [
@@ -112,7 +112,7 @@ export const regexTest: ExampleData = {
 	description: 'Test an email regex against 8 inputs. No guessing — run it.',
 	problem: '"Does this regex match?" — don\'t reason about it, run it.',
 	solution: 'Ship the pattern + inputs to an isolate. Get exact matches.',
-	result: '8 inputs tested. 3 matched. Trace has every result.',
+	result: '8 inputs tested. 3 matched. The saved result has every result.',
 	icon: 'search',
 	tags: ['simple', 'regex', 'validation', 'eval'],
 	steps: [
@@ -166,7 +166,7 @@ export const dateMath: ExampleData = {
 	description: 'Business days, calendar math, day-of-week — computed, not guessed.',
 	problem: 'LLMs are bad at date arithmetic. "90 business days from today" — don\'t guess.',
 	solution: 'Run the date calculation in an isolate. Get the exact answer.',
-	result: 'Exact dates. No off-by-one. Trace proves it.',
+	result: 'Exact dates. No off-by-one. The saved result proves it.',
 	icon: 'calendar',
 	tags: ['simple', 'dates', 'math', 'eval'],
 	steps: [
@@ -198,7 +198,7 @@ export const hash: ExampleData = {
 	description: 'Hash a string with crypto.subtle. Exact hex output. One step.',
 	problem: 'Need a hash? Don\'t install a library — run it on the edge.',
 	solution: 'crypto.subtle.digest in an isolate. Done.',
-	result: 'Deterministic SHA-256 hex. 64 characters. Trace has it.',
+	result: 'Deterministic SHA-256 hex. 64 characters. The saved result has it.',
 	icon: 'hash',
 	tags: ['simple', 'crypto', 'hash', 'eval'],
 	steps: [
@@ -247,7 +247,7 @@ export const validateJson: ExampleData = {
 	description: '7 strings — which are valid JSON? Don\'t eyeball it. Run it.',
 	problem: '"Is this valid JSON?" — parsing errors are exact, guesses are not.',
 	solution: 'JSON.parse each string. Catch tells you exactly what\'s wrong.',
-	result: '4 valid, 3 invalid. Trace shows the exact parse errors.',
+	result: '4 valid, 3 invalid. The saved result shows the exact parse errors.',
 	icon: 'file-json',
 	tags: ['simple', 'json', 'validation', 'eval'],
 	steps: [
@@ -284,7 +284,7 @@ export const wordFrequency: ExampleData = {
 	description: 'Count every word in a text. Sorted by frequency. One step.',
 	problem: 'Word counts, frequency analysis — tedious to do by hand, easy to miscount.',
 	solution: 'Split, count, sort. Isolate does it in <1ms.',
-	result: '"the" appears 5 times. 16 words, 8 unique. Trace has the full frequency map.',
+	result: '"the" appears 5 times. 16 words, 8 unique. The saved result has the full frequency map.',
 	icon: 'text',
 	tags: ['simple', 'text', 'frequency', 'loop'],
 	steps: [
@@ -341,9 +341,9 @@ return {
 export const mapFilterReduce: ExampleData = {
 	id: 'map-filter-reduce',
 	title: 'Map → Filter → Reduce',
-	description: '1,000 users. Filter active. Map emails. Reduce totals. Trace shows timing.',
+	description: '1,000 users. Filter active. Map emails. Reduce totals. The saved result shows timing.',
 	problem: 'Every app processes arrays. Agents can offload the loop and prove the output.',
-	solution: 'Generate 1k users → filter → map → reduce. Two steps. Trace has the numbers.',
+	solution: 'Generate 1k users → filter → map → reduce. Two steps. The saved result has the numbers.',
 	result: '667 active users, total spend, averages, oldest/youngest. All verified.',
 	icon: 'repeat',
 	tags: ['simple', 'loop', 'map', 'filter', 'reduce', 'array'],
@@ -382,7 +382,7 @@ export const generateUuids: ExampleData = {
 	description: '100 crypto-random UUIDs in one isolate. All unique. Sub-millisecond.',
 	problem: 'Need UUIDs? crypto.randomUUID() on the edge. No library.',
 	solution: 'One isolate, one line, 100 UUIDs.',
-	result: '100 UUIDs, all unique, <1ms. Trace has the full list.',
+	result: '100 UUIDs, all unique, <1ms. The saved result has the full list.',
 	icon: 'key',
 	tags: ['simple', 'uuid', 'crypto', 'generate'],
 	steps: [

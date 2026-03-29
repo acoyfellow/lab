@@ -5,7 +5,7 @@ import { catalogAtPath } from './catalogPath.js';
 
 /** Minimal shape for path tests only */
 const cat = {
-  version: '0.0.2',
+  version: '0.0.3',
   capabilities: [{ id: 'kvRead', binding: 'KV', summary: '', llmHint: '' }],
   templates: [],
   execute: {
@@ -21,7 +21,7 @@ const cat = {
 
 describe('catalogAtPath', () => {
   test('scalar at top-level path', () => {
-    expect(catalogAtPath(cat, 'version')).toBe('0.0.2');
+    expect(catalogAtPath(cat, 'version')).toBe('0.0.3');
   });
 
   test('nested path', () => {

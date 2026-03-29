@@ -59,7 +59,7 @@ export const SPAWN_PARALLEL_CURL = `curl -X POST $LAB_URL/run/spawn \\
 
 /**
  * Homepage TypeScript sample — agent-oriented workflow.
- * Shows an agent building a self-healing pipeline and using the trace.
+ * Shows an agent building a self-healing pipeline and using the saved result.
  */
 export const CLIENT_SNIPPET = `import { createLabClient } from "@acoyfellow/lab";
 
@@ -94,9 +94,9 @@ return { ok: true, data: JSON.parse(fixed), healed: true };\`,
   },
 ]);
 
-// The trace is the proof. Share it with another agent or a reviewer.
+// The saved result is the proof. Share it with another agent or a reviewer.
 console.log(out.result);   // { ok: true, data: {...}, healed: true }
-console.log(out.traceId);  // → shareable URL`;
+console.log(out.traceId);  // → JSON: /t/<id>.json, viewer: /t/<id>`;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // "You've used these before" — recognizable agent patterns mapped to Lab
@@ -136,7 +136,7 @@ export const KNOWN_PATTERNS = [
              verdict: passed === input.length ? "PASS" : "FAIL" };
   \`, capabilities: [] },
 ]);
-// → trace URL proves 3/3 pass. Ship the receipt, not "trust me."`,
+// → saved result URL proves 3/3 pass. Ship the receipt, not "trust me."`,
   },
   {
     id: 'deep-research',

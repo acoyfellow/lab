@@ -58,6 +58,8 @@ See [HTTP API](/docs/http-api) for all endpoints.
 
 `GET /lab/catalog` returns a machine-readable JSON document describing all available capabilities, endpoints, and how to call them. Point your agent at this URL instead of hardcoding API details.
 
+After a persisted run, agents should fetch `GET /t/:id.json`. `GET /t/:id` is the human viewer on the public app.
+
 ## Security
 
 The catalog is public if your Lab instance is public. To restrict access, use Cloudflare Access, a private Worker URL, or only expose the catalog on internal deploys.

@@ -1,6 +1,6 @@
 {
   "name": "@acoyfellow/lab-cli",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Minimal CLI for Lab — agents shell out, get saved results back",
   "license": "MIT",
   "type": "module",
@@ -28,7 +28,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@acoyfellow/lab": "^0.0.2",
+    "@acoyfellow/lab": "^0.0.3",
     "effect": "4.0.0-beta.40"
   },
   "devDependencies": {

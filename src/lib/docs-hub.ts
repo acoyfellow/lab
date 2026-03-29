@@ -76,8 +76,8 @@ export const docsHubCards: DocsHubCard[] = [
 		{
 			group: 'reference',
 			to: paths.docsTraceSchema,
-			title: 'Trace Schema',
-			description: 'Saved-result viewer, `/t/:id.json`, and `traceId` semantics.',
+			title: 'Saved Result Schema',
+			description: 'Saved-result JSON, viewer semantics, and `traceId`.',
 			tags: ['Schema']
 		},
 	{

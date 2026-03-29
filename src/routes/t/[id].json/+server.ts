@@ -8,7 +8,7 @@ export const GET: RequestHandler = async ({ params, platform }) => {
   const response = await fetchLabWorker(platform, `/t/${traceId}.json`);
 
   if (!response.ok) {
-    error(404, `Trace ${traceId} not found`);
+    error(404, `Saved result ${traceId} not found`);
   }
 
   const trace = await response.json();

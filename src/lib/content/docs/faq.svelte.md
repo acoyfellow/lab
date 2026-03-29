@@ -4,7 +4,7 @@ Short answers for folks who like agents, MCP, and shipping real integrations. De
 
 ## 1. How do agents actually call this?
 
-**MCP** (stdio server in `@acoyfellow/lab-mcp`) or **raw HTTP**: `GET /lab/catalog` for capability and execute metadata, then `POST /run`, `/run/chain`, etc. See [Agent integration](/docs/agent-integration) and [HTTP API](/docs/http-api). A minimal loop is: discover paths from the catalog, run, read `traceId`, then open the saved result URL or fetch `GET /t/:id.json`. Successful runs include full step data; failed or aborted runs may include partial-or-empty step detail.
+**MCP** (stdio server in `@acoyfellow/lab-mcp`) or **raw HTTP**: `GET /lab/catalog` for capability and execute metadata, then `POST /run`, `/run/chain`, etc. See [Agent integration](/docs/agent-integration) and [HTTP API](/docs/http-api). A minimal loop is: discover paths from the catalog, run, read `traceId`, then fetch `GET /t/:id.json`. Humans can open `GET /t/:id` in the app viewer. Successful runs include full step data; failed or aborted runs may include partial-or-empty step detail.
 
 ## 2. How tight is the sandbox for LLM-generated or user-supplied JS?
 
@@ -12,11 +12,11 @@ Guest code runs in **Worker Loader** isolates with an explicit **capability** se
 
 ## 3. What’s the observability story for agent runs?
 
-Every persisted run returns a **`traceId`**. The saved result document contains the request shape, outcome, timing, and per-step data for successful chains. Use **`/t/:id`** as the shareable result URL and **`/t/:id.json`** for the raw JSON document. It’s a shareable artifact, not a full “agent session” product—you correlate tool calls to saved results in your own control plane. See [Trace schema](/docs/trace-schema) and [Failures & traces](/docs/failures) (including chain failure behavior).
+Every persisted run returns a **`traceId`**. The saved result document contains the request shape, outcome, timing, and per-step data for successful chains. Agents should read **`/t/:id.json`**. Humans can open **`/t/:id`** as the viewer over that same saved result. It’s a shareable artifact, not a full “agent session” product—you correlate tool calls to saved results in your own control plane. See [Saved result schema](/docs/trace-schema) and [Failures & traces](/docs/failures) (including chain failure behavior).
 
 ## 4. Cost and limits—what breaks first?
 
-Platform **CPU/time** and **Workers** limits apply; Lab doesn’t add a separate chain step cap in code. Spawn depth is bounded; R2 invoke caps list/size in the Worker. See [Limits](/docs/limits). For dollars-on-the-bill precision, use Cloudflare’s published pricing and your account—not the trace’s wall `ms` alone.
+Platform **CPU/time** and **Workers** limits apply; Lab doesn’t add a separate chain step cap in code. Spawn depth is bounded; R2 invoke caps list/size in the Worker. See [Limits](/docs/limits). For dollars-on-the-bill precision, use Cloudflare’s published pricing and your account—not the saved result’s wall `ms` alone.
 
 ## 5. Why edge instead of a Python sidecar or local sandbox?
 

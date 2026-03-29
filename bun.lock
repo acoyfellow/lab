@@ -48,7 +48,7 @@
     },
     "packages/lab": {
       "name": "@acoyfellow/lab",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "devDependencies": {
         "effect": "4.0.0-beta.40",
         "typescript": "^5.9.3",
@@ -62,12 +62,12 @@
     },
     "packages/lab-cli": {
       "name": "@acoyfellow/lab-cli",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "bin": {
         "lab": "./dist/cli.js",
       },
       "dependencies": {
-        "@acoyfellow/lab": "^0.0.1",
+        "@acoyfellow/lab": "^0.0.3",
         "effect": "4.0.0-beta.40",
       },
       "devDependencies": {
@@ -77,12 +77,12 @@
     },
     "packages/lab-mcp": {
       "name": "@acoyfellow/lab-mcp",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "bin": {
         "lab-mcp": "./dist/main.js",
       },
       "dependencies": {
-        "@acoyfellow/lab": "^0.0.1",
+        "@acoyfellow/lab": "^0.0.3",
         "@modelcontextprotocol/sdk": "1.28.0",
         "effect": "4.0.0-beta.40",
         "zod": "^4.0.0",
@@ -94,7 +94,7 @@
     },
     "packages/lab-petri": {
       "name": "@acoyfellow/lab-petri",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20250321.0",
         "typescript": "^5.4.0",
@@ -1765,10 +1765,6 @@
     "zod-to-json-schema": ["zod-to-json-schema@3.25.1", "", { "peerDependencies": { "zod": "^3.25 || ^4" } }, "sha512-pM/SU9d3YAggzi6MtR4h7ruuQlqKtad8e9S0fmxcMi+ueAK5Korys/aWcV9LIIHTVbj01NdzxcnXSN+O74ZIVA=="],
 
     "zwitch": ["zwitch@2.0.4", "", {}, "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="],
-
-    "@acoyfellow/lab-cli/@acoyfellow/lab": ["@acoyfellow/lab@0.0.1", "", { "peerDependencies": { "effect": ">=4.0.0-beta.0 <5" }, "optionalPeers": ["effect"] }, "sha512-FsOrR3TOCZQ7CqdP2nET9Azzno7dKJkwnqdpzp7n5CvoT7YxRZZIjndchQ14laVgFGbDkdhKhL5PFW+086Sq7A=="],
-
-    "@acoyfellow/lab-mcp/@acoyfellow/lab": ["@acoyfellow/lab@0.0.1", "", { "peerDependencies": { "effect": ">=4.0.0-beta.0 <5" }, "optionalPeers": ["effect"] }, "sha512-FsOrR3TOCZQ7CqdP2nET9Azzno7dKJkwnqdpzp7n5CvoT7YxRZZIjndchQ14laVgFGbDkdhKhL5PFW+086Sq7A=="],
 
     "@aws-crypto/sha256-browser/@smithy/util-utf8": ["@smithy/util-utf8@2.3.0", "", { "dependencies": { "@smithy/util-buffer-from": "^2.2.0", "tslib": "^2.6.2" } }, "sha512-R8Rdn8Hy72KKcebgLiv8jQcQkXoLMOGGv5uI1/k0l+snqkOzQ1R0ChUBCxWMlBsFMekWjq0wRudIweFs7sKT5A=="],
 

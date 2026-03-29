@@ -66,7 +66,7 @@ function mapHttpToError(err) {
 }
 const mcpServer = new McpServer({
     name: 'lab',
-    version: '0.0.2',
+    version: '0.0.3',
 });
 mcpServer.registerTool('find', {
     description: 'Discover lab API: full GET /lab/catalog JSON, a dot-path slice (e.g. execute.chain), or GET /t/:id.json raw saved-result JSON when traceId is set.',

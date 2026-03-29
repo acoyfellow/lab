@@ -2,7 +2,7 @@
 
 ## You send code. Lab runs it. You get a saved result.
 
-That's the whole idea. Your agent (or script, or curl command) sends JavaScript to Lab. Lab runs it inside a Cloudflare sandbox — a fresh, isolated environment that starts in milliseconds. When you run code on Lab, the result is saved as JSON at a URL (`/t/:id`). Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial.
+That's the whole idea. Your agent (or script, or curl command) sends JavaScript to Lab. Lab runs it inside a Cloudflare sandbox — a fresh, isolated environment that starts in milliseconds. When you run code on Lab, the saved-result JSON is available at `GET /t/:id.json`. Humans can open `GET /t/:id` in the public app viewer. Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial.
 
 ---
 
@@ -51,7 +51,7 @@ There's a depth limit. Each level down gets the same or fewer permissions than i
 
 ## What gets saved
 
-Every run saves a JSON result document. The human-facing result URL is usually `/t/:id`, and `/t/:id.json` always returns the raw JSON.
+Every run saves a JSON result document. `GET /t/:id.json` is the canonical machine path, and `GET /t/:id` is the human-facing viewer on the public app.
 
 For successful runs, it contains:
 

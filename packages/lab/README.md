@@ -2,7 +2,7 @@
 
 Typed HTTP client for the [Lab](https://github.com/acoyfellow/lab) public app API — sandboxed isolates, capability chains, and saved results.
 
-> **0.0.2** — early feedback. API may change.
+> **0.0.3** — early feedback. API may change.
 
 ## Install
 
@@ -41,8 +41,10 @@ console.log(r.result);  // [2, 4, 6]
 | `runSpawn({ body, capabilities, depth? })` | `POST /run/spawn` |
 | `runGenerate({ prompt, capabilities })` | `POST /run/generate` |
 | `seed()` | `POST /seed` |
-| `getTrace(id)` | `GET /t/:id` |
+| `getTrace(id)` | `GET /t/:id.json` |
 | `getTraceJson(id)` | `GET /t/:id.json` |
+
+`GET /t/:id` is the human viewer on the public app. Agents and scripts should read `GET /t/:id.json`.
 
 Use `body` for guest JavaScript. `code` is a legacy alias. Default template: `guest@v1`.
 

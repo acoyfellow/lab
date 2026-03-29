@@ -144,7 +144,7 @@ describe("Lab Worker", () => {
     expect(runData.traceId).toBeDefined();
     expect(runData.traceId!.length).toBeGreaterThan(5);
     
-    const traceRes = await fetch(`${baseUrl}/t/${runData.traceId}`);
+    const traceRes = await fetch(`${baseUrl}/t/${runData.traceId}.json`);
     const traceData = (await traceRes.json()) as {
       id: string;
       outcome: { ok: boolean; result?: { test: boolean } };
@@ -153,6 +153,32 @@ describe("Lab Worker", () => {
     expect(traceData.id).toBe(runData.traceId);
     expect(traceData.outcome.ok).toBe(true);
     expect(traceData.outcome.result?.test).toBe(true);
+  });
+
+  test("worker bare trace path redirects to .json", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const runRes = await fetch(`${baseUrl}/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        body: "return 123",
+        capabilities: [],
+      }),
+    });
+    const runData = (await runRes.json()) as {
+      ok: boolean;
+      traceId?: string;
+    };
+
+    expect(runData.ok).toBe(true);
+    expect(runData.traceId).toBeDefined();
+
+    const response = await fetch(`${baseUrl}/t/${runData.traceId}`, { redirect: "manual" });
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(`${baseUrl}/t/${runData.traceId}.json`);
   });
 
   test("chain step failure stops execution", async () => {

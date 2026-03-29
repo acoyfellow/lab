@@ -23,9 +23,9 @@ export type LabClient = {
   runSpawn: (payload: RunSpawnPayload) => Promise<RunResult>;
   runGenerate: (payload: RunGeneratePayload) => Promise<RunResult>;
   seed: () => Promise<SeedResult>;
-  /** Saved-result URL: `GET /t/:id` */
+  /** Fetch saved-result JSON from the canonical `GET /t/:id.json` path. */
   getTrace: (traceId: string) => Promise<TraceData | { error: string }>;
-  /** Same saved result as `getTrace`, but always uses the explicit `.json` URL. */
+  /** Explicit alias for `getTrace`; always uses `GET /t/:id.json`. */
   getTraceJson: (traceId: string) => Promise<TraceData | { error: string }>;
 };
 
@@ -90,7 +90,7 @@ export function createLabClient(options: LabClientOptions): LabClient {
       });
     },
     getTrace(traceId) {
-      return requestJSON<TraceData | { error: string }>(baseUrl, fetchImpl, `/t/${traceId}`, {
+      return requestJSON<TraceData | { error: string }>(baseUrl, fetchImpl, `/t/${traceId}.json`, {
         method: 'GET',
       });
     },

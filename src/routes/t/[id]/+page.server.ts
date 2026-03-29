@@ -1,14 +1,13 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { fetchLabWorker } from '$lib/server/lab-worker';
 
-export const load: PageServerLoad = async ({ params, platform }) => {
+export const load: PageServerLoad = async ({ params, fetch }) => {
   const traceId = params.id;
 
-  const response = await fetchLabWorker(platform, `/t/${traceId}`);
+  const response = await fetch(`/t/${traceId}.json`);
 
   if (!response.ok) {
-    error(404, `Trace ${traceId} not found`);
+    error(404, `Saved result ${traceId} not found`);
   }
 
   const trace = await response.json();

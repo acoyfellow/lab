@@ -434,10 +434,20 @@ class LabWorker extends WorkerEntrypoint<Env> {
       return withCors(Response.json(buildLabCatalog()))
     }
 
-    // --- Trace retrieval (JSON only): /t/:id and /t/:id.json (same document) ---
-    const traceMatch = url.pathname.match(/^\/t\/([a-z0-9]+)(?:\.json)?$/i)
-    if (req.method === "GET" && traceMatch) {
-      const traceId = traceMatch[1]
+    // --- Saved-result JSON retrieval: /t/:id.json ---
+    const bareTraceMatch = url.pathname.match(/^\/t\/([a-z0-9]+)$/i)
+    if (req.method === "GET" && bareTraceMatch) {
+      return withCors(
+        new Response(null, {
+          status: 307,
+          headers: { Location: `${url.origin}/t/${bareTraceMatch[1]}.json${url.search}` },
+        }),
+      )
+    }
+
+    const traceJsonMatch = url.pathname.match(/^\/t\/([a-z0-9]+)\.json$/i)
+    if (req.method === "GET" && traceJsonMatch) {
+      const traceId = traceJsonMatch[1]
       const trace = await getTrace(env, traceId)
       if (!trace) {
         return withCors(Response.json({ error: "trace not found" }, { status: 404 }))

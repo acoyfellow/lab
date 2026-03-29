@@ -10,7 +10,7 @@ agent writes code  →  Lab runs it  →  saved result (what happened)  →  age
 
 **Try it now:** [lab.coey.dev/compose](https://lab.coey.dev/compose) — run a chain, click the saved-result link.
 
-> **0.0.2** — API and trace shapes may still move. Pin to exact versions or self-host.
+> **0.0.3** — API and saved-result shapes may still move. Pin to exact versions or self-host.
 
 ## Quickstart
 
@@ -34,7 +34,7 @@ const out = await lab.runChain([
 ]);
 
 console.log(out.result);   // { valid: true, healed: true, users: 1 }
-console.log(out.traceId);  // → $LAB_URL/t/<id> (shareable result URL)
+console.log(out.traceId);  // → machine JSON: $LAB_URL/t/<id>.json; viewer: $LAB_URL/t/<id>
 ```
 
 Each step runs in its own sandbox. Step 2's output flows to Step 3's `input`. The result is saved at a URL — share it to show what happened.
@@ -71,7 +71,7 @@ See all patterns: [lab.coey.dev/docs/patterns](https://lab.coey.dev/docs/pattern
 
 No capabilities = pure compute, no I/O. Denied capabilities produce clear errors recorded in the saved result.
 
-**Results** — every run saves a JSON document. Use `/t/:id` as the shareable result URL and `/t/:id.json` for the raw JSON. Successful runs include code, capabilities, return values, and timing. Failed or aborted runs include the top-level error and reason; chain step detail may be partial or empty. Share the URL. Fork it into a new run. Hand it to another agent.
+**Results** — every run saves a JSON document. Agents and scripts should read `/t/:id.json`. Humans can open `/t/:id` as the viewer over that same saved result. Successful runs include code, capabilities, return values, and timing. Failed or aborted runs include the top-level error and reason; chain step detail may be partial or empty. Share the URL. Fork it into a new run. Hand it to another agent.
 
 ## API
 
@@ -87,8 +87,8 @@ No capabilities = pure compute, no I/O. Denied capabilities produce clear errors
 | `POST` | `/run/generate` | `{ prompt, capabilities }` |
 | `POST` | `/seed` | `{}` — writes demo KV data |
 | `GET` | `/lab/catalog` | capability + route metadata for agents |
-| `GET` | `/t/:id` | shareable saved-result URL |
-| `GET` | `/t/:id.json` | raw saved-result JSON |
+| `GET` | `/t/:id` | human saved-result viewer |
+| `GET` | `/t/:id.json` | canonical saved-result JSON |
 
 ### TypeScript client
 
@@ -104,8 +104,8 @@ npm install @acoyfellow/lab
 | `runSpawn(payload)` | Nested isolates |
 | `runGenerate(payload)` | AI-generated code + run |
 | `seed()` | Seed demo KV data |
-| `getTrace(traceId)` | Fetch the saved result |
-| `getTraceJson(traceId)` | Fetch raw saved-result JSON |
+| `getTrace(traceId)` | Fetch canonical saved-result JSON |
+| `getTraceJson(traceId)` | Same JSON via the explicit `.json` path |
 
 Effect client: `import { createLabEffectClient } from "@acoyfellow/lab/effect"` — same API, returns `Effect` instead of `Promise`.
 
@@ -146,13 +146,13 @@ Requires Cloudflare Workers Paid ($5/mo). Provisions the public app, the private
 
 ```
 worker/              Sandbox engine (Effect v4, Worker Loaders)
-  index.ts           Routes, chain/spawn orchestration, trace storage
+  index.ts           Routes, chain/spawn orchestration, saved-result storage
   Loader.ts          V8 sandbox lifecycle
   guest/templates.ts Guest module composition + capability shims
   capabilities/      Capability registry
 packages/lab/        TypeScript client (@acoyfellow/lab)
 packages/lab-mcp/    MCP server (@acoyfellow/lab-mcp)
-src/                 SvelteKit app (compose, trace viewer, docs)
+src/                 SvelteKit app (compose, saved-result viewer, docs)
 alchemy.run.ts       Infrastructure-as-code
 ```
 

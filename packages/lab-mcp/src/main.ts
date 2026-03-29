@@ -81,7 +81,7 @@ function mapHttpToError(err: HttpError): Error {
 
 const mcpServer = new McpServer({
   name: 'lab',
-  version: '0.0.2',
+  version: '0.0.3',
 });
 
 mcpServer.registerTool(

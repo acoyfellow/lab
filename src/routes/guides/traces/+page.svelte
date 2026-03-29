@@ -5,8 +5,8 @@
 </script>
 
 <SEO
-  title="Traces — lab"
-  description="How trace IDs work, how to view /t/:id, export JSON, and fork runs back into Compose."
+  title="Saved Results — lab"
+  description="How trace IDs map to saved results, when to open /t/:id, and when to read /t/:id.json."
   path="/guides/traces"
   type="website"
 />
@@ -15,20 +15,20 @@
   <p class="mb-6">
     <a href="/guides" class="text-(--text-3) no-underline hover:text-(--text)">Guides</a>
     <span class="text-(--text-3)"> / </span>
-    <span class="text-(--text)">Traces</span>
+    <span class="text-(--text)">Saved results</span>
   </p>
-  <h1 class="text-lg font-semibold text-(--text) tracking-tight mb-4">Traces</h1>
+  <h1 class="text-lg font-semibold text-(--text) tracking-tight mb-4">Saved results</h1>
   <p class="max-w-[62ch] mb-6">
-    Persisted runs return a <code class="font-(family-name:--mono) text-[0.75rem]">traceId</code>. Open <code class="font-(family-name:--mono) text-[0.75rem]">/t/&#123;id&#125;</code> in the app for a human-readable viewer, or append <code class="font-(family-name:--mono) text-[0.75rem]">.json</code> for the raw document.
+    Persisted runs return a <code class="font-(family-name:--mono) text-[0.75rem]">traceId</code>. Agents should read <code class="font-(family-name:--mono) text-[0.75rem]">/t/&#123;id&#125;.json</code>. Humans can open <code class="font-(family-name:--mono) text-[0.75rem]">/t/&#123;id&#125;</code> in the app viewer.
   </p>
   <p class="max-w-[62ch] mb-6">
-    <strong class="text-(--text) font-medium">Fork</strong> on a trace page copies request fields into Compose via <code class="font-(family-name:--mono) text-[0.75rem]">sessionStorage</code> and navigates to <a href="/compose" class="underline underline-offset-2 hover:text-(--text)">/compose</a>.
+    <strong class="text-(--text) font-medium">Fork</strong> on the saved-result page copies request fields into Compose via <code class="font-(family-name:--mono) text-[0.75rem]">sessionStorage</code> and navigates to <a href="/compose" class="underline underline-offset-2 hover:text-(--text)">/compose</a>.
   </p>
   <DocFooterNav
     gridClass="sm:grid-cols-2"
     links={[
-      { label: 'Trace schema', to: paths.docsTraceSchema, description: 'Saved-result schema, `/t/:id`, and `/t/:id.json` semantics.' },
-      { label: 'Compose', to: '/compose', description: 'Fork from a trace back into the runner.' },
+      { label: 'Saved result schema', to: paths.docsTraceSchema, description: 'Saved-result schema, `/t/:id`, and `/t/:id.json` semantics.' },
+      { label: 'Compose', to: '/compose', description: 'Fork from a saved result back into the runner.' },
     ]}
   />
 </div>

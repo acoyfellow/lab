@@ -134,10 +134,10 @@ export const seedKv = command(
   },
 );
 
-// Get a trace by ID
+// Get a saved result by ID
 export const getTrace = query('unchecked', async (traceId: string): Promise<TraceData | { error: string }> => {
   const platform = getRequestEvent().platform;
-  return callWorkerJSON<TraceData | { error: string }>(platform, `/t/${traceId}`);
+  return callWorkerJSON<TraceData | { error: string }>(platform, `/t/${traceId}.json`);
 });
 
 // Durable Object SQL helpers

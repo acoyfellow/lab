@@ -1,6 +1,6 @@
 {
   "name": "@acoyfellow/lab",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Typed HTTP client for the Lab public app API (sandboxed isolates, chains, saved results)",
   "license": "MIT",
   "type": "module",

@@ -11,7 +11,7 @@ const baseUrl = process.env.LAB_URL ?? 'http://localhost:1337';
 const lab = createLabClient({ baseUrl });
 
 const catalog = await fetchLabCatalog({ baseUrl });
-if (catalog.version !== '0.0.1') {
+if (catalog.version !== '0.0.3') {
   console.error('fetchLabCatalog: unexpected version', catalog.version);
   process.exit(1);
 }

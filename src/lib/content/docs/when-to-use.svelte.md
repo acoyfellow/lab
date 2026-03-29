@@ -3,7 +3,7 @@
 ## Good fit
 
 - **Chainable guest JavaScript** on the edge with **per-step** permission sets.
-- **Trace-first** debugging: you want a persisted document per run with inputs/outputs for inspection and sharing.
+- **Saved-result-first** debugging: you want a persisted document per run with inputs/outputs for inspection and sharing.
 - **HTTP or agent** control planes: [HTTP API](/docs/http-api), [MCP / catalog](/docs/agent-integration), or both.
 
 ## Poor fit
@@ -16,4 +16,4 @@
 
 ## Relationship to “plain” Workers
 
-Lab **orchestrates** Loader isolates, capabilities, and traces. It does not replace Workers; it **depends** on them. See [Architecture](/docs/architecture) for loaders, KV snapshots, spawn, and `/invoke/*`.
+Lab **orchestrates** Loader isolates, capabilities, and saved results. It does not replace Workers; it **depends** on them. See [Architecture](/docs/architecture) for loaders, KV snapshots, spawn, and `/invoke/*`.

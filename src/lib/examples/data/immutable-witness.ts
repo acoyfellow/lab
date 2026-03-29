@@ -3,7 +3,7 @@ import type { ExampleData } from '../types';
 export const immutableWitness: ExampleData = {
 	id: 'immutable-witness',
 	title: 'The Immutable Witness',
-	description: 'Prove compliance with a shareable trace',
+	description: 'Prove compliance with a shareable saved result',
 	problem: 'Regulator demands proof of how AI processed sensitive customer data',
 	solution: 'Every action timestamped, logged, and shareable via URL',
 	result: 'Prove compliance with a URL.',

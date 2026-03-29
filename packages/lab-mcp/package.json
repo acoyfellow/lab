@@ -1,6 +1,6 @@
 {
   "name": "@acoyfellow/lab-mcp",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "MCP server for Lab: find (catalog/saved result) + execute (guest runs) via stdio",
   "license": "MIT",
   "type": "module",
@@ -29,7 +29,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@acoyfellow/lab": "^0.0.2",
+    "@acoyfellow/lab": "^0.0.3",
     "@modelcontextprotocol/sdk": "1.28.0",
     "effect": "4.0.0-beta.40",
     "zod": "^4.0.0"
