@@ -51,9 +51,9 @@
       <nav
         class="flex flex-wrap items-center gap-x-4 gap-y-1 justify-end text-[0.8125rem]"
       >
-        <AppLink to={paths.docs} class={navClass(paths.docs)}>Docs</AppLink>
+        <AppLink to={paths.docsPatterns} class={navClass(paths.docsPatterns)}>Patterns</AppLink>
         <AppLink to="/examples" class={navClass('/examples')}>Examples</AppLink>
-        <AppLink to="/experiments" class={navClass('/experiments')}>Experiments</AppLink>
+        <AppLink to={paths.docs} class={navClass(paths.docs)}>Docs</AppLink>
         <AppLink to="/compose" class={navClass('/compose')}>Compose</AppLink>
         <a
           href="https://github.com/acoyfellow/lab"
@@ -90,7 +90,6 @@
           <div class="flex flex-col gap-1.5">
             <AppLink to="/compose" class="text-(--text-2) no-underline hover:text-(--text)">Compose</AppLink>
             <AppLink to="/examples" class="text-(--text-2) no-underline hover:text-(--text)">Examples</AppLink>
-            <AppLink to="/experiments" class="text-(--text-2) no-underline hover:text-(--text)">Experiments</AppLink>
           </div>
         </div>
 
@@ -99,9 +98,9 @@
             Learn
           </div>
           <div class="flex flex-col gap-1.5">
+            <AppLink to={paths.docsPatterns} class="text-(--text-2) no-underline hover:text-(--text)">Patterns</AppLink>
             <AppLink to={paths.docs} class="text-(--text-2) no-underline hover:text-(--text)">Docs</AppLink>
             <AppLink to={paths.tutorial} class="text-(--text-2) no-underline hover:text-(--text)">Tutorial</AppLink>
-            <AppLink to={paths.docsHttpApi} class="text-(--text-2) no-underline hover:text-(--text)">HTTP API</AppLink>
           </div>
         </div>
 

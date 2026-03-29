@@ -93,10 +93,15 @@ try {
   <!-- Visual step pipeline showing the narrative -->
   <div class="rounded-(--radius) border border-(--border) bg-(--surface) overflow-hidden">
     {#each steps as step, i}
+      {#if i > 0}
+        <div class="flex items-center gap-2 px-4 py-1 bg-(--surface-alt)/50 border-t border-(--border)">
+          <span class="text-[0.625rem] text-(--text-3) font-mono">↓ output becomes <code class="text-(--text-2)">input</code></span>
+        </div>
+      {/if}
       <div class="px-4 py-3 {i > 0 ? 'border-t border-(--border)' : ''}">
         <div class="flex items-center gap-2.5 mb-1.5">
           <span class="flex-shrink-0 w-5 h-5 rounded-full bg-(--surface-alt) flex items-center justify-center text-[0.625rem] font-bold {stepColors[i]}">{stepIcons[i]}</span>
-          <span class="text-[0.8125rem] font-medium text-(--text)">{step.name}</span>
+          <span class="text-[0.8125rem] font-medium text-(--text)">Step {i + 1}: {step.name}</span>
         </div>
         <pre class="text-[0.7rem] font-mono text-(--text-2) pl-[1.875rem] leading-relaxed m-0 whitespace-pre-wrap">{step.body}</pre>
       </div>

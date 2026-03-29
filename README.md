@@ -1,39 +1,16 @@
 # Lab
 
-Isolated execution and traceable workflows for AI agents on Cloudflare's edge.
+Codegen workflows with receipts.
 
-An agent sends code. Lab runs each step in a fresh V8 isolate with only the capabilities you grant. Every run produces a **trace** — a permanent, inspectable artifact that records what ran, what it returned, and how long it took.
-
-The trace is the point. It's how agents prove what they did, hand off context to other agents, and let humans follow the story.
+AI writes code. Lab chains each step into a workflow, runs it in a sandbox, and returns a **trace** — a permanent URL proving what ran, what returned, and what broke.
 
 ```
-agent sends code  →  isolated execution  →  trace URL (permanent artifact)
+agent writes code  →  Lab runs each step  →  trace URL (the receipt)
 ```
 
-**See a trace:** [lab.coey.dev/compose](https://lab.coey.dev/compose) — run a chain, click the trace link, follow the story.
+**Try it now:** [lab.coey.dev/compose](https://lab.coey.dev/compose) — run a chain, click the trace link.
 
 > **0.0.2** — API and trace shapes may still move. Pin to exact versions or self-host.
-
-## Why traces
-
-An agent that runs code in a black box can only say "I think this worked." A trace proves it.
-
-- **Proof of work** — the trace records every step's code, input, output, and timing. It's a receipt, not a claim.
-- **Agent-to-agent handoff** — Agent A produces a trace URL. Agent B reads it and continues the work. The trace is the protocol.
-- **Self-healing loops** — an agent runs a chain, reads the trace, sees the failure, patches the code, runs again. Each iteration is a new trace. You can watch an agent debug itself.
-- **Human oversight** — share a trace URL. A person can follow exactly what happened, step by step, without needing the agent's context window.
-
-## What agents build with this
-
-**Self-healing data pipelines** — an agent chains steps that parse, validate, and repair broken data. When a step fails, the trace shows exactly what input caused it. The agent reads the trace, generates a fix, and runs again.
-
-**Proof of correctness** — instead of "this should work," an agent specifies edge cases, runs the function against all of them in isolated steps, and returns a trace showing 10/10 passing. The trace IS the deliverable.
-
-**Canary deployments** — old logic and new logic run against the same inputs in separate isolates. The trace diffs the outputs. An agent (or human) reviews the trace to decide if the change is safe to ship.
-
-**Compute offload** — LLMs hallucinate math. An agent ships fibonacci, prime sieves, matrix operations to Lab isolates and gets exact answers with a trace proving the computation.
-
-See all agent patterns: [lab.coey.dev/examples](https://lab.coey.dev/examples)
 
 ## Quickstart
 
@@ -48,9 +25,7 @@ const lab = createLabClient({
   baseUrl: "https://lab.coey.dev",
 });
 
-// Agent builds a self-healing chain:
-// Step 1 loads broken data, Step 2 tries to parse it,
-// Step 3 repairs it, Step 4 validates the fix.
+// Self-healing pipeline: load broken JSON → try parse → heal → validate
 const out = await lab.runChain([
   { name: "Load",    body: `return { raw: '{"users": [{"id": 1,}]}', attempt: 1 }`, capabilities: [] },
   { name: "Parse",   body: `try { return { ok: true, data: JSON.parse(input.raw) } } catch(e) { return { ok: false, error: e.message, raw: input.raw } }`, capabilities: [] },
@@ -59,16 +34,31 @@ const out = await lab.runChain([
 ]);
 
 console.log(out.result);   // { valid: true, healed: true, users: 1 }
-console.log(out.traceId);  // → lab.coey.dev/t/<id> (the full story)
+console.log(out.traceId);  // → lab.coey.dev/t/<id> (the receipt)
 ```
 
-Each step runs in its own V8 isolate. Step 2's output flows to Step 3's `input`. The trace records every step — share the URL to show exactly what happened.
+Each step runs in its own sandbox. Step 2's output flows to Step 3's `input`. The trace records everything — share the URL to show exactly what happened.
+
+## Patterns
+
+These are the workflows agents build with Lab. Every pattern produces a trace. The trace is always the point.
+
+| Pattern | What happens | The trace proves |
+|---|---|---|
+| **[Prove It](https://lab.coey.dev/docs/patterns#prove-it)** | Agent writes code + edge cases, runs them all | 10/10 pass — the receipt |
+| **[Self-Healing](https://lab.coey.dev/docs/patterns#self-healing-loop)** | Step fails → agent reads trace → patches → retries | The full reasoning chain |
+| **[Agent Handoff](https://lab.coey.dev/docs/patterns#agent-handoff)** | Agent A → B → C, one chain | Who did what |
+| **[Canary Deploy](https://lab.coey.dev/docs/patterns#canary-deploy)** | Old vs new logic, same inputs | What changed |
+| **[Compute Offload](https://lab.coey.dev/docs/patterns#compute-offload)** | Ship math to a sandbox | Exact answer, no hallucination |
+| **[Zero Bleed](https://lab.coey.dev/docs/patterns#zero-bleed-isolation-proof)** | Poison globals in step 1, step 2 is clean | Isolation works |
+
+See all patterns: [lab.coey.dev/docs/patterns](https://lab.coey.dev/docs/patterns)
 
 ## How it works
 
-**Isolates** — each step spins up a fresh V8 via Cloudflare [Worker Loaders](https://developers.cloudflare.com/workers/runtime-apis/loaders/). No shared state between steps. Nothing leaks. Step 1 can poison globals — Step 2 won't see any of it.
+**Workflows** — chain JavaScript steps together. Each step's return value becomes the next step's `input`. Each step runs in its own V8 sandbox via Cloudflare [Worker Loaders](https://developers.cloudflare.com/workers/runtime-apis/loaders/). Nothing leaks between steps.
 
-**Capabilities** — a step can only touch what you explicitly grant:
+**Capabilities** — each step can only access what you explicitly grant:
 
 | Capability | What the guest gets |
 |---|---|
@@ -82,7 +72,7 @@ Each step runs in its own V8 isolate. Step 2's output flows to Step 3's `input`.
 
 No capabilities = pure compute, no I/O. Denied capabilities produce clear errors recorded in the trace.
 
-**Traces** — every run produces a durable artifact at `/t/:id`. Code, capabilities, return values, timing — all recorded. Share the URL. Inspect it. Fork it into a new run. Hand it to another agent or a human reviewer.
+**Traces** — every run produces a durable artifact at `/t/:id`. Code, capabilities, return values, timing — all recorded. Share the URL. Fork it into a new run. Hand it to another agent.
 
 ## API
 
@@ -107,9 +97,9 @@ npm install @acoyfellow/lab
 
 | Method | What it does |
 |---|---|
-| `runSandbox(payload)` | Single isolate run |
+| `runSandbox(payload)` | Single sandbox run |
 | `runKv(payload)` | Run with KV snapshot |
-| `runChain(steps)` | Multi-step pipeline |
+| `runChain(steps)` | Multi-step workflow |
 | `runSpawn(payload)` | Nested isolates |
 | `runGenerate(payload)` | AI-generated code + run |
 | `seed()` | Seed demo KV data |
@@ -153,9 +143,9 @@ Requires Cloudflare Workers Paid ($5/mo). Provisions KV, D1, R2, and the Worker 
 ## Project structure
 
 ```
-worker/              Isolate engine (Effect v4, Worker Loaders)
+worker/              Sandbox engine (Effect v4, Worker Loaders)
   index.ts           Routes, chain/spawn orchestration, trace storage
-  Loader.ts          V8 isolate lifecycle
+  Loader.ts          V8 sandbox lifecycle
   guest/templates.ts Guest module composition + capability shims
   capabilities/      Capability registry
 packages/lab/        TypeScript client (@acoyfellow/lab)

@@ -7,28 +7,28 @@
 
   const featuredExamples = [
     {
-      title: 'Adaptive Opponent',
-      badge: 'Loop',
-      href: '/experiments/versus',
-      description: 'Deterministic search plays Connect 4. Any model breaks ties. Losses produce traced insights that feed the next game. Swap the model, the system still improves.'
-    },
-    {
-      title: 'Trace Handoff',
-      badge: 'URL',
-      href: '/examples',
-      description: 'Agent A produces a trace URL. Agent B reads it and continues the work. The trace becomes the handoff protocol.'
-    },
-    {
-      title: 'Proof of Correctness',
+      title: 'Code mode — but verified',
       badge: '10/10',
-      href: '/examples',
-      description: 'Agent writes a function, specifies edge cases, runs them all in isolated steps, and returns the trace as the execution receipt.'
+      href: '/docs/patterns#prove-it',
+      description: 'Agent writes a function, generates edge cases, runs them all. The trace proves 10/10 pass. Ship the trace, not "trust me."'
     },
     {
-      title: 'Canary Run',
+      title: 'Self-healing pipeline',
+      badge: 'Fix',
+      href: '/docs/patterns#self-healing-loop',
+      description: 'Step fails. Agent reads the trace, sees what broke, patches the code, reruns. Each attempt is a new trace. Watch it debug itself.'
+    },
+    {
+      title: 'Agent-to-agent handoff',
+      badge: 'URL',
+      href: '/docs/patterns#agent-handoff',
+      description: 'Agent A researches. Agent B synthesizes. Agent C delivers. One chain, one trace URL — that\'s the entire coordination protocol.'
+    },
+    {
+      title: 'Canary deploy',
       badge: 'Diff',
-      href: '/examples',
-      description: 'Old logic and new logic run on the same inputs. The trace shows exactly what changed before you ship.'
+      href: '/docs/patterns#canary-deploy',
+      description: 'Old logic vs new logic, same inputs. The trace diffs the outputs. Review what changed before you ship.'
     }
   ];
 
@@ -36,8 +36,8 @@
 </script>
 
 <SEO
-  title="Lab — Isolated execution and traces for AI agents"
-  description="Agents send code. Lab runs each step in an isolated V8. Every run produces a trace — a permanent artifact that proves what happened."
+  title="Lab — Codegen workflows with receipts"
+  description="AI writes code. Lab chains each step into a workflow, runs it in a sandbox, and returns a trace — a permanent URL proving what ran, what returned, and what broke."
   path="/"
   type="website"
 />
@@ -71,13 +71,12 @@
         </div>
 
         <h1 class="text-[1.65rem] sm:text-[2.25rem] font-semibold tracking-tight leading-[1.15] text-(--text) drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
-          Run code in isolation.<br />
-          <span class="text-(--text-2)">Trace what happened.</span>
+          Codegen workflows<br />
+          <span class="text-(--text-2)">with receipts.</span>
         </h1>
 
         <p class="text-[1.0625rem] text-(--text-2) leading-relaxed max-w-[60ch]">
-          An agent sends JavaScript. Lab runs each step in an <strong class="text-(--text)">isolated V8</strong> — sandboxed, capability-scoped, edge-deployed.
-          Every run produces a permanent <strong class="text-(--text)">trace</strong> — the proof of what happened, shareable with agents and humans alike.
+          AI writes code. Lab chains each step into a workflow, runs it in a sandbox, and returns a <strong class="text-(--text)">trace</strong> — a permanent URL proving what ran, what returned, and what broke.
         </p>
         <div class="flex items-center gap-3 flex-wrap">
           <Button href="/compose" variant="default">Open Compose</Button>
@@ -91,23 +90,23 @@
 
   <!-- Why traces matter -->
   <section class="space-y-4">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Why traces</h2>
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Every run produces a trace</h2>
     <div class="grid gap-3 sm:grid-cols-2">
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Proof, not claims</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">An agent says "I fixed the data." The trace shows every step — what it received, what it returned, what failed. It's a receipt.</p>
+        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Receipt, not assertion</div>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">The trace records every step's code, input, output, and timing. "I fixed the data" becomes a URL you can verify.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Agent-to-agent handoff</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Agent A produces a trace URL. Agent B reads it and continues the work. No shared database, no custom API — just a URL.</p>
+        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Handoff protocol</div>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Agent A produces a trace URL. Agent B reads it and picks up where A left off. The trace is the API.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Self-healing loops</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Run fails. Agent reads the trace, sees exactly what broke, patches the code, runs again. Each iteration is a new trace — the system fixes itself.</p>
+        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Debugging built in</div>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">When a step fails, the trace shows exactly what input caused it. Agents read traces to self-heal. Humans read traces to understand.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Follow the story</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Share a trace URL with a human. They can follow exactly what happened without needing the agent's context. It's a narrative, not a log.</p>
+        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Shareable</div>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Every trace is a permanent URL. Send it to a teammate, attach it to a PR, or feed it to another agent.</p>
       </div>
     </div>
   </section>
@@ -118,7 +117,7 @@
       <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Watch an agent heal broken data</h2>
     </div>
     <p class="text-[0.9375rem] text-(--text-2)">
-      Four isolates. Step 1 loads broken JSON. Step 2 tries to parse it and fails. Step 3 diagnoses and repairs. Step 4 validates. Hit Run, then open the trace to follow the full story.
+      Four steps, four sandboxes. Each step's output flows to the next step's <code class="text-[0.8125rem]">input</code>. Hit Run, then open the trace.
     </p>
     <MiniSandbox />
   </section>
@@ -139,7 +138,10 @@
         </a>
       {/each}
     </div>
-    <a href="/examples" class="inline-block text-[0.8125rem] text-(--accent) hover:underline mt-1">See all examples →</a>
+    <div class="flex items-center gap-4 mt-1">
+      <a href="/docs/patterns" class="inline-block text-[0.8125rem] text-(--accent) hover:underline font-medium">All 8 patterns →</a>
+      <a href="/examples" class="inline-block text-[0.8125rem] text-(--text-3) hover:text-(--text) hover:underline">Browse runnable examples →</a>
+    </div>
   </section>
 
   <!-- Get started -->
