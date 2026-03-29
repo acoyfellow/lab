@@ -2,6 +2,7 @@
   "name": "lab",
   "version": "0.0.2",
   "private": false,
+  "packageManager": "bun@1.3.10",
   "workspaces": [
     "packages/*"
   ],
