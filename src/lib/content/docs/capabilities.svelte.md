@@ -1,7 +1,3 @@
-<script lang="ts">
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
-</script>
-
 # Capabilities
 
 Capabilities control what code can do inside an isolate. They are implemented as shims injected into the isolate wrapper at spawn time. Canonical strings live in `worker/capabilities/registry.ts`.
@@ -41,12 +37,3 @@ Denied-capability errors and per-step I/O show up on **`/t/:id`**.
 | **`d1Read`** | `ENGINE_D1` | Guest `d1.query(sql)` **read-only**; host **`POST /invoke/d1`**. | SQL from guest without a raw D1 binding in the Loader. | Read-only; **503** if D1 unbound; expose only SQL you trust (injection / heavy queries). |
 | **`durableObjectFetch`** | `LAB_DO` | Guest calls into the bound Durable Object via host **`POST /invoke/do`** (method/path/body). | RPC-style DO access without handing guest the real binding. | **503** if unconfigured; in the default DO: `GET` reads storage by `path`, `POST|PUT|PATCH` stores JSON at `path`, `DELETE` removes. |
 | **`containerHttp`** | `LAB_CONTAINER` (optional) | Guest **`POST /invoke/container`** for HTTP GET-style access to a bound **container** service. | Same leash model for heavier or non-Worker workloads. | Often **503** until you bind `LAB_CONTAINER`; more moving parts than Workers-only caps. |
-
-<DocFooterNav
-  gridClass="sm:grid-cols-2 lg:grid-cols-3"
-  links={[
-    { label: 'Compose', to: '/compose', description: 'Try modes and caps in the browser.' },
-    { label: 'HTTP API', to: '/docs/http-api', description: 'Endpoints, curl, run modes.' },
-    { label: 'Architecture', to: '/docs/architecture', description: 'Worker loaders, Effect, KV, spawn, chains.' },
-  ]}
-/>

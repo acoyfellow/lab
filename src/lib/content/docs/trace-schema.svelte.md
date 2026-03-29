@@ -1,7 +1,3 @@
-<script lang="ts">
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
-</script>
-
 # Trace document schema
 
 JSON returned by `GET /t/:id` (Worker or app) and `GET /t/:id.json`. Authoring source: `src/lib/content/docs/trace-schema.svelte.md` in the repo (same content as this page).
@@ -54,13 +50,3 @@ Each element:
 Successful run endpoints include `traceId` in the JSON response alongside mode-specific fields (`result`, `trace`, `generated`, etc.). Failed runs that go through trace persistence also return `traceId`.
 
 `POST /seed` does not create a trace.
-
-
-<DocFooterNav
-  gridClass="sm:grid-cols-2 lg:grid-cols-3"
-  links={[
-    { label: 'Examples', to: '/examples', description: 'Runnable demos and bookmarkable trace URLs.' },
-    { label: 'Compose', to: '/compose', description: 'Run modes in the browser against the Worker.' },
-    { label: 'Docs', to: '/docs', description: 'Hub for HTTP API, architecture, TypeScript, capabilities.' },
-  ]}
-/>

@@ -98,6 +98,119 @@ return { ok: true, data: JSON.parse(fixed), healed: true };\`,
 console.log(out.result);   // { ok: true, data: {...}, healed: true }
 console.log(out.traceId);  // → shareable URL`;
 
+// ═══════════════════════════════════════════════════════════════════════════
+// "You've used these before" — recognizable agent patterns mapped to Lab
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const KNOWN_PATTERNS = [
+  {
+    id: 'code-mode',
+    tab: 'Code Mode',
+    knownFrom: 'Cursor, Claude Code',
+    whatItDoes: 'Write a function → run tests → prove it works',
+    lines: 14,
+    code: `const out = await lab.runChain([
+  { name: "Write",  body: \`
+    function parseAmount(raw) {
+      if (!raw) return null;
+      const n = parseFloat(String(raw).replace(/[^\\\\d.\\\\-]/g, ""));
+      return isNaN(n) ? null : Math.round(n * 100) / 100;
+    }
+    return { fn: parseAmount.toString() };
+  \`, capabilities: [] },
+  { name: "Test",   body: \`
+    \${input.fn}
+    const cases = [
+      { in: "$1,234.56", expect: 1234.56 },
+      { in: "free",      expect: null },
+      { in: null,        expect: null },
+    ];
+    return cases.map(c => ({
+      ...c, actual: parseAmount(c.in),
+      pass: parseAmount(c.in) === c.expect,
+    }));
+  \`, capabilities: [] },
+  { name: "Verdict", body: \`
+    const passed = input.filter(r => r.pass).length;
+    return { score: passed + "/" + input.length,
+             verdict: passed === input.length ? "PASS" : "FAIL" };
+  \`, capabilities: [] },
+]);
+// → trace URL proves 3/3 pass. Ship the receipt, not "trust me."`,
+  },
+  {
+    id: 'deep-research',
+    tab: 'Deep Research',
+    knownFrom: 'Perplexity, Gemini Deep Research',
+    whatItDoes: 'Gather sources → reconcile → write report',
+    lines: 12,
+    code: `const out = await lab.runChain([
+  { name: "Gather", body: \`
+    const api  = await fetch("https://api.example.com/stats");
+    const data = await api.json();
+    return { findings: [
+      { source: "API",      users: data.active },
+      { source: "Internal", users: 887 },
+    ]};
+  \`, capabilities: ["fetch"] },
+  { name: "Reconcile", body: \`
+    const avg = Math.round(
+      input.findings.reduce((s, f) => s + f.users, 0)
+      / input.findings.length
+    );
+    return { activeUsers: avg, confidence: "high",
+             sources: input.findings.length };
+  \`, capabilities: [] },
+  { name: "Report", body: \`
+    return {
+      summary: input.activeUsers + " active users (avg of "
+               + input.sources + " sources, " + input.confidence + " confidence)",
+      trace: "Open this trace to verify the data pipeline.",
+    };
+  \`, capabilities: [] },
+]);
+// → trace shows every source, the reconciliation math, the final report.`,
+  },
+  {
+    id: 'pr-review',
+    tab: 'PR Review Bot',
+    knownFrom: 'CodeRabbit, Ralph',
+    whatItDoes: 'Pull diff → review → post comment',
+    lines: 10,
+    code: `const out = await lab.runChain([
+  { name: "Pull diff", body: \`
+    const res = await fetch(
+      "https://api.github.com/repos/org/repo/pulls/42/files",
+      { headers: { Authorization: "token " + env.GITHUB_TOKEN } }
+    );
+    return { files: await res.json() };
+  \`, capabilities: ["fetch"] },
+  { name: "Analyze", body: \`
+    const issues = input.files.map(f => ({
+      file: f.filename,
+      additions: f.additions,
+      flag: f.additions > 200 ? "large-change" : "ok",
+    }));
+    return { issues, flagged: issues.filter(i => i.flag !== "ok").length };
+  \`, capabilities: [] },
+  { name: "Comment", body: \`
+    if (input.flagged === 0) return { action: "approve", comment: "LGTM" };
+    const body = input.issues.filter(i => i.flag !== "ok")
+      .map(i => "- " + i.file + ": " + i.additions + " additions")
+      .join("\\n");
+    await fetch("https://api.github.com/repos/org/repo/issues/42/comments", {
+      method: "POST",
+      headers: { Authorization: "token " + env.GITHUB_TOKEN,
+                 "Content-Type": "application/json" },
+      body: JSON.stringify({ body: "## Review\\n" + body }),
+    });
+    return { action: "commented", flagged: input.flagged };
+  \`, capabilities: ["fetch"] },
+]);
+// → trace shows the diff, the analysis, and the posted comment.`,
+  },
+] as const;
+
 /** Illustrative RunResult.trace shape for seeded KV + Load → Pack → Line. */
 export const EXAMPLE_RUN_RESULT_SHAPE = JSON.stringify(
 	{

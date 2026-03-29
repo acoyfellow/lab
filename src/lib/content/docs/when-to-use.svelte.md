@@ -1,7 +1,3 @@
-<script lang="ts">
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
-</script>
-
 # When to use Lab
 
 ## Good fit
@@ -19,11 +15,3 @@
 ## Relationship to “plain” Workers
 
 Lab **orchestrates** Loader isolates, capabilities, and traces. It does not replace Workers; it **depends** on them. See [Architecture](/docs/architecture) for loaders, KV snapshots, spawn, and `/invoke/*`.
-
-<DocFooterNav
-  gridClass="sm:grid-cols-2"
-  links={[
-    { label: 'Architecture', to: '/docs/architecture', description: 'How loaders, chains, and traces fit together.' },
-    { label: 'Agent integration', to: '/docs/agent-integration', description: 'MCP and HTTP catalog.' },
-  ]}
-/>

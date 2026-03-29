@@ -1,7 +1,3 @@
-<script lang="ts">
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
-</script>
-
 # TypeScript client
 
 `@acoyfellow/lab` is a typed HTTP client. It does not install Cloudflare tooling or deploy this repo.
@@ -44,16 +40,3 @@ Methods: `runSandbox`, `runKv`, `runChain`, `runSpawn`, `runGenerate`, `seed`, `
 **Effect:** Peer `effect@4.0.0-beta.40`, then `import { createLabEffectClient, fetchLabCatalogEffect, HttpError } from "@acoyfellow/lab/effect"`. Same run/trace API as `createLabClient`, plus `fetchLabCatalogEffect` for the catalog; each returns `Effect` (unexpected bodies → `HttpError`).
 
 **Smoke:** `LAB_URL=… bun run dogfood:lab` runs [`scripts/dogfood-lab.ts`](https://github.com/acoyfellow/lab/blob/main/scripts/dogfood-lab.ts) (sandbox + chain + `traceId` + `getTrace` + `getTraceJson`). Local: `bun dev` then default `LAB_URL=http://localhost:1337`.
-
-
-<DocFooterNav
-  gridClass="sm:grid-cols-2"
-  links={[
-    { label: 'Docs', to: '/docs', description: 'Hub and related reference.' },
-    {
-      label: 'npm package',
-      href: 'https://www.npmjs.com/package/@acoyfellow/lab',
-      description: 'Published client on the registry.',
-    },
-  ]}
-/>

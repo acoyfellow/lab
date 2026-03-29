@@ -1,7 +1,3 @@
-<script lang="ts">
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
-</script>
-
 # Agents and lab
 
 **0.0.1:** ship a **stdio MCP** with exactly two tools — **`find`** and **`execute`** — for Cursor and other MCP hosts. Implementation: monorepo [`packages/lab-mcp`](https://github.com/acoyfellow/lab/tree/main/packages/lab-mcp) (Effect **v4 beta** + `@modelcontextprotocol/sdk`). **HTTP** remains the wire format to the Worker.
@@ -42,12 +38,3 @@ const lab = createLabClient({ baseUrl });
 ## Security
 
 Catalog is public if `/run` is public. Lock down with Cloudflare Access, private Worker URL, or ship catalog only on internal deploys.
-
-
-<DocFooterNav
-  gridClass="sm:grid-cols-2"
-  links={[
-    { label: 'HTTP API', to: '/docs/http-api', description: 'Endpoints and curl.' },
-    { label: 'TypeScript client', to: '/docs/typescript', description: 'createLabClient, fetchLabCatalog.' },
-  ]}
-/>

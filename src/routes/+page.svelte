@@ -10,34 +10,35 @@
       title: 'Code mode — but verified',
       badge: '10/10',
       href: '/docs/patterns#prove-it',
-      description: 'Agent writes a function, generates edge cases, runs them all. The trace proves 10/10 pass. Ship the trace, not "trust me."'
+      description: 'Agent writes a function, generates edge cases, runs them all. 10/10 pass — here\'s the URL to prove it.'
     },
     {
-      title: 'Self-healing pipeline',
+      title: 'Auto-fix pipeline',
       badge: 'Fix',
       href: '/docs/patterns#self-healing-loop',
-      description: 'Step fails. Agent reads the trace, sees what broke, patches the code, reruns. Each attempt is a new trace. Watch it debug itself.'
+      description: 'Something fails. Agent sees what broke, patches the code, reruns. Watch it debug itself.'
     },
     {
-      title: 'Agent-to-agent handoff',
+      title: 'Multi-agent relay',
       badge: 'URL',
       href: '/docs/patterns#agent-handoff',
-      description: 'Agent A researches. Agent B synthesizes. Agent C delivers. One chain, one trace URL — that\'s the entire coordination protocol.'
+      description: 'Agent A researches. Agent B synthesizes. Agent C delivers. Each one picks up where the last left off — one URL ties it together.'
     },
     {
-      title: 'Canary deploy',
+      title: 'Compare before you ship',
       badge: 'Diff',
       href: '/docs/patterns#canary-deploy',
-      description: 'Old logic vs new logic, same inputs. The trace diffs the outputs. Review what changed before you ship.'
+      description: 'Old logic vs new logic, same inputs. See exactly what changed before you deploy.'
     }
   ];
 
   let { data }: PageProps = $props();
+  let activeTab = $state(0);
 </script>
 
 <SEO
-  title="Lab — The feedback loop for AI agents"
-  description="Agents write code. Lab runs it, traces what happened, and hands the result back. The same loop a developer uses — write, run, see, fix — except the agent does it."
+  title="Lab — Run agent code. Get proof it worked."
+  description="Agents write code. Lab runs it in a sandbox and returns a trace — a full record of what happened. The agent reads the trace, fixes what broke, and runs again."
   path="/"
   type="website"
 />
@@ -71,16 +72,16 @@
         </div>
 
         <h1 class="text-[1.65rem] sm:text-[2.25rem] font-semibold tracking-tight leading-[1.15] text-(--text) drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
-          The feedback loop<br />
-          <span class="text-(--text-2)">for AI agents.</span>
+          Run agent code.<br />
+          <span class="text-(--text-2)">Get proof it worked.</span>
         </h1>
 
         <p class="text-[1.0625rem] text-(--text-2) leading-relaxed max-w-[60ch]">
-          An agent writes code. Lab runs it in a sandbox and returns a <strong class="text-(--text)">trace</strong> — a full record of what happened. The agent reads the trace, fixes what broke, and runs again. Same loop a developer uses, except the agent does it.
+          An agent writes code. Lab runs it in a <strong class="text-(--text)">Cloudflare sandbox</strong> and returns a <strong class="text-(--text)">trace</strong> — a full record of what happened. The agent reads the trace, fixes what broke, and runs again.
         </p>
         <div class="flex items-center gap-3 flex-wrap">
           <Button href="/compose" variant="default">Open Compose</Button>
-          <a href="/examples" class="text-[0.8125rem] text-(--accent) hover:underline">browse example chains →</a>
+          <a href="/examples" class="text-[0.8125rem] text-(--accent) hover:underline">browse examples →</a>
         </div>
       </div>
     </header>
@@ -88,25 +89,63 @@
 
   <div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-12">
 
-  <!-- Why traces matter -->
+  <!-- You've used these before -->
   <section class="space-y-4">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Every run produces a trace</h2>
+    <!-- Tab bar -->
+    <div class="flex gap-0 border-b border-(--border)">
+      {#each data.knownPatterns as pattern, i}
+        <button
+          onclick={() => activeTab = i}
+          class="relative px-4 py-2.5 text-[0.8125rem] font-medium transition-colors cursor-pointer bg-transparent border-none
+            {activeTab === i ? 'text-(--text)' : 'text-(--text-3) hover:text-(--text-2)'}"
+        >
+          <span>{pattern.tab}</span>
+          {#if activeTab === i}
+            <span class="absolute bottom-0 left-0 right-0 h-[2px] bg-(--accent)"></span>
+          {/if}
+        </button>
+      {/each}
+    </div>
+
+    <!-- Tab content -->
+    {#each data.knownPatterns as pattern, i}
+      {#if activeTab === i}
+        <div class="space-y-3">
+          <p class="text-[0.875rem] text-(--text) m-0 font-medium">
+            {pattern.whatItDoes}
+          </p>
+          <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-x-auto text-[0.8125rem]">
+            {@html pattern.html}
+          </div>
+        </div>
+      {/if}
+    {/each}
+
+    <div class="flex items-center gap-4">
+      <a href="/docs/patterns" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">All 8 patterns →</a>
+      <a href="/examples" class="text-[0.8125rem] text-(--text-3) hover:text-(--text) hover:underline">Run these examples →</a>
+    </div>
+  </section>
+
+  <!-- What you get back -->
+  <section class="space-y-4">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Every run records everything</h2>
     <div class="grid gap-3 sm:grid-cols-2">
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Receipt, not assertion</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">The trace records every step's code, input, output, and timing. "I fixed the data" becomes a URL you can verify.</p>
+        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Proof, not promises</div>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Every piece of code that ran, every input, every output, every timing. "I fixed the data" becomes a URL you can verify.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Handoff protocol</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Agent A produces a trace URL. Agent B reads it and picks up where A left off. The trace is the API.</p>
+        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Agents can pick up where others left off</div>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Agent A finishes and produces a URL. Agent B reads that URL and continues the work. No message queue, no shared database.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Debugging built in</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">When a step fails, the trace shows exactly what input caused it. Agents read traces to self-heal. Humans read traces to understand.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">When something fails, you see exactly what input caused it. Agents use this to fix their own mistakes. You use it to understand what happened.</p>
       </div>
       <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
         <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Shareable</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Every trace is a permanent URL. Send it to a teammate, attach it to a PR, or feed it to another agent.</p>
+        <p class="text-[0.8125rem] text-(--text-2) m-0">Every run has a permanent URL. Send it to a teammate, attach it to a PR, or feed it to another agent.</p>
       </div>
     </div>
   </section>
@@ -117,7 +156,7 @@
       <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Watch an agent heal broken data</h2>
     </div>
     <p class="text-[0.9375rem] text-(--text-2)">
-      Four steps, four sandboxes. Each step's output flows to the next step's <code class="text-[0.8125rem]">input</code>. Hit Run, then open the trace.
+      Four pieces of code, four sandboxes. Each one's output flows into the next one's input. Hit Run, then open the result.
     </p>
     <MiniSandbox />
   </section>
@@ -154,14 +193,14 @@
       <a href="/tutorial" class="flex items-center gap-3 p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
         <div>
           <div class="font-semibold text-(--text) group-hover:text-(--accent)">Tutorial</div>
-          <div class="text-[0.8125rem] text-(--text-2)">5 minutes to your first trace</div>
+          <div class="text-[0.8125rem] text-(--text-2)">5 minutes to your first run</div>
         </div>
       </a>
 
       <a href="/docs" class="flex items-center gap-3 p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
         <div>
           <div class="font-semibold text-(--text) group-hover:text-(--accent)">Docs</div>
-          <div class="text-[0.8125rem] text-(--text-2)">API, capabilities, trace schema</div>
+          <div class="text-[0.8125rem] text-(--text-2)">API, permissions, reference</div>
         </div>
       </a>
 

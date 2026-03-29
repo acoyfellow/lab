@@ -1,7 +1,3 @@
-<script lang="ts">
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
-</script>
-
 # Limits and bounds
 
 Lab does not re-implement every Cloudflare platform limit in code. **Account-level** quotas (CPU time, requests, subrequests) follow [Cloudflare Workers limits](https://developers.cloudflare.com/workers/platform/limits/). Below: **what this repo enforces or assumes** in the Worker.
@@ -31,11 +27,3 @@ Total HTTP body sizes for `POST /run*` are bounded by **Workers request limits**
 ## See also
 
 - [Architecture](/docs/architecture) — **Isolate identity, cache, and cold starts** (why wall `ms` varies run-to-run).
-
-<DocFooterNav
-  gridClass="sm:grid-cols-2"
-  links={[
-    { label: 'Failures & traces', to: '/docs/failures', description: 'Errors, empty trace on chain failure.' },
-    { label: 'HTTP API', to: '/docs/http-api', description: 'Endpoints and request shapes.' },
-  ]}
-/>

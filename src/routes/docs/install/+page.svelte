@@ -1,39 +1,49 @@
 <script lang="ts">
-  import SEO from '$lib/SEO.svelte';
-  
+  import DocsArticle from '$lib/DocsArticle.svelte';
+
+  const tocItems = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'what-gets-created', label: 'What Gets Created' },
+    { id: 'step-by-step', label: 'Step-by-Step' },
+    { id: 'commands', label: 'Commands' },
+    { id: 'next-steps', label: 'Next Steps' },
+  ];
+
   const steps = [
     {
       number: 1,
       title: 'Prerequisites',
-      content: 'Cloudflare account with Workers Paid plan (required for D1 and some bindings). Bun or Node.js installed locally.'
+      content:
+        'Cloudflare account with Workers Paid plan (required for D1 and some bindings). Bun or Node.js installed locally.',
     },
     {
       number: 2,
       title: 'Clone and Install',
-      content: 'Clone the repository and install dependencies.'
+      content: 'Clone the repository and install dependencies.',
     },
     {
       number: 3,
       title: 'Authentication',
-      content: 'Get your Cloudflare API token with Workers Scripts:Edit and Account:Read permissions.'
+      content: 'Get your Cloudflare API token with Workers Scripts:Edit and Account:Read permissions.',
     },
     {
       number: 4,
       title: 'Deploy',
-      content: 'Run the deploy command. Alchemy creates D1 databases, R2 buckets, and KV namespaces automatically.'
+      content:
+        'Run the deploy command. Alchemy creates D1 databases, R2 buckets, and KV namespaces automatically.',
     },
     {
       number: 5,
       title: 'Environment Variables',
-      content: 'Set up your LAB_URL and any API keys for external services.'
+      content: 'Set up your LAB_URL and any API keys for external services.',
     },
     {
       number: 6,
       title: 'Verify',
-      content: 'Test your deployment with a simple curl command.'
-    }
+      content: 'Test your deployment with a simple curl command.',
+    },
   ];
-  
+
   const infrastructure = [
     { name: 'D1 Database', purpose: 'Trace storage and metadata', required: true },
     { name: 'R2 Bucket', purpose: 'Large trace outputs and artifacts', required: true },
@@ -43,22 +53,21 @@
   ];
 </script>
 
-<SEO
-  title="Installation — lab"
+<DocsArticle
+  pageTitle="Installation"
+  segment="Installation"
   description="Step-by-step guide to deploying Lab to your Cloudflare account."
-  path="/docs/install"
-  type="website"
-/>
-
-<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-10">
-  <header class="space-y-3">
+  {tocItems}
+  mdDoc={false}
+>
+  <header id="overview" class="space-y-3">
     <h1 class="text-2xl font-semibold tracking-tight">Installation</h1>
     <p class="text-[0.9375rem] text-(--text-2) leading-relaxed">
       Deploy Lab to your own Cloudflare account. You control the data, infrastructure, and capabilities.
     </p>
   </header>
 
-  <section class="space-y-4">
+  <section id="what-gets-created" class="space-y-4">
     <h2 class="text-lg font-semibold">What Gets Created</h2>
     <p class="text-[0.8125rem] text-(--text-2)">
       The deploy script provisions these Cloudflare resources automatically:
@@ -91,13 +100,15 @@
     </div>
   </section>
 
-  <section class="space-y-6">
+  <section id="step-by-step" class="space-y-6">
     <h2 class="text-lg font-semibold">Step-by-Step</h2>
-    
+
     {#each steps as step}
       <div class="space-y-3">
         <div class="flex items-center gap-3">
-          <span class="w-8 h-8 rounded-full bg-(--accent) text-white flex items-center justify-center font-semibold text-sm">
+          <span
+            class="w-8 h-8 rounded-full bg-(--accent) text-white flex items-center justify-center font-semibold text-sm"
+          >
             {step.number}
           </span>
           <h3 class="font-semibold text-(--text)">{step.title}</h3>
@@ -107,24 +118,26 @@
     {/each}
   </section>
 
-  <section class="space-y-4">
+  <section id="commands" class="space-y-4">
     <h2 class="text-lg font-semibold">Commands</h2>
-    
+
     <div class="space-y-4">
       <div>
-        <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Clone and install</p>
+        <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">
+          Clone and install
+        </p>
         <pre class="text-[0.75rem] bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">git clone https://github.com/acoyfellow/lab
 cd lab
 
 bun install
 npm install</pre>
       </div>
-      
+
       <div>
         <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Create API token</p>
         <p class="text-[0.8125rem] text-(--text-2) mb-2">
-          Go to Cloudflare dashboard → My Profile → API Tokens → Create Token. 
-          Use the "Custom token" template with these permissions:
+          Go to Cloudflare dashboard → My Profile → API Tokens → Create Token. Use the "Custom token" template with
+          these permissions:
         </p>
         <ul class="text-[0.8125rem] text-(--text-2) list-disc pl-5 space-y-1 mb-3">
           <li>Account: Cloudflare Pages:Edit</li>
@@ -132,7 +145,7 @@ npm install</pre>
           <li>Zone: Workers Routes:Edit (if using custom domain)</li>
         </ul>
       </div>
-      
+
       <div>
         <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Deploy</p>
         <pre class="text-[0.75rem] bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">export CLOUDFLARE_API_TOKEN=your-token-here
@@ -141,12 +154,14 @@ bun run deploy</pre>
           This creates all infrastructure and deploys the Worker. Takes 2-3 minutes.
         </p>
       </div>
-      
+
       <div>
-        <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Set environment variables</p>
+        <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">
+          Set environment variables
+        </p>
         <pre class="text-[0.75rem] bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">echo 'LAB_URL=https://lab.YOUR-SUBDOMAIN.workers.dev' >> .env</pre>
       </div>
-      
+
       <div>
         <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Verify</p>
         <pre class="text-[0.75rem] bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">curl https://lab.YOUR-SUBDOMAIN.workers.dev</pre>
@@ -157,8 +172,7 @@ bun run deploy</pre>
     </div>
   </section>
 
-  <!-- Next Steps -->
-  <section class="rounded-(--radius) border border-(--border) bg-(--surface) p-5 space-y-3">
+  <section id="next-steps" class="rounded-(--radius) border border-(--border) bg-(--surface) p-5 space-y-3">
     <h2 class="font-semibold text-(--text)">Next Steps</h2>
     <ul class="space-y-2 text-[0.8125rem]">
       <li class="flex items-center gap-2">
@@ -175,8 +189,4 @@ bun run deploy</pre>
       </li>
     </ul>
   </section>
-
-  <div class="pt-4 border-t border-(--border)">
-    <a href="/docs" class="text-[0.8125rem] text-(--accent) hover:underline">← Back to Documentation</a>
-  </div>
-</div>
+</DocsArticle>

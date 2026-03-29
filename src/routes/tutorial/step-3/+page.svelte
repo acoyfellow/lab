@@ -15,8 +15,7 @@
   type="website"
 />
 
-<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-8">
-  <header class="space-y-2">
+<header class="space-y-2">
     <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">
       Tutorial • Step 3 of 3
     </div>
@@ -119,7 +118,4 @@
     </div>
   </section>
 
-  <TutorialPager 
-    prev={{ href: paths.tutorialStep2, label: 'Step 2 · Multi-Step Chains' }}
-  />
-</div>
+<TutorialPager prev={{ href: paths.tutorialStep2, label: 'Step 2 · Multi-Step Chains' }} />

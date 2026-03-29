@@ -12,10 +12,15 @@
     const base =
       'text-[0.8125rem] no-underline hover:text-(--text) transition-colors';
     const p = page.url.pathname;
+    const onPatterns =
+      p === paths.docsPatterns || p.startsWith(paths.docsPatterns + '/');
     const active =
-      href === '/'
-        ? p === '/'
-        : p === href || (href !== '/' && p.startsWith(href + '/'));
+      href === paths.docs
+        ? p === paths.docs ||
+          (!onPatterns && p.startsWith(paths.docs + '/'))
+        : href === '/'
+          ? p === '/'
+          : p === href || (href !== '/' && p.startsWith(href + '/'));
     return active
       ? `${base} text-(--text) underline underline-offset-4`
       : `${base} text-(--text-3)`;

@@ -1,7 +1,3 @@
-<script lang="ts">
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
-</script>
-
 # FAQ (AI-curious engineers)
 
 Short answers for folks who like agents, MCP, and shipping real integrations. Deeper detail lives on the linked pages.
@@ -25,11 +21,3 @@ Platform **CPU/time** and **Workers** limits apply; Lab doesn’t add a separate
 ## 5. Why edge instead of a Python sidecar or local sandbox?
 
 **Fit:** short, chainable, **least-privilege** guest JS next to **KV / AI / R2 / …** with **traces**. **Poor fit:** long CPU-heavy batch jobs or arbitrary host access—see [When to use Lab](/docs/when-to-use) and [Architecture](/docs/architecture).
-
-<DocFooterNav
-  gridClass="sm:grid-cols-2"
-  links={[
-    { label: 'Agent integration', to: '/docs/agent-integration', description: 'MCP, catalog, execute map.' },
-    { label: 'HTTP API', to: '/docs/http-api', description: 'Endpoints and curl examples.' },
-  ]}
-/>

@@ -9,6 +9,8 @@ import { createHighlighter, createJavaScriptRegexEngine } from 'shiki';
 
 const THEME = 'github-light' as const;
 
+export type ShikiLang = 'typescript' | 'bash' | 'json';
+
 let highlighter: Awaited<ReturnType<typeof createHighlighter>> | undefined;
 
 async function getHighlighter() {
@@ -22,7 +24,7 @@ async function getHighlighter() {
 	return highlighter;
 }
 
-export async function highlightCode(code: string, lang: 'typescript' | 'bash' | 'json'): Promise<string> {
+export async function highlightCode(code: string, lang: ShikiLang): Promise<string> {
 	const h = await getHighlighter();
 	return h.codeToHtml(code, { lang, theme: THEME });
 }

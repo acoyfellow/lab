@@ -16,8 +16,7 @@
   type="website"
 />
 
-<div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-8">
-  <header class="space-y-2">
+<header class="space-y-2">
     <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">
       Tutorial • Step 2 of 3
     </div>
@@ -85,8 +84,7 @@ Trace: https://lab.coey.dev/t/abc123...`}</pre>
     </p>
   </section>
 
-  <TutorialPager 
-    prev={{ href: paths.tutorialStep1, label: 'Step 1 · Install and First Run' }}
-    next={{ href: paths.tutorialStep3, label: 'Step 3 · Agents and Handoffs' }} 
-  />
-</div>
+<TutorialPager
+  prev={{ href: paths.tutorialStep1, label: 'Step 1 · Install and First Run' }}
+  next={{ href: paths.tutorialStep3, label: 'Step 3 · Agents and Handoffs' }}
+/>

@@ -1,7 +1,3 @@
-<script lang="ts">
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
-</script>
-
 # Failures and traces
 
 ## Chain runs
@@ -29,11 +25,3 @@ Responses and persisted **`outcome`** may include **`error`** / **`reason`** str
 
 - [Limits](/docs/limits) — platform and repo-enforced bounds.
 - [Architecture](/docs/architecture) — **Isolate identity, cache, and cold starts** (why timings differ between runs).
-
-<DocFooterNav
-  gridClass="sm:grid-cols-2"
-  links={[
-    { label: 'Trace schema', to: '/docs/trace-schema', description: 'Stored JSON fields and tables.' },
-    { label: 'HTTP API', to: '/docs/http-api', description: 'Run endpoints and curl examples.' },
-  ]}
-/>

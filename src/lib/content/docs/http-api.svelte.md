@@ -1,7 +1,3 @@
-<script lang="ts">
-  import DocFooterNav from '$lib/DocFooterNav.svelte';
-</script>
-
 # HTTP API
 
 Public Worker endpoints (examples default to `https://lab.coey.dev`). Related: [Capabilities](/docs/capabilities) · [Limits](/docs/limits) · [Failures](/docs/failures) · [Security](/docs/security).
@@ -126,13 +122,3 @@ JSON for **LLM / tool** discovery: `capabilities` (with `llmHint`), `templates`,
 ## `GET /t/:id` and `GET /t/:id.json`
 
 Persisted trace document. Both paths return the same JSON. On the **Worker** (e.g. `http://localhost:1337`), `.json` exists for parity with the SvelteKit route [`/t/[id].json`](https://github.com/acoyfellow/lab/blob/main/src/routes/t/%5Bid%5D.json/%2Bserver.ts). Shape: [Trace schema](/docs/trace-schema).
-
-
-<DocFooterNav
-  gridClass="sm:grid-cols-2"
-  links={[
-    { label: 'Docs', to: '/docs', description: 'Hub for all on-site reference pages.' },
-    { label: 'Agents', to: '/docs/agent-integration', description: 'MCP find + execute, or HTTP catalog + runs.' },
-    { label: 'TypeScript client', to: '/docs/typescript', description: 'npm package, createLabClient, methods.' },
-  ]}
-/>
