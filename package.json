@@ -68,7 +68,7 @@
     "d3": "^7.9.0",
     "drizzle-orm": "^0.45.1",
     "effect": "4.0.0-beta.40",
-    "marked": "^15.0.12",
+    "marked": "^17.0.5",
     "shiki": "^4.0.2"
   },
   "type": "module"
