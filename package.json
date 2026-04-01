@@ -67,7 +67,7 @@
     "better-auth": "1.4.7",
     "d3": "^7.9.0",
     "drizzle-orm": "^0.45.1",
-    "effect": "4.0.0-beta.40",
+    "effect": "4.0.0-beta.43",
     "marked": "^15.0.12",
     "shiki": "^4.0.2"
   },
