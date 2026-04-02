@@ -1,4 +1,3 @@
-import ts from 'typescript';
 import {
 	highlightCode,
 	renderTokenizedCode,
@@ -19,34 +18,159 @@ type TokenSpan = {
 	fontStyle?: number;
 };
 
-function propertyNameText(name: ts.PropertyName): string | null {
-	if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name)) {
-		return name.text;
+function isIdentifierStart(char: string): boolean {
+	return /[A-Za-z_$]/.test(char);
+}
+
+function isIdentifierChar(char: string): boolean {
+	return /[A-Za-z0-9_$]/.test(char);
+}
+
+function skipString(code: string, start: number, quote: "'" | '"'): number {
+	let index = start + 1;
+	while (index < code.length) {
+		if (code[index] === '\\') {
+			index += 2;
+			continue;
+		}
+		if (code[index] === quote) return index + 1;
+		index += 1;
 	}
-	return null;
+	return index;
+}
+
+function skipLineComment(code: string, start: number): number {
+	let index = start + 2;
+	while (index < code.length && code[index] !== '\n') {
+		index += 1;
+	}
+	return index;
+}
+
+function skipBlockComment(code: string, start: number): number {
+	let index = start + 2;
+	while (index < code.length - 1) {
+		if (code[index] === '*' && code[index + 1] === '/') return index + 2;
+		index += 1;
+	}
+	return code.length;
+}
+
+function skipTrivia(code: string, start: number): number {
+	let index = start;
+	while (index < code.length) {
+		if (/\s/.test(code[index])) {
+			index += 1;
+			continue;
+		}
+		if (code[index] === '/' && code[index + 1] === '/') {
+			index = skipLineComment(code, index);
+			continue;
+		}
+		if (code[index] === '/' && code[index + 1] === '*') {
+			index = skipBlockComment(code, index);
+			continue;
+		}
+		return index;
+	}
+	return index;
+}
+
+function skipTemplateExpression(code: string, start: number): number {
+	let depth = 1;
+	let index = start;
+	while (index < code.length) {
+		const char = code[index];
+		if (char === "'" || char === '"') {
+			index = skipString(code, index, char);
+			continue;
+		}
+		if (char === '`') {
+			index = skipTemplateLiteral(code, index);
+			continue;
+		}
+		if (char === '/' && code[index + 1] === '/') {
+			index = skipLineComment(code, index);
+			continue;
+		}
+		if (char === '/' && code[index + 1] === '*') {
+			index = skipBlockComment(code, index);
+			continue;
+		}
+		if (char === '{') depth += 1;
+		if (char === '}') {
+			depth -= 1;
+			if (depth === 0) return index + 1;
+		}
+		index += 1;
+	}
+	return index;
+}
+
+function skipTemplateLiteral(code: string, start: number): number {
+	let index = start + 1;
+	while (index < code.length) {
+		if (code[index] === '\\') {
+			index += 2;
+			continue;
+		}
+		if (code[index] === '`') return index + 1;
+		if (code[index] === '$' && code[index + 1] === '{') {
+			index = skipTemplateExpression(code, index + 2);
+			continue;
+		}
+		index += 1;
+	}
+	return index;
 }
 
 function findBodyRanges(code: string): BodyRange[] {
-	const sourceFile = ts.createSourceFile('snippet.ts', code, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 	const ranges: BodyRange[] = [];
+	let index = 0;
 
-	function visit(node: ts.Node) {
-		if (
-			ts.isPropertyAssignment(node) &&
-			propertyNameText(node.name) === 'body' &&
-			(ts.isNoSubstitutionTemplateLiteral(node.initializer) || ts.isTemplateExpression(node.initializer))
-		) {
-			const start = node.initializer.getStart(sourceFile) + 1;
-			const end = node.initializer.getEnd() - 1;
-			if (end > start) {
-				ranges.push({ start, end });
-			}
+	while (index < code.length) {
+		index = skipTrivia(code, index);
+		if (index >= code.length) break;
+
+		const char = code[index];
+		if (char === "'" || char === '"') {
+			index = skipString(code, index, char);
+			continue;
 		}
-		ts.forEachChild(node, visit);
+		if (char === '`') {
+			index = skipTemplateLiteral(code, index);
+			continue;
+		}
+		if (!isIdentifierStart(char)) {
+			index += 1;
+			continue;
+		}
+
+		const propertyStart = index;
+		index += 1;
+		while (index < code.length && isIdentifierChar(code[index])) {
+			index += 1;
+		}
+
+		if (code.slice(propertyStart, index) !== 'body') continue;
+
+		let valueStart = skipTrivia(code, index);
+		if (code[valueStart] !== ':') continue;
+
+		valueStart = skipTrivia(code, valueStart + 1);
+		if (code[valueStart] !== '`') {
+			index = valueStart;
+			continue;
+		}
+
+		const templateEnd = skipTemplateLiteral(code, valueStart);
+		if (templateEnd > valueStart + 1) {
+			ranges.push({ start: valueStart + 1, end: templateEnd - 1 });
+		}
+		index = templateEnd;
 	}
 
-	visit(sourceFile);
-	return ranges.sort((a, b) => a.start - b.start);
+	return ranges;
 }
 
 function flattenTokens(lines: HighlightedToken[][], offsetShift = 0): TokenSpan[] {
