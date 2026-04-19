@@ -60,6 +60,8 @@
         <AppLink to="/examples" class={navClass('/examples')}>Examples</AppLink>
         <AppLink to={paths.docs} class={navClass(paths.docs)}>Docs</AppLink>
         <AppLink to="/compose" class={navClass('/compose')}>Compose</AppLink>
+        <AppLink to="/stories" class={navClass('/stories')}>Stories</AppLink>
+        <AppLink to="/healing" class={navClass('/healing')}>Healing</AppLink>
         <a
           href="https://github.com/acoyfellow/lab"
           class="inline-flex items-center justify-center w-8 h-8 rounded-(--radius) text-(--text-3) hover:text-(--text) hover:bg-(--surface-alt) transition-colors"
@@ -95,6 +97,8 @@
           <div class="flex flex-col gap-1.5">
             <AppLink to="/compose" class="text-(--text-2) no-underline hover:text-(--text)">Compose</AppLink>
             <AppLink to="/examples" class="text-(--text-2) no-underline hover:text-(--text)">Examples</AppLink>
+            <AppLink to="/stories" class="text-(--text-2) no-underline hover:text-(--text)">Stories</AppLink>
+            <AppLink to="/healing" class="text-(--text-2) no-underline hover:text-(--text)">Healing</AppLink>
           </div>
         </div>
 

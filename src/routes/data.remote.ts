@@ -6,6 +6,10 @@ import type {
   RunSpawnPayload,
   SeedResult,
   SavedResult,
+  Diagnosis,
+  FixProposal,
+  VerificationResult,
+  Comparison,
 } from '@acoyfellow/lab';
 import { query, command, getRequestEvent } from '$app/server';
 import { error } from '@sveltejs/kit';
@@ -176,5 +180,119 @@ export const doSqlExec = command(
       },
     );
     return { ok: result.ok, error: result.error };
+  },
+);
+
+// Self-healing loop
+export const diagnose = query(
+  'unchecked',
+  async (traceId: string): Promise<{ ok: boolean; diagnosis?: Diagnosis; error?: string }> => {
+    requireAuth();
+    const platform = getRequestEvent().platform;
+    return callWorkerJSON(platform, '/diagnose', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ traceId }),
+    });
+  },
+);
+
+export const propose = query(
+  'unchecked',
+  async (diagnosis: Diagnosis): Promise<{ ok: boolean; proposal?: FixProposal; error?: string }> => {
+    requireAuth();
+    const platform = getRequestEvent().platform;
+    return callWorkerJSON(platform, '/propose', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ diagnosis }),
+    });
+  },
+);
+
+export const verify = query(
+  'unchecked',
+  async (payload: { proposal: FixProposal; baseTraceId?: string }): Promise<{ ok: boolean; result?: VerificationResult; error?: string }> => {
+    requireAuth();
+    const platform = getRequestEvent().platform;
+    return callWorkerJSON(platform, '/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  },
+);
+
+export const compare = query(
+  'unchecked',
+  async (payload: { a: string; b: string }): Promise<{ ok: boolean; comparison?: Comparison; error?: string }> => {
+    requireAuth();
+    const platform = getRequestEvent().platform;
+    return callWorkerJSON(platform, '/compare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  },
+);
+
+// Story helpers
+export const listStories = query(
+  'unchecked',
+  async (options?: { createdBy?: string; status?: string; limit?: number }): Promise<{ ok: boolean; stories?: any[]; error?: string }> => {
+    const platform = getRequestEvent().platform;
+    const params = new URLSearchParams();
+    if (options?.createdBy) params.set('createdBy', options.createdBy);
+    if (options?.status) params.set('status', options.status);
+    if (options?.limit) params.set('limit', String(options.limit));
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return callWorkerJSON(platform, `/stories${query}`);
+  },
+);
+
+export const getStory = query(
+  'unchecked',
+  async (storyId: string): Promise<{ ok: boolean; story?: any; error?: string }> => {
+    const platform = getRequestEvent().platform;
+    return callWorkerJSON(platform, `/stories/${storyId}`);
+  },
+);
+
+export const forkStory = command(
+  'unchecked',
+  async (payload: { storyId: string; fromChapterIndex: number; newTitle?: string }): Promise<{ ok: boolean; story?: any; error?: string }> => {
+    requireAuth();
+    const platform = getRequestEvent().platform;
+    return callWorkerJSON(platform, `/stories/${payload.storyId}/fork`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fromChapterIndex: payload.fromChapterIndex, newTitle: payload.newTitle }),
+    });
+  },
+);
+
+export const createStory = command(
+  'unchecked',
+  async (payload: { title: string; traceIds: string[]; visibility?: string; tags?: string[] }): Promise<{ ok: boolean; story?: any; error?: string }> => {
+    requireAuth();
+    const platform = getRequestEvent().platform;
+    return callWorkerJSON(platform, '/stories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  },
+);
+
+export const appendToStory = command(
+  'unchecked',
+  async (payload: { storyId: string; traceId: string }): Promise<{ ok: boolean; chapter?: any; error?: string }> => {
+    requireAuth();
+    const platform = getRequestEvent().platform;
+    return callWorkerJSON(platform, `/stories/${payload.storyId}/append`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ traceId: payload.traceId }),
+    });
   },
 );
