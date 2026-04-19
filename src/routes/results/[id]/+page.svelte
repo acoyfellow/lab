@@ -8,6 +8,7 @@
   import SEO from '$lib/SEO.svelte';
   import { paths } from '$lib/paths';
   import { page } from '$app/state';
+  import { listStories, createStory, appendToStory } from '../../data.remote';
 
   type ResultRequest = {
     template?: string;
@@ -127,6 +128,69 @@
     window.location.href = '/compose';
   }
 
+  // --- Story + Healing integration ---
+  let storyPickerOpen = $state(false);
+  let storyPickerLoading = $state(false);
+  let storyPickerError = $state<string | null>(null);
+  let existingStories = $state<Array<{ id: string; title: string }>>([]);
+  let newStoryTitle = $state('');
+  let busyStoryAction = $state(false);
+
+  async function openStoryPicker() {
+    storyPickerOpen = true;
+    storyPickerError = null;
+    storyPickerLoading = true;
+    try {
+      const r = await listStories({ limit: 50 });
+      if (r.ok && r.stories) {
+        existingStories = r.stories.map((s: { id: string; title: string }) => ({ id: s.id, title: s.title }));
+      } else {
+        existingStories = [];
+        if (r.error) storyPickerError = r.error;
+      }
+    } catch (e) {
+      storyPickerError = e instanceof Error ? e.message : String(e);
+    } finally {
+      storyPickerLoading = false;
+    }
+  }
+
+  async function handleCreateStory() {
+    const title = newStoryTitle.trim();
+    if (!title) return;
+    busyStoryAction = true;
+    storyPickerError = null;
+    try {
+      const r = await createStory({ title, traceIds: [result.id] });
+      if (r.ok && r.story) {
+        window.location.href = `/stories/${r.story.id}`;
+      } else {
+        storyPickerError = r.error ?? 'Failed to create story';
+      }
+    } catch (e) {
+      storyPickerError = e instanceof Error ? e.message : String(e);
+    } finally {
+      busyStoryAction = false;
+    }
+  }
+
+  async function handleAppendToStory(storyId: string) {
+    busyStoryAction = true;
+    storyPickerError = null;
+    try {
+      const r = await appendToStory({ storyId, traceId: result.id });
+      if (r.ok) {
+        window.location.href = `/stories/${storyId}`;
+      } else {
+        storyPickerError = r.error ?? 'Failed to append';
+      }
+    } catch (e) {
+      storyPickerError = e instanceof Error ? e.message : String(e);
+    } finally {
+      busyStoryAction = false;
+    }
+  }
+
   function handleSelectStep(step: number) {
     selectedStep = step;
     showDetailPanel = true;
@@ -206,6 +270,15 @@
       </p>
     </div>
     <div class="flex gap-2 flex-wrap text-[0.8125rem]">
+      {#if !result.outcome.ok}
+        <a
+          href="/healing?traceId={result.id}"
+          class="text-white bg-(--accent) border border-(--accent) rounded-(--radius) px-3 py-1.5 no-underline hover:opacity-90 text-[0.8125rem]"
+        >
+          Diagnose
+        </a>
+      {/if}
+      <button type="button" onclick={openStoryPicker} class="text-(--text-2) bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 cursor-pointer hover:text-(--text) hover:border-(--accent)/30 text-[0.8125rem]">Add to story</button>
       <button type="button" onclick={goFork} class="text-(--text-2) bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 cursor-pointer hover:text-(--text) hover:border-(--accent)/30 text-[0.8125rem]">Fork</button>
       <a href="/results/{result.id}.json" class="text-(--text-2) no-underline bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 hover:text-(--text) hover:border-(--accent)/30">JSON</a>
       <button type="button" onclick={copyUrl} class="text-(--text-2) bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 cursor-pointer hover:text-(--text) hover:border-(--accent)/30 text-[0.8125rem]">Copy URL</button>
@@ -404,6 +477,96 @@
             {/if}
           </div>
         </div>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Story picker modal -->
+  {#if storyPickerOpen}
+    <div class="fixed inset-0 z-50 flex items-center justify-center">
+      <button
+        type="button"
+        class="absolute inset-0 bg-black/50 w-full h-full cursor-default"
+        transition:fade={{ duration: 120 }}
+        onclick={() => storyPickerOpen = false}
+        aria-label="Close story picker"
+      ></button>
+
+      <div
+        class="relative w-full max-w-md mx-4 bg-(--surface) border border-(--border) rounded-(--radius) shadow-2xl p-5 space-y-4"
+        transition:fly={{ y: 12, duration: 160, easing: cubicOut }}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div class="flex items-center justify-between">
+          <h2 class="text-[0.875rem] font-semibold text-(--text) m-0">Add to story</h2>
+          <button
+            type="button"
+            class="text-(--text-3) hover:text-(--text) p-1 rounded hover:bg-(--surface-alt)"
+            onclick={() => storyPickerOpen = false}
+            aria-label="Close"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- New story -->
+        <div class="space-y-2">
+          <label for="new-story-title" class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) block">
+            Start new story
+          </label>
+          <div class="flex gap-2">
+            <input
+              id="new-story-title"
+              type="text"
+              bind:value={newStoryTitle}
+              placeholder="Story title…"
+              disabled={busyStoryAction}
+              class="flex-1 border border-(--border) rounded-(--radius) bg-white px-3 py-2 text-[0.8125rem]"
+            />
+            <button
+              type="button"
+              onclick={handleCreateStory}
+              disabled={busyStoryAction || !newStoryTitle.trim()}
+              class="text-white bg-(--accent) border border-(--accent) rounded-(--radius) px-3 py-2 cursor-pointer disabled:opacity-50 text-[0.8125rem]"
+            >
+              Create
+            </button>
+          </div>
+        </div>
+
+        <!-- Append to existing -->
+        <div class="space-y-2">
+          <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">
+            Append to existing
+          </div>
+          {#if storyPickerLoading}
+            <p class="text-[0.75rem] text-(--text-3)">Loading stories…</p>
+          {:else if existingStories.length === 0}
+            <p class="text-[0.75rem] text-(--text-3)">No existing stories.</p>
+          {:else}
+            <div class="max-h-48 overflow-y-auto space-y-1 border border-(--border) rounded-(--radius) p-1">
+              {#each existingStories as s}
+                <button
+                  type="button"
+                  onclick={() => handleAppendToStory(s.id)}
+                  disabled={busyStoryAction}
+                  class="w-full text-left px-2 py-1.5 rounded text-[0.8125rem] text-(--text-2) hover:bg-(--surface-alt) hover:text-(--text) disabled:opacity-50 truncate"
+                  title={s.title}
+                >
+                  {s.title}
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
+
+        {#if storyPickerError}
+          <div class="text-[0.75rem] text-red-600">{storyPickerError}</div>
+        {/if}
       </div>
     </div>
   {/if}

@@ -8,6 +8,16 @@ import type {
   RunSpawnPayload,
   SeedResult,
   SavedResult,
+  CreateStoryRequest,
+  CreateStoryResponse,
+  GetStoryResponse,
+  ForkStoryRequest,
+  ForkStoryResponse,
+  AppendToStoryRequest,
+  AppendToStoryResponse,
+  ListStoriesOptions,
+  ListStoriesResponse,
+  StoryStatus,
 } from './types.js';
 import { chainStepsForWire, guestWirePayload, normalizeBaseUrl, requestJSON } from './wire.js';
 
@@ -59,6 +69,18 @@ export type LabEffectClient = {
   readonly seed: () => Effect.Effect<SeedResult, HttpError>;
   /** Fetch saved-result JSON from the canonical `GET /results/:id.json` path. */
   readonly getResult: (resultId: string) => Effect.Effect<SavedResult | { error: string }, HttpError>;
+  /** Create a story from multiple traces */
+  readonly createStory: (request: CreateStoryRequest) => Effect.Effect<CreateStoryResponse, HttpError>;
+  /** Get a story with all chapters */
+  readonly getStory: (id: string) => Effect.Effect<GetStoryResponse, HttpError>;
+  /** Fork a story from a specific chapter */
+  readonly forkStory: (storyId: string, chapterIndex: number, newTitle?: string) => Effect.Effect<ForkStoryResponse, HttpError>;
+  /** Append a trace to an existing story */
+  readonly appendToStory: (storyId: string, traceId: string) => Effect.Effect<AppendToStoryResponse, HttpError>;
+  /** List stories with optional filtering */
+  readonly listStories: (options?: ListStoriesOptions) => Effect.Effect<ListStoriesResponse, HttpError>;
+  /** Update story status */
+  readonly updateStoryStatus: (storyId: string, status: StoryStatus) => Effect.Effect<{ ok: boolean; error?: string }, HttpError>;
 };
 
 export function createLabEffectClient(options: LabEffectClientOptions): LabEffectClient {
@@ -127,6 +149,59 @@ export function createLabEffectClient(options: LabEffectClientOptions): LabEffec
         fetchImpl,
         `/results/${resultId}.json`,
         { method: 'GET' }
+      );
+    },
+    createStory(request) {
+      return tryRequestJSON<CreateStoryResponse>(baseUrl, fetchImpl, '/stories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+      });
+    },
+    getStory(id) {
+      return tryRequestJSON<GetStoryResponse>(baseUrl, fetchImpl, `/stories/${id}`, {
+        method: 'GET',
+      });
+    },
+    forkStory(storyId, chapterIndex, newTitle) {
+      const body: ForkStoryRequest = { fromChapterIndex: chapterIndex };
+      if (newTitle !== undefined) body.newTitle = newTitle;
+      return tryRequestJSON<ForkStoryResponse>(baseUrl, fetchImpl, `/stories/${storyId}/fork`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    },
+    appendToStory(storyId, traceId) {
+      const body: AppendToStoryRequest = { traceId };
+      return tryRequestJSON<AppendToStoryResponse>(baseUrl, fetchImpl, `/stories/${storyId}/append`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    },
+    listStories(options = {}) {
+      const params = new URLSearchParams();
+      if (options.createdBy !== undefined) params.set('createdBy', options.createdBy);
+      if (options.status !== undefined) params.set('status', options.status);
+      if (options.visibility !== undefined) params.set('visibility', options.visibility);
+      if (options.limit !== undefined) params.set('limit', String(options.limit));
+      if (options.offset !== undefined) params.set('offset', String(options.offset));
+      const query = params.toString() ? `?${params.toString()}` : '';
+      return tryRequestJSON<ListStoriesResponse>(baseUrl, fetchImpl, `/stories${query}`, {
+        method: 'GET',
+      });
+    },
+    updateStoryStatus(storyId, status) {
+      return tryRequestJSON<{ ok: boolean; error?: string }>(
+        baseUrl,
+        fetchImpl,
+        `/stories/${storyId}/status`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        }
       );
     },
   };

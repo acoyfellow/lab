@@ -2,17 +2,15 @@
 
 The feedback loop for AI agents.
 
-An agent writes code. Lab runs it in a Cloudflare sandbox and saves canonical result JSON plus a **shareable viewer URL**. Successful runs include full step data — code, inputs, outputs, timing. The agent reads the JSON, fixes what broke, and runs again. Same loop a developer uses, except the agent does it.
+Lab runs agent code in Cloudflare sandboxes and saves shareable results. Agents read those results, fix what broke, and run again. Same loop a developer uses, except the agent does it.
 
-```
-agent writes code  →  Lab runs it  →  saved result (what happened)  →  agent reads, fixes, reruns
-```
+**Try it now:** [lab.coey.dev/compose](https://lab.coey.dev/compose)
 
-**Try it now:** [lab.coey.dev/compose](https://lab.coey.dev/compose) — run a chain, click the saved-result link.
+> **0.0.3** — API and result shapes may still move. Pin to exact versions or self-host.
 
-> **0.0.3** — API and saved-result shapes may still move. Pin to exact versions or self-host.
+---
 
-## Quickstart
+## 2-Minute Quickstart
 
 ```bash
 npm install @acoyfellow/lab
@@ -22,95 +20,165 @@ npm install @acoyfellow/lab
 import { createLabClient } from "@acoyfellow/lab";
 
 const lab = createLabClient({
-  baseUrl: process.env.LAB_URL,  // your Lab instance URL
+  baseUrl: process.env.LAB_URL,  // or https://lab.coey.dev
 });
 
-// Self-healing pipeline: load broken JSON → try parse → heal → validate
+// Run a chain, get a shareable result URL
 const out = await lab.runChain([
-  { name: "Load",    body: `return { raw: '{"users": [{"id": 1,}]}', attempt: 1 }`, capabilities: [] },
-  { name: "Parse",   body: `try { return { ok: true, data: JSON.parse(input.raw) } } catch(e) { return { ok: false, error: e.message, raw: input.raw } }`, capabilities: [] },
-  { name: "Heal",    body: `if (input.ok) return input; const fixed = input.raw.replace(/,(\\s*[}\\]])/g, '$1'); return { ok: true, data: JSON.parse(fixed), healed: true }`, capabilities: [] },
-  { name: "Verify",  body: `return { valid: input.ok, healed: !!input.healed, users: input.data?.users?.length }`, capabilities: [] },
+  { name: "Load", body: `return { value: 42 }`, capabilities: [] },
+  { name: "Double", body: `return { value: input.value * 2 }`, capabilities: [] },
 ]);
 
-console.log(out.result);   // { valid: true, healed: true, users: 1 }
-console.log(out.resultId);  // → machine JSON: $LAB_URL/results/<id>.json; viewer: $LAB_URL/results/<id>
+console.log(out.result);    // { value: 84 }
+console.log(out.resultId);  // abc123
+
+// Open the viewer: $LAB_URL/results/abc123
+// Get the JSON: $LAB_URL/results/abc123.json
 ```
 
-Each step runs in its own sandbox. Step 2's output flows to Step 3's `input`. The result is saved at a URL — share it to show what happened.
+**What you'll see:**
+1. **Code** — what ran in each step
+2. **Capabilities** — what the code could access
+3. **Result** — return values, timing, and any errors
 
-## Patterns
+---
 
-These are the workflows agents build with Lab. Every pattern saves a result. The result is the point.
+## What Lab Does
 
-| Pattern | What happens | The result shows |
-|---|---|---|
-| **[Prove It](https://lab.coey.dev/docs/patterns#prove-it)** | Agent writes code + edge cases, runs them all | 10/10 pass — the receipt |
-| **[Self-Healing](https://lab.coey.dev/docs/patterns#self-healing-loop)** | Step fails → agent reads result → patches → retries | The saved result, including any successful chain steps |
-| **[Agent Handoff](https://lab.coey.dev/docs/patterns#agent-handoff)** | Agent A → B → C, one chain | Who did what |
-| **[Canary Deploy](https://lab.coey.dev/docs/patterns#canary-deploy)** | Old vs new logic, same inputs | What changed |
-| **[Stress Test](https://lab.coey.dev/docs/patterns#stress-test)** | Run N times, find where it breaks | Which runs failed and why |
+Three concepts to understand:
 
-See all patterns: [lab.coey.dev/docs/patterns](https://lab.coey.dev/docs/patterns)
+### The Trace
+Every run saves a canonical JSON result at `/results/:id.json`. This is the proof of execution. It includes code, inputs, outputs, timing, and errors. Share the URL to show what happened.
 
-## How it works
+### The Loop
+Agents read the saved result, fix what broke, and run again. A step fails → agent sees the error → patches → retries. The result JSON is the feedback mechanism.
 
-**Workflows** — chain JavaScript steps together. Each step's return value becomes the next step's `input`. Each step runs in its own V8 sandbox via Cloudflare [Worker Loaders](https://developers.cloudflare.com/workers/runtime-apis/loaders/). Nothing leaks between steps.
+### The Story
+Results link together. Agent A runs something, Agent B reads the result and continues. Teams share traces to debug, audit, and collaborate.
 
-**Capabilities** — each step can only access what you explicitly grant:
+---
+
+## Common Patterns
+
+These are the workflows agents build with Lab:
+
+### Prove It Works
+Ship agent code with proof it works.
+
+```js
+const out = await lab.runChain([
+  { name: "Unit Tests", body: testCode, capabilities: [] },
+  { name: "Integration", body: integrationCode, capabilities: ["kvRead"] },
+]);
+// Share the result URL → "10/10 tests passed"
+```
+
+### Self-Healing Pipeline
+Auto-fix failures without human intervention.
+
+```js
+const steps = [
+  { name: "Parse", body: `try { return JSON.parse(input.raw) } catch(e) { return { error: e.message } }`, capabilities: [] },
+  { name: "Heal", body: `if (!input.error) return input; const fixed = input.raw.replace(/,(\s*[}\]])/g, '$1'); return JSON.parse(fixed);`, capabilities: [] },
+];
+```
+
+### Agent Handoff
+Multi-agent relay — each step can spawn the next.
+
+```js
+await lab.runChain([
+  { name: "Planner", body: plannerCode, capabilities: ["workersAi"] },
+  { name: "Coder", body: coderCode, capabilities: ["spawn"] },
+  { name: "Reviewer", body: reviewerCode, capabilities: [] },
+]);
+```
+
+### Canary Deploy
+Compare old vs new logic before shipping.
+
+```js
+const [old, neu] = await Promise.all([
+  lab.runSandbox({ body: oldLogic, capabilities: [] }),
+  lab.runSandbox({ body: newLogic, capabilities: [] }),
+]);
+// Compare outputs, then decide
+```
+
+### Stress Test
+Find breaking points.
+
+```js
+const runs = await Promise.all(
+  Array.from({ length: 50 }, () =>
+    lab.runSandbox({ body: targetCode, capabilities: [] })
+  )
+);
+// Check which runs failed and why
+```
+
+See full patterns: [lab.coey.dev/docs/patterns](https://lab.coey.dev/docs/patterns)
+
+---
+
+## API Reference
+
+### HTTP Routes
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET`  | `/health` | Health check |
+| `POST` | `/run` | Run code sandbox |
+| `POST` | `/run/kv` | Run with `kvRead` capability |
+| `POST` | `/run/chain` | Multi-step workflow |
+| `POST` | `/run/spawn` | Nested isolates with depth budget |
+| `POST` | `/run/generate` | AI-generated code + run |
+| `POST` | `/seed` | Write demo KV data |
+| `GET`  | `/lab/catalog` | Capability metadata for agents |
+| `GET`  | `/results/:id` | Human viewer |
+| `GET`  | `/results/:id.json` | Canonical result JSON |
+
+### TypeScript Client
+
+```js
+import { createLabClient } from "@acoyfellow/lab";
+
+const lab = createLabClient({ baseUrl: "..." });
+
+lab.runSandbox({ body, capabilities? })  // Single sandbox
+lab.runKv({ body })                       // With KV snapshot
+lab.runChain(steps)                       // Multi-step
+lab.runSpawn({ body, capabilities?, depth? })  // Nested isolates
+lab.runGenerate({ prompt, capabilities? })     // AI-generated code
+lab.seed()                                // Seed demo data
+lab.getResult(resultId)                   // Fetch saved result JSON
+```
+
+Effect client: `import { createLabEffectClient } from "@acoyfellow/lab/effect"`
+
+---
+
+## Capabilities
+
+Each step only gets what you explicitly grant:
 
 | Capability | What the guest gets |
-|---|---|
-| `kvRead` | `kv.get(key)` / `kv.list(prefix)` — read-only KV snapshot |
-| `workersAi` | `ai.run(prompt)` — Workers AI (keys stay on host) |
-| `r2Read` | `r2.list()` / `r2.getText(key)` — R2 object storage |
-| `d1Read` | `d1.query(sql)` — read-only D1 queries |
-| `spawn` | `spawn(code, caps)` — nested child isolates with depth budget |
-| `durableObjectFetch` | `labDo.fetch(name, { method, path, body })` — Durable Object RPC |
+|------------|---------------------|
+| `kvRead` | Read-only KV: `kv.get(key)`, `kv.list(prefix)` |
+| `workersAi` | `ai.run(prompt)` — keys stay on host |
+| `r2Read` | `r2.list()`, `r2.getText(key)` |
+| `d1Read` | `d1.query(sql)` — read-only queries |
+| `spawn` | `spawn(code, caps)` — nested child isolates |
+| `durableObjectFetch` | `labDo.fetch(name, { method, path, body })` |
 | `containerHttp` | `labContainer.get(path)` — bound container service |
 
-No capabilities = pure compute, no I/O. Denied capabilities produce clear errors recorded in the saved result.
+No capabilities = pure compute, no I/O. Denied capabilities produce clear errors in the saved result.
 
-**Results** — every run saves a JSON document. Agents and scripts should read `/results/:id.json`. Humans can open `/results/:id` as the viewer over that same saved result. Successful runs include code, capabilities, return values, and timing. Failed or aborted runs include the top-level error and reason; chain step detail may be partial or empty. Share the URL. Fork it into a new run. Hand it to another agent.
+---
 
-## API
+## MCP Integration
 
-### HTTP routes
-
-| Method | Path | Body |
-|---|---|---|
-| `GET` | `/health` | health check |
-| `POST` | `/run` | `{ body, capabilities? }` |
-| `POST` | `/run/kv` | same — always includes `kvRead` |
-| `POST` | `/run/chain` | `{ steps: [{ body, capabilities, name? }] }` |
-| `POST` | `/run/spawn` | `{ body, capabilities, depth? }` |
-| `POST` | `/run/generate` | `{ prompt, capabilities }` |
-| `POST` | `/seed` | `{}` — writes demo KV data |
-| `GET` | `/lab/catalog` | capability + route metadata for agents |
-| `GET` | `/results/:id` | human saved-result viewer |
-| `GET` | `/results/:id.json` | canonical saved-result JSON |
-
-### TypeScript client
-
-```bash
-npm install @acoyfellow/lab
-```
-
-| Method | What it does |
-|---|---|
-| `runSandbox(payload)` | Single sandbox run |
-| `runKv(payload)` | Run with KV snapshot |
-| `runChain(steps)` | Multi-step workflow |
-| `runSpawn(payload)` | Nested isolates |
-| `runGenerate(payload)` | AI-generated code + run |
-| `seed()` | Seed demo KV data |
-| `getResult(resultId)` | Fetch canonical saved-result JSON |
-
-Effect client: `import { createLabEffectClient } from "@acoyfellow/lab/effect"` — same API, returns `Effect` instead of `Promise`.
-
-## MCP integration
-
-Lab exposes two MCP tools — **`find`** (discover capabilities, fetch saved results) and **`execute`** (run any mode). Give an agent access to Lab and it can execute code, read saved results, and build on previous runs.
+Give agents access to Lab via MCP:
 
 ```bash
 npm install -g @acoyfellow/lab-mcp
@@ -128,43 +196,54 @@ npm install -g @acoyfellow/lab-mcp
 }
 ```
 
-Works with Claude Desktop, Cursor, or any MCP client. See [`packages/lab-mcp`](packages/lab-mcp).
+Tools: `find` (discover capabilities, fetch results) and `execute` (run any mode).
 
-## Self-host
+---
 
-Deploy to your own Cloudflare account. Your agents, your data, your capabilities.
+## Self-Host
+
+Your agents, your data, your capabilities:
 
 ```bash
 git clone https://github.com/acoyfellow/lab.git && cd lab
 bun install && bun run deploy
 ```
 
-Requires Cloudflare Workers Paid ($5/mo). Provisions the public app, the private Worker, auth D1, engine D1, KV, Worker Loader, Durable Objects, and optional R2/AI bindings via [Alchemy](https://github.com/sam-goodwin/alchemy).
+Requires Cloudflare Workers Paid ($5/mo). Provisions the public app, private Worker, auth D1, engine D1, KV, Worker Loader, Durable Objects, and optional R2/AI bindings via [Alchemy](https://github.com/sam-goodwin/alchemy).
 
-## Project structure
+---
+
+## Project Structure
 
 ```
 worker/              Sandbox engine (Effect v4, Worker Loaders)
-  index.ts           Routes, chain/spawn orchestration, saved-result storage
+  index.ts           Routes, chain/spawn orchestration, result storage
   Loader.ts          V8 sandbox lifecycle
   guest/templates.ts Guest module composition + capability shims
   capabilities/      Capability registry
-packages/lab/        TypeScript client (@acoyfellow/lab)
-packages/lab-mcp/    MCP server (@acoyfellow/lab-mcp)
-src/                 SvelteKit app (compose, saved-result viewer, docs)
+packages/
+  lab/               TypeScript client (@acoyfellow/lab)
+  lab-mcp/           MCP server (@acoyfellow/lab-mcp)
+  lab-cli/           CLI tools
+  lab-petri/         Runtime utilities
+src/                 SvelteKit app (compose, viewer, docs)
 alchemy.run.ts       Infrastructure-as-code
 ```
+
+---
 
 ## Development
 
 ```bash
-bun dev              # Worker (port 1337) + SvelteKit app
-bun test             # Guest body syntax validation
-bun run lint         # oxlint
-bun run check        # svelte-check + typecheck
+bun dev        # Worker (port 1337) + SvelteKit app
+bun test       # Guest body syntax validation
+bun run lint   # oxlint
+bun run check  # svelte-check + typecheck
 ```
 
-Integration tests in `worker/index.test.ts` run against a live Worker and skip gracefully when unavailable.
+Integration tests in `worker/index.test.ts` run against a live Worker.
+
+---
 
 ## License
 

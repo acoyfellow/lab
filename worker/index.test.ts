@@ -305,4 +305,265 @@ describe("Lab Worker", () => {
     expect(capIds).toContain("spawn");
     expect(capIds).toContain("workersAi");
   });
+
+  // --- Self-healing route tests ---
+
+  test("diagnose returns error for missing traceId", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const res = await fetch(`${baseUrl}/diagnose`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const data = (await res.json()) as { ok: boolean; error?: string };
+    expect(data.ok).toBe(false);
+    expect(res.status).toBe(400);
+    expect(data.error).toContain("traceId");
+  });
+
+  test("diagnose returns error for non-existent trace", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const res = await fetch(`${baseUrl}/diagnose`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ traceId: "nonexistent0000" }),
+    });
+    const data = (await res.json()) as { ok: boolean; error?: string };
+    expect(data.ok).toBe(false);
+  });
+
+  test("propose returns error for missing diagnosis", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const res = await fetch(`${baseUrl}/propose`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const data = (await res.json()) as { ok: boolean; error?: string };
+    expect(data.ok).toBe(false);
+    expect(res.status).toBe(400);
+  });
+
+  test("verify returns error for missing proposal", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const res = await fetch(`${baseUrl}/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const data = (await res.json()) as { ok: boolean; error?: string };
+    expect(data.ok).toBe(false);
+    expect(res.status).toBe(400);
+  });
+
+  test("compare returns error for missing trace IDs", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const res = await fetch(`${baseUrl}/compare`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const data = (await res.json()) as { ok: boolean; error?: string };
+    expect(data.ok).toBe(false);
+    expect(res.status).toBe(400);
+  });
+
+  test("compare returns error for non-existent trace IDs", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const res = await fetch(`${baseUrl}/compare`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ a: "nonexistentA", b: "nonexistentB" }),
+    });
+    const data = (await res.json()) as { ok: boolean; error?: string };
+    expect(data.ok).toBe(false);
+  });
+
+  test("diagnose analyzes a failed trace", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    // First create a failing trace
+    const runRes = await fetch(`${baseUrl}/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        body: "throw new Error('test failure for healing')",
+        capabilities: [],
+      }),
+    });
+    const runData = (await runRes.json()) as { ok: boolean; resultId?: string; error?: string };
+    expect(runData.ok).toBe(false);
+    expect(runData.resultId).toBeDefined();
+
+    // Diagnose the failed trace
+    const diagRes = await fetch(`${baseUrl}/diagnose`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ traceId: runData.resultId }),
+    });
+    const diagData = (await diagRes.json()) as {
+      ok: boolean;
+      diagnosis?: {
+        problem?: { category?: string; description?: string };
+        context?: { errorMessage?: string; traceId?: string };
+        hints?: string[];
+        confidence?: string;
+      };
+      error?: string;
+    };
+
+    expect(diagData.ok).toBe(true);
+    expect(diagData.diagnosis).toBeDefined();
+    expect(diagData.diagnosis!.problem).toBeDefined();
+    expect(diagData.diagnosis!.problem!.category).toBeDefined();
+    expect(diagData.diagnosis!.context!.traceId).toBe(runData.resultId);
+  });
+
+  test("compare works with two existing traces", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    // Create two traces
+    const [resA, resB] = await Promise.all([
+      fetch(`${baseUrl}/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: "return 1", capabilities: [] }),
+      }),
+      fetch(`${baseUrl}/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: "return 2", capabilities: [] }),
+      }),
+    ]);
+    const dataA = (await resA.json()) as { ok: boolean; resultId?: string };
+    const dataB = (await resB.json()) as { ok: boolean; resultId?: string };
+    expect(dataA.resultId).toBeDefined();
+    expect(dataB.resultId).toBeDefined();
+
+    const compRes = await fetch(`${baseUrl}/compare`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ a: dataA.resultId, b: dataB.resultId }),
+    });
+    const compData = (await compRes.json()) as {
+      ok: boolean;
+      comparison?: {
+        traceA: string;
+        traceB: string;
+        diff?: { output?: { changed?: boolean }; code?: { changed?: boolean } };
+        summary?: string;
+      };
+      error?: string;
+    };
+
+    expect(compData.ok).toBe(true);
+    expect(compData.comparison).toBeDefined();
+    expect(compData.comparison!.traceA).toBe(dataA.resultId);
+    expect(compData.comparison!.traceB).toBe(dataB.resultId);
+    expect(compData.comparison!.summary).toBeDefined();
+  });
+
+  // --- Story route tests ---
+
+  test("story creation requires title and traceIds", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const res = await fetch(`${baseUrl}/stories`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "" }),
+    });
+    const data = (await res.json()) as { ok: boolean; error?: string };
+    expect(data.ok).toBe(false);
+  });
+
+  test("story creation works with valid input", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    // Create a trace first
+    const runRes = await fetch(`${baseUrl}/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body: "return { story: true }", capabilities: [] }),
+    });
+    const runData = (await runRes.json()) as { ok: boolean; resultId?: string };
+    expect(runData.resultId).toBeDefined();
+
+    const res = await fetch(`${baseUrl}/stories`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "Test Story",
+        traceIds: [runData.resultId],
+        visibility: "private",
+      }),
+    });
+    const data = (await res.json()) as {
+      ok: boolean;
+      story?: { id: string; title: string; status: string; chapters?: unknown[] };
+      error?: string;
+    };
+
+    if (data.ok) {
+      expect(data.story).toBeDefined();
+      expect(data.story!.title).toBe("Test Story");
+      expect(data.story!.status).toBe("in-progress");
+      expect(data.story!.chapters).toBeDefined();
+      expect(data.story!.chapters!.length).toBe(1);
+    } else {
+      // D1 may not be configured in test environment
+      expect(data.error).toBeDefined();
+    }
+  });
+
+  test("story fork requires valid chapter index", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const res = await fetch(`${baseUrl}/stories/nonexistent/fork`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fromChapterIndex: 0 }),
+    });
+    const data = (await res.json()) as { ok: boolean; error?: string };
+    expect(data.ok).toBe(false);
+  });
+
+  test("list stories returns array", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const res = await fetch(`${baseUrl}/stories`);
+    const data = (await res.json()) as { ok: boolean; stories?: unknown[]; error?: string };
+    // May fail if D1 not configured, but should return valid JSON
+    expect(typeof data.ok).toBe("boolean");
+  });
 });

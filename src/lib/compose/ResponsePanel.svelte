@@ -73,10 +73,16 @@
           </p>
           <div class="flex flex-wrap gap-2 pt-1">
             <a
-              href="/results/{resultId}"
+              href="/healing?traceId={resultId}"
               class="inline-flex items-center gap-1.5 rounded-(--radius) bg-(--accent) px-3 py-2 text-xs font-medium text-white no-underline hover:opacity-90"
             >
               <ExternalLink class="w-3.5 h-3.5" />
+              Heal this trace
+            </a>
+            <a
+              href="/results/{resultId}"
+              class="inline-flex items-center gap-1.5 rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2 text-xs text-(--text) no-underline hover:bg-(--surface-alt)"
+            >
               Open saved result
             </a>
             <button

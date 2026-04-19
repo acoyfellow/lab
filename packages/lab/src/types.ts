@@ -87,3 +87,191 @@ export type SavedResult = {
   generated?: string;
   steps?: Array<Record<string, unknown>>;
 };
+
+// Story types
+/** Story status values */
+export type StoryStatus = 'in-progress' | 'completed' | 'failed' | 'approved';
+
+/** Story visibility levels */
+export type StoryVisibility = 'private' | 'team' | 'public';
+
+/** Decision point in a story chapter */
+export interface DecisionPoint {
+  question: string;
+  options: string[];
+  chosen: number;
+  reasoning: string;
+}
+
+/** Story chapter linking a trace to a narrative */
+export interface StoryChapter {
+  id: string;
+  storyId: string;
+  chapterIndex: number;
+  traceId: string;
+  title?: string;
+  summary?: string;
+  decisionPoint?: DecisionPoint;
+}
+
+/** Story composed of multiple traces for debugging and team review */
+export interface Story {
+  id: string;
+  title: string;
+  createdAt: string;
+  createdBy?: string;
+  status: StoryStatus;
+  visibility: StoryVisibility;
+  tags?: string[];
+  chapters?: StoryChapter[];
+}
+
+/** Request to create a new story */
+export interface CreateStoryRequest {
+  title: string;
+  traceIds: string[];
+  createdBy?: string;
+  visibility?: StoryVisibility;
+  tags?: string[];
+}
+
+/** Response from create story */
+export interface CreateStoryResponse {
+  ok: boolean;
+  story?: Story;
+  error?: string;
+}
+
+/** Response from get story */
+export interface GetStoryResponse {
+  ok: boolean;
+  story?: Story;
+  error?: string;
+}
+
+/** Request to fork a story */
+export interface ForkStoryRequest {
+  fromChapterIndex: number;
+  newTitle?: string;
+}
+
+/** Response from fork story */
+export interface ForkStoryResponse {
+  ok: boolean;
+  story?: Story;
+  error?: string;
+}
+
+/** Request to append to a story */
+export interface AppendToStoryRequest {
+  traceId: string;
+}
+
+/** Response from append to story */
+export interface AppendToStoryResponse {
+  ok: boolean;
+  chapter?: StoryChapter;
+  error?: string;
+}
+
+/** Options for listing stories */
+export interface ListStoriesOptions {
+  createdBy?: string;
+  status?: StoryStatus;
+  visibility?: StoryVisibility;
+  limit?: number;
+  offset?: number;
+}
+
+/** Response from list stories */
+export interface ListStoriesResponse {
+  ok: boolean;
+  stories?: Story[];
+  error?: string;
+}
+
+// --- Self-healing loop types ---
+
+export type DiagnosisCategory =
+  | "syntax_error"
+  | "runtime_error"
+  | "capability_denied"
+  | "timeout"
+  | "logic_error"
+  | "unknown";
+
+export interface DiagnosisProblem {
+  category: DiagnosisCategory;
+  stepIndex: number | null;
+  description: string;
+}
+
+export interface Diagnosis {
+  problem: DiagnosisProblem;
+  context: {
+    errorMessage: string;
+    traceId: string;
+    code?: string;
+    input?: unknown;
+    capabilities?: string[];
+  };
+  hints: string[];
+  confidence: "high" | "medium" | "low";
+}
+
+export type FixType = "code_change" | "capability_change" | "input_change" | "template_change";
+
+export interface FixProposal {
+  type: FixType;
+  description: string;
+  changes: {
+    body?: string;
+    capabilities?: string[];
+    template?: string;
+    input?: unknown;
+  };
+  reasoning: string;
+  estimatedConfidence: "high" | "medium" | "low";
+}
+
+export interface VerificationResult {
+  traceId: string;
+  ok: boolean;
+  result?: unknown;
+  error?: string;
+}
+
+export interface TraceDiff {
+  input: {
+    before: unknown;
+    after: unknown;
+    changed: boolean;
+  };
+  code: {
+    before: string | null;
+    after: string | null;
+    changed: boolean;
+  };
+  output: {
+    before: unknown;
+    after: unknown;
+    changed: boolean;
+  };
+  error: {
+    before: string | null;
+    after: string | null;
+    resolved: boolean;
+    introduced: boolean;
+  };
+  steps?: {
+    before: number;
+    after: number;
+  };
+}
+
+export interface Comparison {
+  traceA: string;
+  traceB: string;
+  diff: TraceDiff;
+  summary: string;
+}
