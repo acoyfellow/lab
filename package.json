@@ -63,7 +63,7 @@
     "@cf-wasm/resvg": "^0.3.3",
     "@types/d3": "^7.4.3",
     "@types/node": "^25.5.0",
-    "alchemy": "^0.90.0",
+    "alchemy": "^0.91.2",
     "better-auth": "1.4.7",
     "d3": "^7.9.0",
     "drizzle-orm": "^0.45.1",
