@@ -583,9 +583,12 @@ export async function handleListStories(
 
     query += ` ORDER BY created_at DESC`
 
-    if (options.limit) {
+    // SQLite/D1 require LIMIT to be present whenever OFFSET is used.
+    // If the caller supplied only `offset`, inject the SQLite sentinel
+    // `LIMIT -1` (meaning "no limit") so the query parses.
+    if (options.limit || options.offset) {
       query += ` LIMIT ?`
-      params.push(options.limit)
+      params.push(options.limit ?? -1)
     }
 
     if (options.offset) {
