@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import type { Auth, BetterAuthOptions } from 'better-auth';
 import { sveltekitCookies } from "better-auth/svelte-kit";
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { drizzle } from 'drizzle-orm/d1';
@@ -9,8 +10,13 @@ import type { D1Database } from '@cloudflare/workers-types';
 
 let drizzleInstance: ReturnType<typeof drizzle> | null = null;
 
-// Cache auth instances per origin so multiple origins work in the same isolate
-const authInstances = new Map<string, ReturnType<typeof betterAuth>>();
+// Cache auth instances per origin so multiple origins work in the same isolate.
+// better-auth 1.6+ infers a narrow `Auth<T>` from the literal config, but the
+// cache stores the widened `Auth<BetterAuthOptions>` shape downstream consumers
+// expect. The cast at insertion is safe — all callers treat the cached value
+// through the generic-auth surface, not the narrow inferred config.
+type CachedAuth = Auth<BetterAuthOptions>;
+const authInstances = new Map<string, CachedAuth>();
 
 export function getDrizzle(): ReturnType<typeof drizzle> {
   if (!drizzleInstance) {
@@ -78,6 +84,6 @@ export function initAuth(db: D1Database, env: any, baseURL: string) {
     plugins: [sveltekitCookies(getRequestEvent as any)],
   });
 
-  authInstances.set(baseURL, instance);
+  authInstances.set(baseURL, instance as unknown as CachedAuth);
   return instance;
 }
