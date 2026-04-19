@@ -1,4 +1,4 @@
-import { Data, Effect, Layer, ServiceMap } from "effect"
+import { Data, Effect, Layer, Context } from "effect"
 import type { CapabilitySet } from "./Capability"
 import {
   composeGuestModule,
@@ -39,7 +39,7 @@ export interface WorkerLoaderBinding {
 
 // --- Isolate Service ---
 
-export class Isolate extends ServiceMap.Service<
+export class Isolate extends Context.Service<
   Isolate,
   {
     readonly run: (

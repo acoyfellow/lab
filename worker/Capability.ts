@@ -1,8 +1,8 @@
-import { Effect, ServiceMap } from "effect"
+import { Effect, Context } from "effect"
 
 // Each capability is a service. If it's not in the Layer, the isolate can't use it.
 
-export class KvRead extends ServiceMap.Service<
+export class KvRead extends Context.Service<
   KvRead,
   {
     readonly get: (key: string) => Effect.Effect<string | null>
@@ -12,7 +12,7 @@ export class KvRead extends ServiceMap.Service<
 
 /** What you pass to an isolate. Only included keys get injected / host invoke enabled. */
 export type CapabilitySet = {
-  kvRead?: ServiceMap.Service.Shape<typeof KvRead>
+  kvRead?: Context.Service.Shape<typeof KvRead>
   spawn?: { depth: number }
   workersAi?: true
   r2Read?: true
