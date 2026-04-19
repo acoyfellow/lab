@@ -566,4 +566,60 @@ describe("Lab Worker", () => {
     // May fail if D1 not configured, but should return valid JSON
     expect(typeof data.ok).toBe("boolean");
   });
+
+  // Regression: GET /stories?offset=10 (no limit) used to fail with a SQL
+  // syntax error because OFFSET requires LIMIT in SQLite/D1. Handler now
+  // injects `LIMIT -1` when only `offset` is supplied. See PR #27 follow-up.
+  test("list stories with offset only does not 500", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const res = await fetch(`${baseUrl}/stories?offset=10`);
+    expect(res.status).toBeLessThan(500);
+    const data = (await res.json()) as { ok: boolean; stories?: unknown[]; error?: string };
+    expect(typeof data.ok).toBe("boolean");
+    if (!data.ok && data.error) {
+      expect(data.error.toLowerCase()).not.toContain("syntax");
+    }
+  });
+
+  // Regression: /verify used to flatten the VerificationResult into the
+  // top-level response, dropping `result.ok`. The SDK contract is
+  // `{ ok, result: VerificationResult }`. See PR #27 follow-up.
+  test("/verify returns full VerificationResult shape", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const res = await fetch(`${baseUrl}/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        proposal: {
+          type: "code_change",
+          description: "regression test",
+          changes: { body: "return 0" },
+          reasoning: "test",
+          estimatedConfidence: "low",
+        },
+      }),
+    });
+    const data = (await res.json()) as {
+      ok: boolean;
+      result?: { traceId?: string; ok?: boolean; result?: unknown; error?: string };
+      error?: string;
+    };
+    if (data.ok) {
+      // Successful verify must return a full VerificationResult object,
+      // not a flattened payload.
+      expect(data.result).toBeDefined();
+      expect(typeof data.result?.ok).toBe("boolean");
+      expect(typeof data.result?.traceId).toBe("string");
+    } else {
+      // If verify failed (e.g. no body provided), must return an error
+      // string at top level — not a half-flattened result.
+      expect(typeof data.error).toBe("string");
+    }
+  });
 });

@@ -683,7 +683,11 @@ export async function handleVerify(
       }
       return Response.json({ ok: false, error }, { status: 500 })
     },
-    onSuccess: (result) => Response.json({ ok: true, traceId: result.traceId, result: result.result, error: result.error }),
+    // Return the full VerificationResult unchanged so the SDK contract
+    // (`{ ok, result: VerificationResult }`) is preserved. Flattening here
+    // drops `result.ok` and conflates a falsy `result.result` (0, false, "",
+    // null) with a failed run.
+    onSuccess: (result) => Response.json({ ok: true, result }),
   })
 }
 
