@@ -74,5 +74,97 @@ export function buildLabCatalog() {
       path: "/seed",
       note: "Optional demo KV rows for kv.list exercises.",
     },
+    healing: {
+      diagnose: {
+        method: "POST",
+        path: "/diagnose",
+        body: {
+          traceId: "string - ID of a failed trace to analyze",
+        },
+        note: "Uses Workers AI to analyze a failed trace and return a structured diagnosis with problem category, hints, and confidence.",
+      },
+      propose: {
+        method: "POST",
+        path: "/propose",
+        body: {
+          diagnosis: "Diagnosis object - From /diagnose response",
+        },
+        note: "Given a diagnosis, the LLM suggests a fix (code change, capability change, input change, or template change).",
+      },
+      verify: {
+        method: "POST",
+        path: "/verify",
+        body: {
+          proposal: "FixProposal object - From /propose response",
+          baseTraceId: "optional string - Original trace ID to inherit context from",
+        },
+        note: "Runs the proposed fix in a sandbox and returns a new trace with the result.",
+      },
+      compare: {
+        method: "POST",
+        path: "/compare",
+        body: {
+          a: "string - First trace ID (typically the failed one)",
+          b: "string - Second trace ID (typically the fixed one)",
+        },
+        note: "Compares two traces and returns diffs for input, code, output, and errors with a summary.",
+      },
+    },
+    stories: {
+      create: {
+        method: "POST",
+        path: "/stories",
+        body: {
+          title: "string - Story title",
+          traceIds: "string[] - Array of trace IDs to compose",
+          createdBy: "optional string - Creator identifier",
+          visibility: "optional string: private | team | public",
+          tags: "optional string[] - Story tags",
+        },
+        note: "Create a new story from multiple traces. Each trace becomes a chapter with AI-generated summaries.",
+      },
+      get: {
+        method: "GET",
+        path: "/stories/:id",
+        note: "Get story with all chapters including summaries and decision points.",
+      },
+      list: {
+        method: "GET",
+        path: "/stories",
+        query: {
+          createdBy: "optional string - Filter by creator",
+          status: "optional string: in-progress | completed | failed | approved",
+          visibility: "optional string: private | team | public",
+          limit: "optional number - Max results",
+          offset: "optional number - Skip results",
+        },
+        note: "List stories with optional filtering.",
+      },
+      fork: {
+        method: "POST",
+        path: "/stories/:id/fork",
+        body: {
+          fromChapterIndex: "number - Fork from this chapter index (inclusive)",
+          newTitle: "optional string - Title for the forked story",
+        },
+        note: "Fork a story from a specific chapter, creating a new story with chapters up to that point.",
+      },
+      append: {
+        method: "POST",
+        path: "/stories/:id/append",
+        body: {
+          traceId: "string - Trace ID to append as new chapter",
+        },
+        note: "Add a new chapter (trace) to an existing story.",
+      },
+      updateStatus: {
+        method: "PATCH",
+        path: "/stories/:id/status",
+        body: {
+          status: "string: in-progress | completed | failed | approved",
+        },
+        note: "Update story status.",
+      },
+    },
   } as const
 }

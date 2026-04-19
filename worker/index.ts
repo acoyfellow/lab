@@ -9,6 +9,19 @@ import type { CapabilitySet } from "./Capability"
 import { CAPABILITY_REGISTRY, type LabCapabilityId } from "./capabilities/registry"
 import { buildLabCatalog } from "./catalog"
 import { resolveGuestTemplateId, type GuestTemplateId } from "./guest/templates"
+import {
+  handleCreateStory,
+  handleGetStory,
+  handleForkStory,
+  handleAppendToStory,
+  handleUpdateStoryStatus,
+  handleListStories,
+  type CreateStoryRequest,
+  type ForkStoryRequest,
+  type AppendToStoryRequest,
+  type StoryStatus,
+} from "./routes/stories"
+import { handleDiagnose, handlePropose, handleVerify, handleCompare } from "./routes/healing"
 
 const AI_MODEL_DEFAULT = "@cf/meta/llama-3.1-8b-instruct" as const
 
@@ -946,8 +959,87 @@ class LabWorker extends WorkerEntrypoint<Env> {
               },
               { ok: true, result, generated: genCode, generateMs, runMs },
             ),
-          ),
+            ),
       })
+    }
+
+    // --- Story routes ---
+    // POST /stories - Create story from traceIds
+    if (req.method === "POST" && url.pathname === "/stories") {
+      const body = (await req.json()) as CreateStoryRequest
+      const result = await handleCreateStory(env, body)
+      return withCors(Response.json(result, { status: result.ok ? 201 : 400 }))
+    }
+
+    // GET /stories - List stories
+    if (req.method === "GET" && url.pathname === "/stories") {
+      const createdBy = url.searchParams.get("createdBy") || undefined
+      const status = url.searchParams.get("status") as StoryStatus | undefined
+      const visibility = url.searchParams.get("visibility") as "private" | "team" | "public" | undefined
+      const limit = url.searchParams.has("limit") ? parseInt(url.searchParams.get("limit")!, 10) : undefined
+      const offset = url.searchParams.has("offset") ? parseInt(url.searchParams.get("offset")!, 10) : undefined
+
+      const result = await handleListStories(env, { createdBy, status, visibility, limit, offset })
+      return withCors(Response.json(result, { status: result.ok ? 200 : 400 }))
+    }
+
+    // GET /stories/:id - Get story with chapters
+    const storyGetMatch = url.pathname.match(/^\/stories\/([a-z0-9]+)$/i)
+    if (req.method === "GET" && storyGetMatch) {
+      const storyId = storyGetMatch[1]
+      const result = await handleGetStory(env, storyId)
+      return withCors(Response.json(result, { status: result.ok ? 200 : 404 }))
+    }
+
+    // POST /stories/:id/fork - Fork from chapter
+    const storyForkMatch = url.pathname.match(/^\/stories\/([a-z0-9]+)\/fork$/i)
+    if (req.method === "POST" && storyForkMatch) {
+      const storyId = storyForkMatch[1]
+      const body = (await req.json()) as ForkStoryRequest
+      const result = await handleForkStory(env, storyId, body)
+      return withCors(Response.json(result, { status: result.ok ? 201 : 400 }))
+    }
+
+    // POST /stories/:id/append - Add trace to story
+    const storyAppendMatch = url.pathname.match(/^\/stories\/([a-z0-9]+)\/append$/i)
+    if (req.method === "POST" && storyAppendMatch) {
+      const storyId = storyAppendMatch[1]
+      const body = (await req.json()) as AppendToStoryRequest
+      const result = await handleAppendToStory(env, storyId, body)
+      return withCors(Response.json(result, { status: result.ok ? 201 : 400 }))
+    }
+
+    // PATCH /stories/:id/status - Update story status
+    const storyStatusMatch = url.pathname.match(/^\/stories\/([a-z0-9]+)\/status$/i)
+    if (req.method === "PATCH" && storyStatusMatch) {
+      const storyId = storyStatusMatch[1]
+      const body = (await req.json()) as { status: StoryStatus }
+      if (!body.status) {
+        return withCors(Response.json({ ok: false, error: "status required" }, { status: 400 }))
+      }
+      const result = await handleUpdateStoryStatus(env, storyId, body.status)
+      return withCors(Response.json(result, { status: result.ok ? 200 : 400 }))
+    }
+
+    // --- Self-healing loop routes ---
+    // POST /diagnose - Analyze a failed trace and return structured diagnosis
+    if (req.method === "POST" && url.pathname === "/diagnose") {
+      return withCors(await handleDiagnose(req, env))
+    }
+
+    // POST /propose - Given a diagnosis, propose a fix
+    if (req.method === "POST" && url.pathname === "/propose") {
+      return withCors(await handlePropose(req, env))
+    }
+
+    // POST /verify - Run a proposed fix and return a new trace
+    if (req.method === "POST" && url.pathname === "/verify") {
+      return withCors(await handleVerify(req, env))
+    }
+
+    // POST /compare - Compare two traces and return diff
+    if (req.method === "POST" && url.pathname === "/compare") {
+      return withCors(await handleCompare(req, env))
     }
 
     return withCors(Response.json({ error: "not found" }, { status: 404 }))
