@@ -8,6 +8,7 @@
     { id: 'requirements', label: 'Requirements' },
     { id: 'infrastructure-created', label: 'Infrastructure Created' },
     { id: 'deployment-steps', label: 'Deployment Steps' },
+    { id: 'authentication', label: 'Authentication' },
     { id: 'configuration', label: 'Configuration Options' },
     { id: 'need-help', label: 'Need Help?' },
   ];
@@ -180,6 +181,60 @@
         {/if}
       </div>
     {/each}
+  </section>
+
+  <section id="authentication" class="space-y-4">
+    <h2 class="text-lg font-semibold">Authentication</h2>
+    <p class="text-[0.9375rem] leading-relaxed">
+      By default, a self-hosted Lab worker is open — anyone who knows the URL can run code and read receipts. To lock it down, set the <code class="font-mono text-[0.8125rem]">LAB_AUTH_TOKEN</code> environment variable on the worker. Every external request will then require <code class="font-mono text-[0.8125rem]">Authorization: Bearer &lt;token&gt;</code>.
+    </p>
+
+    <h3 class="font-semibold text-(--text)">1. Generate a token and set it on the worker</h3>
+    <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto"># pick any opaque secret (32+ random bytes recommended)
+TOKEN=$(openssl rand -hex 32)
+
+# put it in the deployed worker's secrets
+bunx wrangler secret put LAB_AUTH_TOKEN --name lab-worker
+# (paste $TOKEN when prompted)</pre>
+
+    <h3 class="font-semibold text-(--text)">2. Send it from the SDK</h3>
+    <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">{`import { createLabClient } from "@acoyfellow/lab";
+
+const lab = createLabClient({
+  baseUrl: "https://your-instance.example",
+  token: process.env.LAB_TOKEN,   // ← attaches Authorization on every call
+});`}</pre>
+
+    <h3 class="font-semibold text-(--text)">3. Send it from the MCP server</h3>
+    <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">{`{
+  "mcpServers": {
+    "lab": {
+      "command": "npx",
+      "args": ["-y", "@acoyfellow/lab-mcp"],
+      "env": {
+        "LAB_URL":   "https://your-instance.example",
+        "LAB_TOKEN": "..."
+      }
+    }
+  }
+}`}</pre>
+
+    <h3 class="font-semibold text-(--text)">4. Send it with curl</h3>
+    <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">{`curl -X POST https://your-instance.example/run \\
+  -H "Authorization: Bearer $LAB_TOKEN" \\
+  -H 'content-type: application/json' \\
+  -d '{ "body": "return 1+1", "capabilities": [] }'`}</pre>
+
+    <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 space-y-2 text-[0.875rem]">
+      <p class="font-semibold text-(--text) m-0">Behaviour notes</p>
+      <ul class="list-disc pl-5 space-y-1 m-0 text-(--text-2)">
+        <li><code class="font-mono text-[0.8125rem]">LAB_AUTH_TOKEN</code> can be a single token or a comma-separated list (<code class="font-mono text-[0.8125rem]">tok-a,tok-b</code>) — useful for rotation.</li>
+        <li>Tokens are constant-time compared. <code class="font-mono text-[0.8125rem]">/health</code> and <code class="font-mono text-[0.8125rem]">/.well-known/*</code> stay open.</li>
+        <li><code class="font-mono text-[0.8125rem]">/results/:id</code> and <code class="font-mono text-[0.8125rem]">/results/:id.json</code> are gated, so receipt URLs aren't reachable without the token.</li>
+        <li>Internal sandbox-to-host calls (<code class="font-mono text-[0.8125rem]">/invoke/*</code>, <code class="font-mono text-[0.8125rem]">/spawn/child</code>) bypass auth — they're identified by the <code class="font-mono text-[0.8125rem]">internal</code> hostname used by <code class="font-mono text-[0.8125rem]">SELF</code> outbound calls and aren't reachable from external callers.</li>
+        <li>When auth is on, <code class="font-mono text-[0.8125rem]">Access-Control-Allow-Origin: *</code> is dropped. Set <code class="font-mono text-[0.8125rem]">LAB_CORS_ORIGIN</code> to allow specific browser origins (or <code class="font-mono text-[0.8125rem]">*</code> if you accept the risk).</li>
+      </ul>
+    </div>
   </section>
 
   <section id="configuration" class="rounded-(--radius) border border-(--border) bg-(--surface) p-5 space-y-3">

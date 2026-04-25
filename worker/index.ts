@@ -4,6 +4,7 @@ export { PetriBinding } from "./petri-binding"
 
 import { WorkerEntrypoint } from "cloudflare:workers"
 import { Effect, Exit, Cause } from "effect"
+import { authGate } from "./auth"
 import { Isolate, IsolateError, makeIsolateLive, type WorkerLoaderBinding } from "./Loader"
 import type { CapabilitySet } from "./Capability"
 import { CAPABILITY_REGISTRY, type LabCapabilityId } from "./capabilities/registry"
@@ -36,6 +37,18 @@ interface Env {
   PETRI_DO?: DurableObjectNamespace
   /** Optional Cloudflare Container / fetcher binding */
   LAB_CONTAINER?: Fetcher
+  /**
+   * Optional. Comma-separated list of bearer tokens. When set, every external
+   * request must carry `Authorization: Bearer <token>` with a matching value.
+   * When unset/empty, the worker is open (public-instance mode).
+   */
+  LAB_AUTH_TOKEN?: string
+  /**
+   * Optional. CORS allowed origin to use when LAB_AUTH_TOKEN is set. Defaults to
+   * empty (no Access-Control-Allow-Origin header). Set to "*" or a specific origin
+   * to allow browser clients. Cookies are not used; auth is via Authorization header.
+   */
+  LAB_CORS_ORIGIN?: string
 }
 
 type RunType = "sandbox" | "kv" | "chain" | "generate" | "spawn"
@@ -156,11 +169,19 @@ class LabWorker extends WorkerEntrypoint<Env> {
     const env = this.env
     const url = new URL(req.url)
 
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
+    // CORS: when auth is off (public instance) we allow `*`. When auth is on
+    // (self-host with `LAB_AUTH_TOKEN`), we don't echo `*` because that would
+    // let any origin send a credentialed request — operators must opt in by
+    // setting `LAB_CORS_ORIGIN` to their app origin (or "*" if they accept the risk).
+    const authEnabled = !!(env.LAB_AUTH_TOKEN && env.LAB_AUTH_TOKEN.trim())
+    const allowOrigin = authEnabled
+      ? ((env as { LAB_CORS_ORIGIN?: string }).LAB_CORS_ORIGIN ?? "")
+      : "*"
+    const corsHeaders: Record<string, string> = {
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Headers": "Authorization, Content-Type",
     }
+    if (allowOrigin) corsHeaders["Access-Control-Allow-Origin"] = allowOrigin
 
     if (req.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders })
@@ -172,6 +193,10 @@ class LabWorker extends WorkerEntrypoint<Env> {
       }
       return res
     }
+
+    // --- Auth gate (no-op when LAB_AUTH_TOKEN is unset) ---
+    const gate = authGate(req, { configuredTokens: env.LAB_AUTH_TOKEN, corsHeaders })
+    if (!gate.ok) return gate.response
 
     if (req.method === "GET" && url.pathname === "/health") {
       return withCors(Response.json({ ok: true }))

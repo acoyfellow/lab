@@ -79,6 +79,16 @@ export const WORKER = await Worker(`${projectName}-worker`, {
     ENGINE_D1,
     LAB_DO,
     PETRI_DO,
+    // --- Optional auth gate ---
+    // When LAB_AUTH_TOKEN is set in the deploy env, every external request to
+    // the worker requires `Authorization: Bearer <token>`. When unset, the
+    // worker is open (public-instance mode). See worker/auth.ts.
+    ...(process.env.LAB_AUTH_TOKEN
+      ? { LAB_AUTH_TOKEN: alchemy.secret(process.env.LAB_AUTH_TOKEN) }
+      : {}),
+    ...(process.env.LAB_CORS_ORIGIN
+      ? { LAB_CORS_ORIGIN: process.env.LAB_CORS_ORIGIN }
+      : {}),
   },
   url: false,
   // Same port as SvelteKit dev proxy (`data.remote.ts`) and `@acoyfellow/lab` local dogfood (`LAB_URL`).

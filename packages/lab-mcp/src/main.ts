@@ -22,6 +22,20 @@ function requireBaseUrl(): string {
   return raw.replace(/\/+$/, '');
 }
 
+/**
+ * Optional bearer token. Required when the target lab instance has
+ * `LAB_AUTH_TOKEN` configured. Leave unset for the public instance.
+ */
+function getToken(): string | undefined {
+  const raw = process.env.LAB_TOKEN?.trim();
+  return raw && raw.length > 0 ? raw : undefined;
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 const chainStepSchema: z.ZodType<ChainStep> = z.object({
   name: z.string().optional(),
   template: z.string().optional(),
@@ -80,7 +94,9 @@ function mapHttpToError(err: HttpError): Error {
 }
 
 async function fetchSavedResultJson(baseUrl: string, resultId: string): Promise<unknown> {
-  const response = await fetch(`${baseUrl}/results/${resultId}.json`);
+  const response = await fetch(`${baseUrl}/results/${resultId}.json`, {
+    headers: authHeaders(),
+  });
   if (!response.ok) {
     throw new Error(`GET /results/${resultId}.json failed with status ${response.status}`);
   }
@@ -112,7 +128,7 @@ mcpServer.registerTool(
     }
 
     const catalog = await Effect.runPromise(
-      fetchLabCatalogEffect({ baseUrl }).pipe(Effect.mapError(mapHttpToError))
+      fetchLabCatalogEffect({ baseUrl, token: getToken() }).pipe(Effect.mapError(mapHttpToError))
     );
 
     const data = args.path?.trim()
@@ -133,7 +149,7 @@ mcpServer.registerTool(
   async (input) => {
     const program = Effect.gen(function* () {
       const baseUrl = yield* Effect.sync(requireBaseUrl);
-      const lab = createLabEffectClient({ baseUrl });
+      const lab = createLabEffectClient({ baseUrl, token: getToken() });
       switch (input.mode) {
         case 'sandbox':
           return yield* lab.runSandbox({

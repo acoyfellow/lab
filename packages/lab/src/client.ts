@@ -28,6 +28,12 @@ export type LabClientOptions = {
   baseUrl: string;
   /** Defaults to global `fetch` (Node 18+, Workers, modern runtimes). */
   fetch?: typeof fetch;
+  /**
+   * Optional bearer token. When set, every request includes
+   * `Authorization: Bearer <token>`. Required when the target lab instance
+   * has `LAB_AUTH_TOKEN` configured.
+   */
+  token?: string;
 };
 
 export type LabClient = {
@@ -63,7 +69,19 @@ export type LabClient = {
 
 export function createLabClient(options: LabClientOptions): LabClient {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
-  const fetchImpl = options.fetch ?? globalThis.fetch;
+  const baseFetch = options.fetch ?? globalThis.fetch;
+  const token = options.token?.trim();
+
+  // If a token is configured, wrap fetch so every call carries the Authorization header.
+  const fetchImpl: typeof fetch = token
+    ? ((input, init) => {
+        const headers = new Headers(init?.headers);
+        if (!headers.has('authorization') && !headers.has('Authorization')) {
+          headers.set('Authorization', `Bearer ${token}`);
+        }
+        return baseFetch(input, { ...init, headers });
+      })
+    : baseFetch;
 
   return {
     runSandbox(payload) {

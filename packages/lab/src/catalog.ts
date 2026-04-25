@@ -54,6 +54,16 @@ export type LabCatalog = {
 
 export function fetchLabCatalog(options: LabClientOptions): Promise<LabCatalog> {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
-  const fetchImpl = options.fetch ?? globalThis.fetch;
+  const baseFetch = options.fetch ?? globalThis.fetch;
+  const token = options.token?.trim();
+  const fetchImpl: typeof fetch = token
+    ? ((input, init) => {
+        const headers = new Headers(init?.headers);
+        if (!headers.has('authorization') && !headers.has('Authorization')) {
+          headers.set('Authorization', `Bearer ${token}`);
+        }
+        return baseFetch(input, { ...init, headers });
+      })
+    : baseFetch;
   return requestJSON<LabCatalog>(baseUrl, fetchImpl, '/lab/catalog', { method: 'GET' });
 }

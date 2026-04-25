@@ -26,7 +26,24 @@ export type LabEffectClientOptions = {
   baseUrl: string;
   /** Defaults to global `fetch` (Node 18+, Workers, modern runtimes). */
   fetch?: typeof fetch;
+  /**
+   * Optional bearer token. When set, every request includes
+   * `Authorization: Bearer <token>`. Required when the target lab instance
+   * has `LAB_AUTH_TOKEN` configured.
+   */
+  token?: string;
 };
+
+function withBearerToken(baseFetch: typeof fetch, token: string | undefined): typeof fetch {
+  if (!token) return baseFetch;
+  return (input, init) => {
+    const headers = new Headers(init?.headers);
+    if (!headers.has('authorization') && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    return baseFetch(input, { ...init, headers });
+  };
+}
 
 export class HttpError extends Data.TaggedError('HttpError')<{
   readonly message: string;
@@ -54,7 +71,7 @@ export function fetchLabCatalogEffect(
   options: LabEffectClientOptions
 ): Effect.Effect<LabCatalog, HttpError> {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
-  const fetchImpl = options.fetch ?? globalThis.fetch;
+  const fetchImpl = withBearerToken(options.fetch ?? globalThis.fetch, options.token?.trim());
   return tryRequestJSON<LabCatalog>(baseUrl, fetchImpl, '/lab/catalog', { method: 'GET' });
 }
 
@@ -85,7 +102,7 @@ export type LabEffectClient = {
 
 export function createLabEffectClient(options: LabEffectClientOptions): LabEffectClient {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
-  const fetchImpl = options.fetch ?? globalThis.fetch;
+  const fetchImpl = withBearerToken(options.fetch ?? globalThis.fetch, options.token?.trim());
 
   return {
     runSandbox(payload) {
