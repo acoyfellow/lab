@@ -1,8 +1,12 @@
 # Lab
 
-The feedback loop for AI agents.
+**Receipts for agent work.**
 
-Lab runs agent code in Cloudflare sandboxes and saves shareable results. Agents read those results, fix what broke, and run again. Same loop a developer uses, except the agent does it.
+Your agent runs code. Lab gives back a URL. The URL is the proof — readable by the next agent, verifiable by you.
+
+LLMs do work, then describe what they did. The description is not the work. Lab runs the work in a sandbox and saves a canonical record at a URL: the agent that ran it can read its own receipt to retry or self-heal, the next agent can pick up from where the last one stopped, and a human can open the URL and see exactly what happened — without re-running anything.
+
+One artifact. Two readers. Same source of truth.
 
 **Try it now:** [lab.coey.dev/compose](https://lab.coey.dev/compose)
 
@@ -45,16 +49,16 @@ console.log(out.resultId);  // abc123
 
 ## What Lab Does
 
-Three concepts to understand:
+Three things to know:
 
-### The Trace
-Every run saves a canonical JSON result at `/results/:id.json`. This is the proof of execution. It includes code, inputs, outputs, timing, and errors. Share the URL to show what happened.
+### The receipt
+Every run saves canonical JSON at `/results/:id.json`, viewable at `/results/:id`. It includes the code, the inputs, the outputs, the timings, and any errors. The URL is the artifact.
 
-### The Loop
-Agents read the saved result, fix what broke, and run again. A step fails → agent sees the error → patches → retries. The result JSON is the feedback mechanism.
+### The loop
+A step fails → the receipt includes the error → the agent reads its own receipt → patches → retries. No external memory, no shared database. The agent's last failure is the input to its next attempt.
 
-### The Story
-Results link together. Agent A runs something, Agent B reads the result and continues. Teams share traces to debug, audit, and collaborate.
+### The handoff
+Agent A finishes, returns a `resultId`. Agent B opens `/results/:id.json` and continues from there. The receipt is the entire interface between them.
 
 ---
 
