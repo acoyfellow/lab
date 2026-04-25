@@ -3,7 +3,6 @@
   import type { RunResult } from '@acoyfellow/lab';
   import SEO from '$lib/SEO.svelte';
   import { Button } from '$lib/components/ui/button';
-  import { version as appVersion } from '$app/environment';
   import { runChain } from '$lib/api';
   import { RUNNABLE_STEPS } from '$lib/home-snippets';
   import { goto } from '$app/navigation';
@@ -15,31 +14,19 @@
       title: 'Code mode — but verified',
       badge: '10/10',
       href: '/docs/patterns#prove-it',
-      description: 'Agent writes a function, generates edge cases, runs them all. 10/10 pass — the saved result JSON shows the cases, assertions, and verdict.'
+      description: 'Agent writes a function, generates edge cases, runs them. The receipt shows the cases, the assertions, and the verdict.'
     },
     {
-      title: 'Auto-fix pipeline',
+      title: 'Self-healing loop',
       badge: 'Fix',
       href: '/docs/patterns#self-healing-loop',
-      description: 'A run fails. The saved result includes the error. The agent uses that result to patch the code and rerun.'
+      description: 'A run fails. The receipt has the error. The agent reads its own receipt, patches, retries.'
     },
     {
-      title: 'Multi-agent relay',
+      title: 'Multi-agent handoff',
       badge: 'URL',
       href: '/docs/patterns#agent-handoff',
-      description: 'Agent A researches. Agent B synthesizes. Agent C delivers. Each one picks up where the last left off — one saved result ties the run together.'
-    },
-    {
-      title: 'Compare before you ship',
-      badge: 'Diff',
-      href: '/docs/patterns#canary-deploy',
-      description: 'Old logic vs new logic, same inputs. See exactly what changed before you deploy.'
-    },
-    {
-      title: 'Stress test',
-      badge: 'N',
-      href: '/docs/patterns#stress-test',
-      description: 'Run it 10 times. If run 7 breaks, your instructions are ambiguous. Try with a dumber model to find the floor.'
+      description: 'Agent A finishes. Agent B opens the URL and continues. The receipt is the entire interface — no queue, no shared DB.'
     }
   ];
 
@@ -80,7 +67,6 @@
     goto('/compose');
   }
 
-  // Reset result when switching tabs
   function switchTab(i: number) {
     activeTab = i;
     result = null;
@@ -89,8 +75,8 @@
 </script>
 
 <SEO
-  title="Lab — Run agent code. Get proof it worked."
-  description="Agents write code. Lab runs it in a Cloudflare sandbox and saves a result at a URL. Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial."
+  title="Lab — Receipts for agent work"
+  description="When an agent runs code, Lab returns a URL with the full execution record. Readable by the next agent, verifiable by you."
   path="/"
   type="website"
 />
@@ -115,34 +101,65 @@
     <header
       class="relative z-10 max-w-3xl mx-auto px-6 py-12 max-sm:px-4 sm:py-14 md:py-16 min-h-[min(42vh,400px)] flex flex-col justify-center"
     >
-      <div class="space-y-4 max-w-160">
-        <div
-          class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-(--surface)/90 backdrop-blur-sm border border-(--border) text-[0.75rem] text-(--text-2) shadow-sm"
-        >
-          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          v{appVersion} — experimental (here be dragons)
-        </div>
-
-        <h1 class="text-[1.65rem] sm:text-[2.25rem] font-semibold tracking-tight leading-[1.15] text-(--text) drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
-          Run agent code.<br />
-          <span class="text-(--text-2)">Get proof it worked.</span>
+      <div class="space-y-5 max-w-160">
+        <h1 class="text-[1.85rem] sm:text-[2.5rem] font-semibold tracking-tight leading-[1.1] text-(--text) drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
+          Receipts for agent work.
         </h1>
 
-        <p class="text-[1.0625rem] text-(--text-2) leading-relaxed max-w-[60ch]">
-          An agent writes code. Lab runs it in a <strong class="text-(--text)">Cloudflare sandbox</strong> and saves a result at a <strong class="text-(--text)">URL</strong>. Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial.
+        <p class="text-[1.0625rem] sm:text-[1.125rem] text-(--text-2) leading-relaxed max-w-[60ch]">
+          Your agent runs code. Lab returns a stable URL with the full execution record — code, inputs, outputs, errors, capabilities granted at each step. <span class="text-(--text)">Readable by the next agent, auditable by you.</span>
         </p>
-        <div class="flex items-center gap-3 flex-wrap">
-          <Button href="/compose" variant="default">Open Compose</Button>
-          <a href="/examples" class="text-[0.8125rem] text-(--accent) hover:underline">browse examples →</a>
+
+        <div class="flex items-center gap-3 flex-wrap pt-1">
+          <Button href="/compose" variant="default">Open the editor</Button>
+          <code class="text-[0.8125rem] text-(--text-2) bg-(--surface)/70 px-2.5 py-1 rounded-md border border-(--border)">npm install @acoyfellow/lab</code>
         </div>
       </div>
     </header>
   </section>
 
-  <div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-12">
+  <div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-14">
 
-  <!-- Runnable pattern tabs -->
+  <!-- Why this exists + receipt shape, in one section -->
   <section class="space-y-4">
+    <div class="border-l-2 border-(--accent) pl-5 space-y-2">
+      <p class="text-[1.0625rem] text-(--text) leading-relaxed m-0 font-medium">
+        LLMs do work, then describe what they did. The description is not the work.
+      </p>
+      <p class="text-[0.875rem] text-(--text-2) leading-relaxed m-0">
+        Lab runs the work in a Cloudflare V8 isolate, gates host calls behind explicit capabilities, and saves the full record at <code class="text-[0.8125rem]">/results/:id</code> — viewable in a browser or fetched as <code class="text-[0.8125rem]">.json</code> by another agent.
+      </p>
+    </div>
+
+    <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+      {@html data.codeHtml.receiptShape}
+    </div>
+    <p class="text-[0.8125rem] text-(--text-3) m-0">Stable URL, append-only. Each step lists the capabilities it was granted — <code class="text-[0.75rem]">kvRead</code>, <code class="text-[0.75rem]">workersAi</code>, <code class="text-[0.75rem]">spawn</code>, … Default is none. Code only gets what you explicitly pass.</p>
+  </section>
+
+  <!-- First request: SDK + curl side by side -->
+  <section class="space-y-3">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) m-0">Your first request</h2>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div class="space-y-1.5">
+        <div class="text-[0.75rem] text-(--text-3) font-medium">From a TypeScript agent</div>
+        <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+          {@html data.codeHtml.sdk}
+        </div>
+      </div>
+      <div class="space-y-1.5">
+        <div class="text-[0.75rem] text-(--text-3) font-medium">From a terminal</div>
+        <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+          {@html data.codeHtml.curl}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Runnable demo -->
+  <section class="space-y-4">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) m-0">See it run</h2>
+
     <!-- Tab bar -->
     <div class="flex gap-0 border-b border-(--border)">
       {#each data.knownPatterns as pattern, i}
@@ -184,9 +201,8 @@
         {/if}
       </Button>
       <button onclick={forkInCompose} class="text-[0.875rem] text-(--text-2) hover:text-(--text) underline underline-offset-2 bg-transparent border-none cursor-pointer p-0">
-        Fork in Compose
+        Edit in Compose
       </button>
-      <a href="/docs/patterns" class="text-[0.8125rem] text-(--accent) hover:underline font-medium ml-auto">All 6 patterns →</a>
     </div>
 
     {#if result && result.ok}
@@ -195,7 +211,7 @@
           <span class="text-[0.8125rem] font-semibold text-emerald-500">Ran successfully</span>
           {#if result.resultId}
             <a href="/results/{result.resultId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">
-              Open the saved result →
+              Open the receipt →
             </a>
           {/if}
         </div>
@@ -205,12 +221,14 @@
 
     {#if result && !result.ok}
       <div class="rounded-(--radius) border border-red-500/30 bg-red-500/5 p-4 space-y-2">
-        <span class="text-[0.8125rem] font-semibold text-red-400">Failed</span>
-        {#if result.resultId}
-          <a href="/results/{result.resultId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium block">
-            Open the result to see what happened →
-          </a>
-        {/if}
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <span class="text-[0.8125rem] font-semibold text-red-400">Failed</span>
+          {#if result.resultId}
+            <a href="/results/{result.resultId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">
+              Open the receipt →
+            </a>
+          {/if}
+        </div>
         <pre class="font-mono text-[0.8125rem] text-red-500 m-0 overflow-x-auto">{JSON.stringify({ error: result.error, reason: result.reason }, null, 2)}</pre>
       </div>
     {/if}
@@ -220,32 +238,9 @@
     {/if}
   </section>
 
-  <!-- What you get back -->
+  <!-- What agents do with this -->
   <section class="space-y-4">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Every run gets a saved result</h2>
-    <div class="grid gap-3 sm:grid-cols-2">
-      <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Proof, not promises</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Successful runs include step data, inputs, outputs, and timing. Every run saves canonical JSON for agents and a viewer URL for humans.</p>
-      </div>
-      <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Agents can pick up where others left off</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Agent A finishes and produces a resultId. Agent B reads <code class="text-[0.75rem]">/results/:id.json</code> and continues the work. No message queue, no shared database.</p>
-      </div>
-      <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Debugging built in</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">When something fails, the saved result includes the error and reason. Depending on where execution stopped, step detail may be partial. Agents use that result to retry or debug. You use it to understand what happened.</p>
-      </div>
-      <div class="p-4 rounded-(--radius) border border-(--border) bg-(--surface)">
-        <div class="font-semibold text-(--text) text-[0.875rem] mb-1">Shareable</div>
-        <p class="text-[0.8125rem] text-(--text-2) m-0">Every run saves JSON and a viewer URL. Send <code class="text-[0.75rem]">/results/:id</code> to a teammate, or feed <code class="text-[0.75rem]">/results/:id.json</code> to another agent.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- What agents build -->
-  <section class="space-y-4">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Patterns</h2>
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">What agents do with this</h2>
     <div class="space-y-3">
       {#each featuredExamples as example}
         <a href={example.href} class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
@@ -259,39 +254,37 @@
         </a>
       {/each}
     </div>
-    <div class="flex items-center gap-4 mt-1">
-      <a href="/docs/patterns" class="inline-block text-[0.8125rem] text-(--accent) hover:underline font-medium">All 6 patterns →</a>
-      <a href="/examples" class="inline-block text-[0.8125rem] text-(--text-3) hover:text-(--text) hover:underline">Browse runnable examples →</a>
-    </div>
+    <a href="/docs/patterns" class="inline-block text-[0.8125rem] text-(--accent) hover:underline font-medium mt-1">All 5 patterns →</a>
   </section>
 
-  <!-- Get started -->
+  <!-- Where to next -->
   <section class="space-y-4">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Get started</h2>
-    <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
-      {@html data.codeHtml.install}
-    </div>
-    <div class="grid gap-3 sm:grid-cols-3">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">Where to next</h2>
+    <div class="grid gap-3 sm:grid-cols-2">
       <a href="/tutorial" class="flex items-center gap-3 p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
         <div>
-          <div class="font-semibold text-(--text) group-hover:text-(--accent)">Tutorial</div>
-          <div class="text-[0.8125rem] text-(--text-2)">2 minutes to your first run</div>
-        </div>
-      </a>
-
-      <a href="/docs" class="flex items-center gap-3 p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
-        <div>
-          <div class="font-semibold text-(--text) group-hover:text-(--accent)">Docs</div>
-          <div class="text-[0.8125rem] text-(--text-2)">API, permissions, reference</div>
+          <div class="font-semibold text-(--text) group-hover:text-(--accent)">2-minute tutorial</div>
+          <div class="text-[0.8125rem] text-(--text-2)">From <code class="text-[0.75rem]">npm install</code> to your first receipt URL.</div>
         </div>
       </a>
 
       <a href="/docs/self-host" class="flex items-center gap-3 p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
         <div>
-          <div class="font-semibold text-(--text) group-hover:text-(--accent)">Self-host</div>
-          <div class="text-[0.8125rem] text-(--text-2)">Your agents, your data</div>
+          <div class="font-semibold text-(--text) group-hover:text-(--accent)">Self-host on Cloudflare</div>
+          <div class="text-[0.8125rem] text-(--text-2)">Your account, your data, lock down the API with a bearer token.</div>
         </div>
       </a>
+    </div>
+    <div class="space-y-1 pt-1">
+      <p class="text-[0.75rem] text-(--text-3) m-0 leading-relaxed">
+        <strong class="text-(--text-2)">Public instance</strong> at <code class="text-[0.6875rem]">lab.coey.dev</code>: open and best-effort. Anyone with a receipt URL can read it.
+      </p>
+      <p class="text-[0.75rem] text-(--text-3) m-0 leading-relaxed">
+        <strong class="text-(--text-2)">Self-host</strong>: set <code class="text-[0.6875rem]">LAB_AUTH_TOKEN</code> and every request requires <code class="text-[0.6875rem]">Authorization: Bearer …</code>. SDK and MCP server both accept the token. Receipt URLs aren't reachable without it.
+      </p>
+      <p class="text-[0.75rem] text-(--text-3) m-0 leading-relaxed">
+        Version <strong class="text-(--text-2)">v0.0.3</strong>: APIs may change before 1.0 — pin exact versions.
+      </p>
     </div>
   </section>
 
