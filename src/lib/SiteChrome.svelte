@@ -33,16 +33,22 @@
     class="fixed inset-0 -z-1 pointer-events-none opacity-[0.035] mix-blend-multiply"
     style="background-image: url(&quot;data:image/svg+xml,%3Csvg%20viewBox%3D%270%200%20200%20200%27%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.7%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27/%3E%3CfeColorMatrix%20type%3D%27matrix%27%20values%3D%270.33%200.33%200.33%200%200%200.33%200.33%200.33%200%200%200.33%200.33%200.33%200%200%200%200%200%201%200%27/%3E%3C/filter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url(%2523n)%27%20opacity%3D%270.55%27/%3E%3C/svg%3E&quot;); background-size: 260px 260px; filter: contrast(110%) brightness(105%);"
   ></div>
-  <div class="fixed inset-0 -z-1 pointer-events-none">
-    <div
-      class="absolute inset-0 bg-cover bg-position-[center_bottom] bg-no-repeat"
-      style="background-image: url('/bg.jpg');"
-    ></div>
-    <div
-      class="absolute inset-0"
-      style="background: linear-gradient(to bottom, rgba(250, 250, 250, 1) 0%, rgba(250, 250, 250, 1) 55%, rgba(250, 250, 250, 0.65) 72%, rgba(250, 250, 250, 0.25) 86%, rgba(250, 250, 250, 0) 100%);"
-    ></div>
-  </div>
+  {#if page.url.pathname === '/'}
+    <!-- Homepage only: bg.jpg marketing image fades out at the bottom of the hero.
+         Every other route gets a flat `--bg` so the gradient can't reveal the image. -->
+    <div class="fixed inset-0 -z-1 pointer-events-none">
+      <div
+        class="absolute inset-0 bg-cover bg-position-[center_bottom] bg-no-repeat"
+        style="background-image: url('/bg.jpg');"
+      ></div>
+      <div
+        class="absolute inset-0"
+        style="background: linear-gradient(to bottom, rgba(250, 250, 250, 1) 0%, rgba(250, 250, 250, 1) 55%, rgba(250, 250, 250, 0.65) 72%, rgba(250, 250, 250, 0.25) 86%, rgba(250, 250, 250, 0) 100%);"
+      ></div>
+    </div>
+  {:else}
+    <div class="fixed inset-0 -z-1 pointer-events-none bg-(--bg)"></div>
+  {/if}
   <header
     class="border-b border-(--border) bg-(--surface)/90 sticky top-0 z-50 backdrop-blur-sm"
   >
