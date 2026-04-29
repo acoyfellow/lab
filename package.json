@@ -65,7 +65,7 @@
     "@types/d3": "^7.4.3",
     "@types/node": "^25.5.0",
     "alchemy": "^0.91.2",
-    "better-auth": "1.6.4",
+    "better-auth": "1.6.9",
     "d3": "^7.9.0",
     "drizzle-orm": "^0.45.1",
     "effect": "4.0.0-beta.51",
