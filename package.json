@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "kill:dev": "bun run scripts/kill-dev-ports.ts",
-    "dev": "bun run kill:dev && alchemy dev",
+    "dev": "bun run kill:dev && CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_PERSONAL_ACCOUNT_ID:-$CLOUDFLARE_ACCOUNT_ID} CLOUDFLARE_API_TOKEN=${CLOUDFLARE_PERSONAL_API_TOKEN:-$CLOUDFLARE_API_TOKEN} alchemy dev",
+    "dev:ui": "vite --host 127.0.0.1 --port 4179",
     "dogfood:lab": "bun run build:client && bun scripts/dogfood-lab.ts",
     "pi:lab-bridge": "bun run scripts/pi-lab-bridge.ts",
     "migrate:results": "bun run scripts/migrate-results.ts",

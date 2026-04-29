@@ -13,7 +13,7 @@ import type {
 } from '@acoyfellow/lab';
 import { query, command, getRequestEvent } from '$app/server';
 import { error } from '@sveltejs/kit';
-import { fetchLabWorker } from '$lib/server/lab-worker';
+import { fetchLabWorker, labWorkerOrigin } from '$lib/server/lab-worker';
 
 function requireAuth() {
   const event = getRequestEvent();
@@ -35,8 +35,11 @@ async function callWorkerJSON<T>(
     }
     return response.json() as Promise<T>;
   } catch (error) {
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Worker service temporarily unavailable. Please try again.');
+    if (error instanceof TypeError || (error instanceof Error && error.message.includes('fetch'))) {
+      return {
+        ok: false,
+        error: `Lab Worker unavailable at ${labWorkerOrigin()}. Start \`bun run dev\` or set LAB_WORKER_ORIGIN/LAB_URL to a running Lab Worker.`,
+      } as T;
     }
     throw error;
   }

@@ -16,6 +16,12 @@ Related: [Permissions](/docs/capabilities) · [Limits](/docs/limits) · [Failure
 | POST | `/run/chain` | Run a multi-step pipeline |
 | POST | `/run/spawn` | Run code that can launch nested sandboxes |
 | POST | `/run/generate` | AI writes code from a prompt, then runs it |
+| POST | `/sessions` | Create an Artifact-backed work session |
+| GET | `/sessions` | List recent sessions |
+| GET | `/sessions/:id` | Fetch session state, summary, and receipt IDs |
+| POST | `/sessions/:id/summary` | Update the continuation summary |
+| POST | `/sessions/:id/receipts` | Save a receipt directly into a session |
+| POST | `/receipts` | Save a receipt for external agent work |
 | POST | `/seed` | Load demo data into KV |
 | GET | `/results/:id` | Open the saved-result viewer |
 | GET | `/results/:id.json` | Fetch canonical saved-result JSON |
@@ -104,6 +110,66 @@ Include permission strings so the AI knows what APIs are available when writing 
 ## POST /seed
 
 Loads demo data into KV for testing. No saved result is created.
+
+---
+
+## Sessions
+
+Create a session for an Artifact worktree, then keep its summary fresh as work progresses.
+
+```bash
+curl -X POST $LAB_URL/sessions \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Ship receipts","artifact":{"repo":"lab","branch":"main"}}'
+```
+
+Update the continuation summary:
+
+```bash
+curl -X POST $LAB_URL/sessions/$SESSION_ID/summary \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "goal": "Ship receipt summaries",
+    "state": "API is implemented and checks are running",
+    "nextAction": "Dogfood continuation from the session page",
+    "risks": ["Summary can drift if agents forget to update it"],
+    "importantReceiptIds": ["abc123"],
+    "updatedByReceiptId": "abc123"
+  }'
+```
+
+Use `POST /sessions/:id/receipts` with the same body as `/receipts` when the receipt belongs to a session.
+
+---
+
+## POST /receipts
+
+Save a receipt for work that happened outside Lab's sandbox: an MCP tool call, browser action, long-running task checkpoint, review decision, or handoff.
+
+**Body:**
+```json
+{
+  "source": "cf-portal",
+  "action": "workers.list",
+  "capabilities": ["cf.workers.read"],
+  "input": { "account": "..." },
+  "output": { "count": 12 },
+  "replay": {
+    "mode": "inspect-only",
+    "available": false,
+    "reason": "Read-only observation"
+  }
+}
+```
+
+Replay modes:
+
+- `inspect-only` — the receipt can be read, but not safely re-run.
+- `rerun-sandbox` — the work can be re-run inside Lab.
+- `rerun-live-requires-approval` — live replay touches real services and needs explicit approval.
+- `continue-from-here` — another agent should use this receipt as the next starting point.
+
+**Response:** `{ ok, resultId }`
 
 ---
 

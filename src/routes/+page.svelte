@@ -9,10 +9,42 @@
   import PlayIcon from '@lucide/svelte/icons/play';
   import Loader2Icon from '@lucide/svelte/icons/loader-2';
 
+  const primitives = [
+    {
+      label: 'Run',
+      title: 'Execute the work',
+      body: 'Code, chains, generated steps, and nested isolates run in Cloudflare V8 sandboxes.'
+    },
+    {
+      label: 'Constrain',
+      title: 'Name the powers',
+      body: 'Every host touchpoint is an explicit capability. No capability means pure compute.'
+    },
+    {
+      label: 'Record',
+      title: 'Return the receipt',
+      body: 'Sandbox runs, MCP calls, browser actions, checkpoints, and granted capabilities land at one URL.'
+    },
+    {
+      label: 'Recover',
+      title: 'Continue from proof',
+      body: 'A failed receipt becomes diagnosis input. A finished receipt becomes another agent’s handoff.'
+    }
+  ];
+
+  const receiptFields = [
+    'exact code or prompt',
+    'external tool actions',
+    'capabilities granted',
+    'step inputs and outputs',
+    'errors and timings',
+    'machine-readable JSON'
+  ];
+
   const featuredExamples = [
     {
-      title: 'Code mode — but verified',
-      badge: '10/10',
+      title: 'Verified work',
+      badge: 'Pass',
       href: '/docs/patterns#prove-it',
       description: 'Agent writes a function, generates edge cases, runs them. The receipt shows the cases, the assertions, and the verdict.'
     },
@@ -26,7 +58,7 @@
       title: 'Multi-agent handoff',
       badge: 'URL',
       href: '/docs/patterns#agent-handoff',
-      description: 'Agent A finishes. Agent B opens the URL and continues. The receipt is the entire interface — no queue, no shared DB.'
+      description: 'Agent A finishes. Agent B opens the URL and continues. The receipt is the entire interface — no queue, no shared database.'
     }
   ];
 
@@ -82,9 +114,7 @@
 />
 
 <div class="">
-  <section
-    class="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen overflow-hidden "
-  >
+  <section class="relative w-full overflow-hidden">
     <div
       aria-hidden="true"
       class="absolute inset-0 bg-[url('/bg.jpg')] bg-cover bg-position-[62%_center] sm:bg-center"
@@ -102,16 +132,18 @@
       class="relative z-10 max-w-3xl mx-auto px-6 py-12 max-sm:px-4 sm:py-14 md:py-16 min-h-[min(42vh,400px)] flex flex-col justify-center"
     >
       <div class="space-y-5 max-w-160">
-        <h1 class="text-[1.85rem] sm:text-[2.5rem] font-semibold tracking-tight leading-[1.1] text-(--text) drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
-          Receipts for agent work.
+        <h1 class="text-[1.9rem] sm:text-[2.65rem] font-semibold tracking-tight leading-[1.08] text-(--text) drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
+          Agents need receipts.
         </h1>
 
         <p class="text-[1.0625rem] sm:text-[1.125rem] text-(--text-2) leading-relaxed max-w-[60ch]">
-          Your agent runs code. Lab returns a stable URL with the full execution record — code, inputs, outputs, errors, capabilities granted at each step. <span class="text-(--text)">Readable by the next agent, auditable by you.</span>
+          Lab runs AI-generated work in isolated environments, records what actually happened, and returns a URL anyone can inspect or another agent can continue from.
+          <span class="text-(--text)">Descriptions are not proof. Receipts are.</span>
         </p>
 
         <div class="flex items-center gap-3 flex-wrap pt-1">
-          <Button href="/compose" variant="default">Open the editor</Button>
+          <Button href="/compose" variant="default">Create a receipt</Button>
+          <Button href="/docs/patterns" variant="outline">See patterns</Button>
           <code class="text-[0.8125rem] text-(--text-2) bg-(--surface)/70 px-2.5 py-1 rounded-md border border-(--border)">npm install @acoyfellow/lab</code>
         </div>
       </div>
@@ -120,26 +152,56 @@
 
   <div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-14">
 
-  <!-- Why this exists + receipt shape, in one section -->
+  <!-- Product thesis + receipt shape -->
   <section class="space-y-4">
     <div class="border-l-2 border-(--accent) pl-5 space-y-2">
       <p class="text-[1.0625rem] text-(--text) leading-relaxed m-0 font-medium">
-        LLMs do work, then describe what they did. The description is not the work.
+        AI agents are starting to do real work. The durable artifact should not be a chat summary.
       </p>
       <p class="text-[0.875rem] text-(--text-2) leading-relaxed m-0">
-        Lab runs the work in a Cloudflare V8 isolate, gates host calls behind explicit capabilities, and saves the full record at <code class="text-[0.8125rem]">/results/:id</code> — viewable in a browser or fetched as <code class="text-[0.8125rem]">.json</code> by another agent.
+        Lab makes the receipt the unit of AI work: a canonical record at <code class="text-[0.8125rem]">/results/:id</code>, viewable by humans and fetchable as <code class="text-[0.8125rem]">.json</code> by agents.
       </p>
     </div>
 
-    <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
-      {@html data.codeHtml.receiptShape}
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+        {@html data.codeHtml.receiptShape}
+      </div>
+      <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 flex flex-col justify-between gap-4">
+        <div class="space-y-2">
+          <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) m-0">Receipt anatomy</h2>
+          <p class="text-[0.875rem] text-(--text-2) m-0 leading-relaxed">
+            One link carries enough context to audit, retry, fork, compare, or hand off the work.
+          </p>
+        </div>
+        <ul class="grid gap-2 m-0 p-0 list-none">
+          {#each receiptFields as field}
+            <li class="flex items-center gap-2 text-[0.8125rem] text-(--text)">
+              <span class="size-1.5 rounded-full bg-(--accent) shrink-0"></span>
+              <span>{field}</span>
+            </li>
+          {/each}
+        </ul>
+      </div>
     </div>
-    <p class="text-[0.8125rem] text-(--text-3) m-0">Stable URL, append-only. Each step lists the capabilities it was granted — <code class="text-[0.75rem]">kvRead</code>, <code class="text-[0.75rem]">workersAi</code>, <code class="text-[0.75rem]">spawn</code>, … Default is none. Code only gets what you explicitly pass.</p>
+  </section>
+
+  <section class="space-y-4">
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) m-0">The loop</h2>
+    <div class="grid gap-3 sm:grid-cols-2">
+      {#each primitives as primitive}
+        <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 space-y-2">
+          <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3)">{primitive.label}</div>
+          <h3 class="text-[0.9375rem] font-semibold text-(--text) m-0">{primitive.title}</h3>
+          <p class="text-[0.8125rem] text-(--text-2) m-0 leading-relaxed">{primitive.body}</p>
+        </div>
+      {/each}
+    </div>
   </section>
 
   <!-- First request: SDK + curl side by side -->
   <section class="space-y-3">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) m-0">Your first request</h2>
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) m-0">How agents create receipts</h2>
     <div class="grid gap-3 sm:grid-cols-2">
       <div class="space-y-1.5">
         <div class="text-[0.75rem] text-(--text-3) font-medium">From a TypeScript agent</div>
@@ -158,7 +220,7 @@
 
   <!-- Runnable demo -->
   <section class="space-y-4">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) m-0">See it run</h2>
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) m-0">Produce a real receipt</h2>
 
     <!-- Tab bar -->
     <div class="flex gap-0 border-b border-(--border)">
@@ -208,10 +270,10 @@
     {#if result && result.ok}
       <div class="rounded-(--radius) border border-emerald-500/25 bg-(--surface) p-4 space-y-2">
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <span class="text-[0.8125rem] font-semibold text-emerald-500">Ran successfully</span>
+          <span class="text-[0.8125rem] font-semibold text-emerald-500">Receipt created</span>
           {#if result.resultId}
             <a href="/results/{result.resultId}" class="text-[0.8125rem] text-(--accent) hover:underline font-medium">
-              Open the receipt →
+              Open the receipt
             </a>
           {/if}
         </div>
@@ -240,7 +302,7 @@
 
   <!-- What agents do with this -->
   <section class="space-y-4">
-    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">What agents do with this</h2>
+    <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">What receipts unlock</h2>
     <div class="space-y-3">
       {#each featuredExamples as example}
         <a href={example.href} class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group">
@@ -254,7 +316,7 @@
         </a>
       {/each}
     </div>
-    <a href="/docs/patterns" class="inline-block text-[0.8125rem] text-(--accent) hover:underline font-medium mt-1">All 5 patterns →</a>
+    <a href="/docs/patterns" class="inline-block text-[0.8125rem] text-(--accent) hover:underline font-medium mt-1">All patterns</a>
   </section>
 
   <!-- Where to next -->

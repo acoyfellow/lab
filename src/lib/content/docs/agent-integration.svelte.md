@@ -4,10 +4,12 @@ Lab works with any agent that can make HTTP requests or use MCP tools. Here's ho
 
 ## MCP (recommended for Cursor, Claude Code, etc.)
 
-The `@acoyfellow/lab-mcp` package gives your agent two tools:
+The `@acoyfellow/lab-mcp` package gives your agent three tools:
 
 - **`find`** — browse available permissions, look up past run results, or explore the API
 - **`execute`** — run code in a sandbox, run multi-step pipelines, generate code from a prompt
+- **`session`** — create/list/fetch sessions and update their continuation summary
+- **`receipt`** — save proof for external work such as MCP calls, browser sessions, long-running task checkpoints, and handoffs
 
 ### Setup
 
@@ -59,6 +61,41 @@ See [HTTP API](/docs/http-api) for all endpoints.
 `GET /lab/catalog` returns a machine-readable JSON document describing all available capabilities, endpoints, and how to call them. Point your agent at this URL instead of hardcoding API details.
 
 After a persisted run, agents should fetch `GET /results/:id.json`. `GET /results/:id` is the human viewer on the public app.
+
+## Receipting MCP and long-running work
+
+Use `receipt` when useful work happened outside Lab's sandbox:
+
+```json
+{
+  "source": "the-machine",
+  "action": "portfolio-loop.checkpoint",
+  "capabilities": ["machine.start", "filesystem.write"],
+  "input": { "objective": "stage prompt bundle" },
+  "output": { "status": "handoff", "receipt": ".context/runs/..." },
+  "replay": {
+    "mode": "continue-from-here",
+    "available": true
+  }
+}
+```
+
+For agents, the main next step is often not replay. It is continuation: read the receipt, understand authority and evidence, then keep going from that point.
+
+Keep the session summary current after meaningful checkpoints:
+
+```json
+{
+  "mode": "summary",
+  "sessionId": "abc123",
+  "goal": "Ship receipt summaries",
+  "state": "API and UI are implemented",
+  "nextAction": "Run dogfood continuation",
+  "risks": ["Summary can drift if agents forget to update it"],
+  "importantReceiptIds": ["def456"],
+  "updatedByReceiptId": "def456"
+}
+```
 
 ## Security
 

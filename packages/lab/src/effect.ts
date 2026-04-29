@@ -18,6 +18,14 @@ import type {
   ListStoriesOptions,
   ListStoriesResponse,
   StoryStatus,
+  CreateReceiptPayload,
+  CreateReceiptResult,
+  CreateSessionPayload,
+  CreateSessionResult,
+  GetSessionResult,
+  ListSessionsResult,
+  UpdateSessionSummaryPayload,
+  UpdateSessionSummaryResult,
 } from './types.js';
 import { chainStepsForWire, guestWirePayload, normalizeBaseUrl, requestJSON } from './wire.js';
 
@@ -83,6 +91,12 @@ export type LabEffectClient = {
   readonly runChain: (steps: ChainStep[]) => Effect.Effect<RunResult, HttpError>;
   readonly runSpawn: (payload: RunSpawnPayload) => Effect.Effect<RunResult, HttpError>;
   readonly runGenerate: (payload: RunGeneratePayload) => Effect.Effect<RunResult, HttpError>;
+  readonly createReceipt: (payload: CreateReceiptPayload) => Effect.Effect<CreateReceiptResult, HttpError>;
+  readonly createSession: (payload?: CreateSessionPayload) => Effect.Effect<CreateSessionResult, HttpError>;
+  readonly getSession: (sessionId: string) => Effect.Effect<GetSessionResult, HttpError>;
+  readonly listSessions: () => Effect.Effect<ListSessionsResult, HttpError>;
+  readonly createSessionReceipt: (sessionId: string, payload: Omit<CreateReceiptPayload, 'sessionId'>) => Effect.Effect<CreateReceiptResult, HttpError>;
+  readonly updateSessionSummary: (sessionId: string, payload: UpdateSessionSummaryPayload) => Effect.Effect<UpdateSessionSummaryResult, HttpError>;
   readonly seed: () => Effect.Effect<SeedResult, HttpError>;
   /** Fetch saved-result JSON from the canonical `GET /results/:id.json` path. */
   readonly getResult: (resultId: string) => Effect.Effect<SavedResult | { error: string }, HttpError>;
@@ -153,6 +167,44 @@ export function createLabEffectClient(options: LabEffectClientOptions): LabEffec
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(o),
+      });
+    },
+    createReceipt(payload) {
+      return tryRequestJSON<CreateReceiptResult>(baseUrl, fetchImpl, '/receipts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    },
+    createSession(payload = {}) {
+      return tryRequestJSON<CreateSessionResult>(baseUrl, fetchImpl, '/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    },
+    getSession(sessionId) {
+      return tryRequestJSON<GetSessionResult>(baseUrl, fetchImpl, `/sessions/${sessionId}`, {
+        method: 'GET',
+      });
+    },
+    listSessions() {
+      return tryRequestJSON<ListSessionsResult>(baseUrl, fetchImpl, '/sessions', {
+        method: 'GET',
+      });
+    },
+    createSessionReceipt(sessionId, payload) {
+      return tryRequestJSON<CreateReceiptResult>(baseUrl, fetchImpl, `/sessions/${sessionId}/receipts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    },
+    updateSessionSummary(sessionId, payload) {
+      return tryRequestJSON<UpdateSessionSummaryResult>(baseUrl, fetchImpl, `/sessions/${sessionId}/summary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
     },
     seed() {

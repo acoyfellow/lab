@@ -181,6 +181,91 @@ describe("Lab Worker", () => {
     expect(response.headers.get("location")).toBe(`${baseUrl}/results/${runData.resultId}.json`);
   });
 
+  test("external receipt creates durable saved result", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+    const receiptRes = await fetch(`${baseUrl}/receipts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source: "playwright",
+        action: "homepage-check",
+        capabilities: ["browser.read"],
+        input: { url: "https://example.com" },
+        output: { assertions: 3 },
+        replay: { mode: "continue-from-here", available: true },
+      }),
+    });
+    const receiptData = (await receiptRes.json()) as { ok: boolean; resultId?: string };
+
+    expect(receiptData.ok).toBe(true);
+    expect(receiptData.resultId).toBeDefined();
+
+    const savedRes = await fetch(`${baseUrl}/results/${receiptData.resultId}.json`);
+    const saved = (await savedRes.json()) as {
+      type: string;
+      receipt?: { source?: string; action?: string; capabilities?: string[] };
+      outcome?: { ok?: boolean; result?: { assertions?: number } };
+    };
+
+    expect(saved.type).toBe("external");
+    expect(saved.receipt?.source).toBe("playwright");
+    expect(saved.receipt?.action).toBe("homepage-check");
+    expect(saved.receipt?.capabilities).toContain("browser.read");
+    expect(saved.outcome?.ok).toBe(true);
+    expect(saved.outcome?.result?.assertions).toBe(3);
+  });
+
+  test("session receipts survive concurrent appends", async () => {
+    if (!workerAvailable) {
+      expect(true).toBe(true);
+      return;
+    }
+
+    const sessionRes = await fetch(`${baseUrl}/sessions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "Concurrent receipt regression",
+        artifact: { repo: "lab-test", branch: "main" },
+      }),
+    });
+    const sessionData = (await sessionRes.json()) as { ok: boolean; sessionId?: string };
+    expect(sessionData.ok).toBe(true);
+    expect(sessionData.sessionId).toBeDefined();
+
+    const receiptResults = await Promise.all(
+      Array.from({ length: 5 }, (_, index) =>
+        fetch(`${baseUrl}/sessions/${sessionData.sessionId}/receipts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source: "test",
+            action: `parallel-${index}`,
+            output: { index },
+          }),
+        }).then((res) => res.json() as Promise<{ ok: boolean; resultId?: string }>),
+      ),
+    );
+
+    const receiptIds = receiptResults.map((result) => result.resultId).filter(Boolean);
+    expect(receiptResults.every((result) => result.ok)).toBe(true);
+    expect(receiptIds).toHaveLength(5);
+
+    const savedSessionRes = await fetch(`${baseUrl}/sessions/${sessionData.sessionId}`);
+    const savedSession = (await savedSessionRes.json()) as {
+      ok: boolean;
+      session?: { receiptIds?: string[] };
+    };
+
+    expect(savedSession.ok).toBe(true);
+    for (const receiptId of receiptIds) {
+      expect(savedSession.session?.receiptIds).toContain(receiptId);
+    }
+  });
+
   test("chain step failure stops execution", async () => {
     if (!workerAvailable) {
       expect(true).toBe(true);

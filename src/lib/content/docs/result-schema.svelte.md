@@ -1,19 +1,21 @@
 # Run result format
 
-When you run code on Lab, the saved result is a JSON document. `GET /results/:id.json` is the canonical machine-readable form, and `GET /results/:id` is the human viewer over that same saved result on the public app. Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial or empty. See [Failures & step data](/docs/failures). This page describes the saved-result schema.
+When you run code on Lab or save an external receipt, the saved result is a JSON document. `GET /results/:id.json` is the canonical machine-readable form, and `GET /results/:id` is the human viewer over that same saved result on the public app. Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial or empty. See [Failures & step data](/docs/failures). This page describes the saved-result schema.
 
 ## Top-level fields
 
 | Field | Type | What it is |
 |---|---|---|
 | `id` | string | Unique ID (same as the `resultId` and saved-result paths) |
-| `type` | string | How the code was run: `sandbox`, `kv`, `chain`, `generate`, or `spawn` |
+| `type` | string | How the result was created: `sandbox`, `kv`, `chain`, `generate`, `spawn`, or `external` |
 | `createdAt` | string | When it ran (ISO 8601) |
 | `request` | object | What was sent in (code, permissions, prompt, etc.) |
 | `outcome` | object | What happened — `ok: true` with a `result`, or `ok: false` with `error` and `reason` |
 | `timing` | object | How long it took (`totalMs`, and for AI-generated runs: `generateMs`, `runMs`) |
 | `generated` | string? | The code the AI wrote (only for `/run/generate`) |
 | `steps` | array? | Per-step details (only for `/run/chain`) |
+| `receipt` | object? | External work receipt details (only for `/receipts`) |
+| `lineage` | object? | Parent/supersedes links for continued work |
 
 ## The `request` field (varies by type)
 
@@ -21,6 +23,21 @@ When you run code on Lab, the saved result is a JSON document. `GET /results/:id
 - **chain:** `{ steps: [{ body, capabilities, name?, input? }] }` — each step in the pipeline
 - **generate:** `{ prompt, capabilities }` — what you asked the AI to build
 - **spawn:** `{ body, capabilities, depth? }` — the code and nesting limit
+- **external:** `{ source, action, input?, output?, capabilities?, replay?, evidence? }` — work that happened through an MCP, browser, task runner, or other external system
+
+## External receipts
+
+External receipts use `type: "external"` and include a `receipt` object:
+
+| Field | Type | What it is |
+|---|---|---|
+| `source` | string | MCP server, browser runner, task runner, or external system |
+| `action` | string | Tool/action name |
+| `capabilities` | string[] | Authority used, such as `cf.workers.read` or `browser.click` |
+| `input` | any? | Intent, arguments, or pre-state |
+| `output` | any? | Result, post-state, or observation |
+| `replay` | object | Replay posture: inspect only, sandbox re-run, live re-run with approval, or continue from here |
+| `evidence` | any? | Logs, screenshots, artifact references, before/after data |
 
 ## Per-step details (pipelines only)
 

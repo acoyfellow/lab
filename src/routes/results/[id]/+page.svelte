@@ -26,6 +26,16 @@
       props?: unknown;
       input?: unknown;
     }>;
+    source?: string;
+    action?: string;
+    actor?: unknown;
+    input?: unknown;
+    output?: unknown;
+    replay?: unknown;
+    evidence?: unknown;
+    metadata?: unknown;
+    parentId?: string;
+    supersedes?: string;
   };
 
   type ResultStepRow = {
@@ -49,6 +59,21 @@
     timing?: Record<string, number>;
     generated?: string;
     steps?: ResultStepRow[];
+    receipt?: {
+      source: string;
+      action: string;
+      actor?: unknown;
+      input?: unknown;
+      output?: unknown;
+      capabilities?: string[];
+      replay?: { mode?: string; available?: boolean; reason?: string };
+      evidence?: unknown;
+      metadata?: unknown;
+    };
+    lineage?: {
+      parentId?: string;
+      supersedes?: string;
+    };
   };
 
   let { data } = $props();
@@ -100,6 +125,17 @@
     if (result.outcome.ok) return 'ok — result below.';
     const err = result.outcome.error ?? 'unknown';
     return err.length > 160 ? `${err.slice(0, 160)}…` : err;
+  });
+
+  const resultKind = $derived(result.type === 'external' ? 'Receipt' : 'Saved result');
+  const typeSummary = $derived.by(() => {
+    if (result.type === 'external' && result.receipt) {
+      return `${result.receipt.source}.${result.receipt.action}`;
+    }
+    if (result.type === 'chain') return `${result.steps?.length || 0}-step chain`;
+    if (result.type === 'spawn') return 'Nested spawn execution';
+    if (result.type === 'generate') return 'AI-generated run';
+    return 'Single isolate run';
   });
 
   function copyUrl() {
@@ -253,24 +289,16 @@
   <header class="flex justify-between items-start gap-4 mb-6 max-sm:flex-col">
     <div>
       <div class="flex items-center gap-2">
-        <h1 class="text-lg font-semibold tracking-tight text-(--text) m-0">Saved result</h1>
+        <h1 class="text-lg font-semibold tracking-tight text-(--text) m-0">{resultKind}</h1>
         <span class="text-[0.6875rem] font-mono text-(--text-3) bg-(--surface-alt) px-2 py-0.5 rounded">{result.id}</span>
       </div>
       <p class="text-(--text-2) text-[0.8125rem] mt-1.5 mb-0 max-w-[52ch] leading-relaxed">
-        {#if result.type === 'chain'}
-          {result.steps?.length || 0}-step chain
-        {:else if result.type === 'spawn'}
-          Nested spawn execution
-        {:else if result.type === 'generate'}
-          AI-generated run
-        {:else}
-          Single isolate run
-        {/if}
+        {typeSummary}
         <span class="text-(--text-3)">· {result.createdAt}</span>
       </p>
     </div>
     <div class="flex gap-2 flex-wrap text-[0.8125rem]">
-      {#if !result.outcome.ok}
+      {#if !result.outcome.ok && result.type !== 'external'}
         <a
           href="/healing?traceId={result.id}"
           class="text-white bg-(--accent) border border-(--accent) rounded-(--radius) px-3 py-1.5 no-underline hover:opacity-90 text-[0.8125rem]"
@@ -279,7 +307,9 @@
         </a>
       {/if}
       <button type="button" onclick={openStoryPicker} class="text-(--text-2) bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 cursor-pointer hover:text-(--text) hover:border-(--accent)/30 text-[0.8125rem]">Add to story</button>
-      <button type="button" onclick={goFork} class="text-(--text-2) bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 cursor-pointer hover:text-(--text) hover:border-(--accent)/30 text-[0.8125rem]">Fork</button>
+      {#if result.type !== 'external'}
+        <button type="button" onclick={goFork} class="text-(--text-2) bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 cursor-pointer hover:text-(--text) hover:border-(--accent)/30 text-[0.8125rem]">Fork</button>
+      {/if}
       <a href="/results/{result.id}.json" class="text-(--text-2) no-underline bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 hover:text-(--text) hover:border-(--accent)/30">JSON</a>
       <button type="button" onclick={copyUrl} class="text-(--text-2) bg-(--surface) border border-(--border) rounded-(--radius) px-3 py-1.5 cursor-pointer hover:text-(--text) hover:border-(--accent)/30 text-[0.8125rem]">Copy URL</button>
     </div>
@@ -292,6 +322,9 @@
         {result.outcome.ok ? 'Succeeded' : 'Failed'}
       </span>
       <span><strong class="text-(--text) font-medium">Mode</strong> <code class="text-[0.75rem]">{result.type}</code></span>
+      {#if result.receipt?.replay}
+        <span><strong class="text-(--text) font-medium">Replay</strong> <code class="text-[0.75rem]">{result.receipt.replay.mode}</code></span>
+      {/if}
       {#if timingItems.length > 0}
         <span class="text-(--text-3)">· {timingItems.join(' · ')}</span>
       {/if}
@@ -300,6 +333,60 @@
       <p class="m-0 text-red-400 text-[0.8125rem]">{outcomeSummary}</p>
     {/if}
   </section>
+
+  {#if result.type === 'external' && result.receipt}
+    <section class="bg-(--surface) border border-(--border) rounded-lg p-3.5 mb-6 space-y-4">
+      <div class="grid gap-3 sm:grid-cols-2 text-[0.8125rem]">
+        <div>
+          <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Source</div>
+          <code class="text-[0.8125rem]">{result.receipt.source}</code>
+        </div>
+        <div>
+          <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Action</div>
+          <code class="text-[0.8125rem]">{result.receipt.action}</code>
+        </div>
+      </div>
+
+      {#if result.receipt.capabilities && result.receipt.capabilities.length > 0}
+        <div>
+          <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-2">Authority used</div>
+          <div class="flex flex-wrap gap-1.5">
+            {#each result.receipt.capabilities as cap}
+              <span class="inline-flex items-center px-2 py-1 rounded text-[0.6875rem] font-medium bg-(--accent)/10 text-(--accent) border border-(--accent)/30">
+                {cap}
+              </span>
+            {/each}
+          </div>
+        </div>
+      {/if}
+
+      {#if result.receipt.replay}
+        <div class="rounded-(--radius) bg-(--surface-alt) border border-(--border) p-3">
+          <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-1">Replay posture</div>
+          <p class="text-[0.8125rem] text-(--text-2) m-0">
+            <code>{result.receipt.replay.mode}</code>
+            {#if result.receipt.replay.available === false}
+              <span> · inspect only</span>
+            {/if}
+            {#if result.receipt.replay.reason}
+              <span> · {result.receipt.replay.reason}</span>
+            {/if}
+          </p>
+        </div>
+      {/if}
+
+      {#if result.lineage?.parentId || result.lineage?.supersedes}
+        <div class="text-[0.8125rem] text-(--text-2)">
+          {#if result.lineage.parentId}
+            <div>Continues from <a class="text-(--accent) hover:underline" href="/results/{result.lineage.parentId}">{result.lineage.parentId}</a></div>
+          {/if}
+          {#if result.lineage.supersedes}
+            <div>Supersedes <a class="text-(--accent) hover:underline" href="/results/{result.lineage.supersedes}">{result.lineage.supersedes}</a></div>
+          {/if}
+        </div>
+      {/if}
+    </section>
+  {/if}
 
   <!-- Final Result -->
   <section class="bg-(--surface) border border-(--border) rounded-lg p-3.5 mb-6">
@@ -312,6 +399,31 @@
       <CollapsiblePre label="Full output" text={outcomeText()} defaultOpen={!result.outcome.ok} />
     {/if}
   </section>
+
+  {#if result.type === 'external' && result.receipt}
+    <section class="grid gap-3 sm:grid-cols-2 mb-6">
+      {#if result.receipt.input !== undefined}
+        <div class="bg-(--surface) border border-(--border) rounded-lg p-3.5">
+          <CollapsiblePre label="Input" text={formatValue(result.receipt.input)} defaultOpen={false} />
+        </div>
+      {/if}
+      {#if result.receipt.evidence !== undefined}
+        <div class="bg-(--surface) border border-(--border) rounded-lg p-3.5">
+          <CollapsiblePre label="Evidence" text={formatValue(result.receipt.evidence)} defaultOpen={false} />
+        </div>
+      {/if}
+      {#if result.receipt.actor !== undefined}
+        <div class="bg-(--surface) border border-(--border) rounded-lg p-3.5">
+          <CollapsiblePre label="Actor" text={formatValue(result.receipt.actor)} defaultOpen={false} />
+        </div>
+      {/if}
+      {#if result.receipt.metadata !== undefined}
+        <div class="bg-(--surface) border border-(--border) rounded-lg p-3.5">
+          <CollapsiblePre label="Metadata" text={formatValue(result.receipt.metadata)} defaultOpen={false} />
+        </div>
+      {/if}
+    </section>
+  {/if}
 
   <!-- Step Timeline Section -->
   {#if result.steps && result.steps.length > 0}
