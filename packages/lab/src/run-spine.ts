@@ -263,7 +263,8 @@ export async function createSnapshotBranch(input: {
 function remoteWithToken(repo: ArtifactsRepoRef) {
 	const remote = repo.remote ?? `https://${repo.accountId}.artifacts.cloudflare.net/git/${repo.namespace}/${repo.name}.git`;
 	if (!repo.token) return remote;
-	return remote.replace('https://', `https://x-token:${repo.token}@`);
+	const token = encodeURIComponent(repo.token.split('?')[0] ?? repo.token);
+	return remote.replace('https://', `https://x-token:${token}@`);
 }
 
 export async function resolveRunRepo(repo: LabRunRepo): Promise<ResolvedRunRepo> {
