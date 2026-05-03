@@ -2,11 +2,16 @@
 
 **Receipts for agent work.**
 
-Your agent runs code. Lab gives back a URL. The URL is the proof — readable by the next agent, verifiable by you.
+Repo state goes in. Commands run. Logs, results, and receipts come out.
 
-LLMs do work, then describe what they did. The description is not the work. Lab runs the work in a sandbox and saves a canonical record at a URL: the agent that ran it can read its own receipt to retry or self-heal, the next agent can pick up from where the last one stopped, and a human can open the URL and see exactly what happened — without re-running anything.
+Cloudflare Artifacts are the north-star repo backend: branches, files, diffs, commits. Lab is the adjacent proof layer: every meaningful agent action gets durable evidence that another agent can inspect, replay, continue from, or hand to a human.
 
-One artifact. Two readers. Same source of truth.
+The standalone shape is simple:
+
+1. Resolve repo state: local git today, Cloudflare Artifacts as the durable backend.
+2. Run an executor: local shell today, Cloudshell/Filepath/Flue/Machine later.
+3. Write `.lab/runs/<run_id>/input.json`, `logs.txt`, `result.json`, and `receipt.json`.
+4. Continue from evidence instead of asking the next agent to trust a summary.
 
 **Try it now:** [lab.coey.dev/compose](https://lab.coey.dev/compose)
 
@@ -14,7 +19,71 @@ One artifact. Two readers. Same source of truth.
 
 ---
 
-## 2-Minute Quickstart
+## 7-Minute Quickstart
+
+### Standalone CLI
+
+```bash
+bun install
+bun run --cwd packages/lab-cli build
+```
+
+Run the complete local demo:
+
+```bash
+bun run demo:local-run
+```
+
+It creates a temporary git repo, makes dirty work, snapshots it onto a `lab/run-*` branch, runs a command, writes a receipt, lists runs, shows one run, and replays it with lineage.
+
+Run a real command in a real repo:
+
+```bash
+node packages/lab-cli/dist/cli.js repo-run --repo . -- sh -lc 'bun test'
+```
+
+List recent runs:
+
+```bash
+node packages/lab-cli/dist/cli.js runs --repo .
+```
+
+Show one run:
+
+```bash
+node packages/lab-cli/dist/cli.js show run_YYYYMMDDHHMMSS_abcdef --repo .
+```
+
+Replay one run:
+
+```bash
+node packages/lab-cli/dist/cli.js replay run_YYYYMMDDHHMMSS_abcdef --repo .
+```
+
+Snapshot dirty work onto a `lab/run-*` branch before running:
+
+```bash
+node packages/lab-cli/dist/cli.js repo-run --repo . --snapshot -- sh -lc 'bun test'
+```
+
+Run against Cloudflare Artifacts:
+
+```bash
+node packages/lab-cli/dist/cli.js repo-run \
+  --artifacts default/my-repo \
+  --branch main \
+  --account-id "$CLOUDFLARE_ACCOUNT_ID" \
+  --token "$CLOUDFLARE_ARTIFACTS_REPO_TOKEN" \
+  -- sh -lc 'bun test'
+```
+
+That is the product spine:
+
+```text
+repo -> executor -> logs/result/receipt
+```
+
+### Hosted Client
 
 ```bash
 npm install @acoyfellow/lab
@@ -24,26 +93,44 @@ npm install @acoyfellow/lab
 import { createLabClient } from "@acoyfellow/lab";
 
 const lab = createLabClient({
-  baseUrl: process.env.LAB_URL,  // or https://lab.coey.dev
+  baseUrl: process.env.LAB_URL, // or https://lab.coey.dev
 });
 
-// Run a chain, get a shareable result URL
-const out = await lab.runChain([
-  { name: "Load", body: `return { value: 42 }`, capabilities: [] },
-  { name: "Double", body: `return { value: input.value * 2 }`, capabilities: [] },
-]);
+const session = await lab.createSession({
+  title: "Ship receipt broker",
+  artifact: {
+    repo: "receipt-broker",
+    branch: "main",
+    head: "abc123",
+  },
+});
 
-console.log(out.result);    // { value: 84 }
-console.log(out.resultId);  // abc123
+const receipt = await lab.createSessionReceipt(session.sessionId, {
+  source: "codex",
+  action: "edit",
+  capabilities: ["filesystem.write", "shell.test"],
+  input: { intent: "Add session receipts" },
+  output: { changed: ["worker/index.ts", "packages/lab/src/client.ts"] },
+  replay: { mode: "continue-from-here", available: true },
+});
 
-// Open the viewer: $LAB_URL/results/abc123
-// Get the JSON: $LAB_URL/results/abc123.json
+await lab.updateSessionSummary(session.sessionId, {
+  goal: "Ship receipt broker",
+  state: "Receipt endpoint and SDK calls are implemented",
+  nextAction: "Run dogfood checks and fix the first real gap",
+  risks: ["Session continuation may be too noisy without a concise summary"],
+  importantReceiptIds: [receipt.resultId],
+  updatedByReceiptId: receipt.resultId,
+});
+
+console.log(session.sessionId); // Artifact-backed work session
+console.log(receipt.resultId);  // Receipt URL id
+
+// Human viewer: $LAB_URL/receipts/:id
+// Agent JSON:    $LAB_URL/receipts/:id.json
 ```
 
-**What you'll see:**
-1. **Code** — what ran in each step
-2. **Capabilities** — what the code could access
-3. **Result** — return values, timing, and any errors
+Artifacts answer “what changed?” Lab answers “who did what, under which authority, with what evidence, and where should the next agent resume?”
 
 ---
 
@@ -51,8 +138,11 @@ console.log(out.resultId);  // abc123
 
 Three things to know:
 
+### The session
+A session binds an Artifact worktree to the work trail. `POST /sessions` creates the thread; `GET /sessions/:id` shows the Artifact ref, current summary, and ordered receipt IDs. Agents update the summary after checkpoints so the next agent sees goal, state, next action, and risks before reading the full receipt trail.
+
 ### The receipt
-Every run saves canonical JSON at `/results/:id.json`, viewable at `/results/:id`. It includes the code, the inputs, the outputs, the timings, and any errors. The URL is the artifact.
+Every run or external action saves canonical JSON at `/receipts/:id.json`, viewable at `/receipts/:id`. It includes input, output, capabilities, timing, evidence, lineage, replay hints, and Artifact refs. `/results/:id` remains an alias for sandbox run history.
 
 ### The loop
 A step fails → the receipt includes the error → the agent reads its own receipt → patches → retries. No external memory, no shared database. The agent's last failure is the input to its next attempt.
@@ -137,10 +227,17 @@ See full patterns: [lab.coey.dev/docs/patterns](https://lab.coey.dev/docs/patter
 | `POST` | `/run/chain` | Multi-step workflow |
 | `POST` | `/run/spawn` | Nested isolates with depth budget |
 | `POST` | `/run/generate` | AI-generated code + run |
+| `POST` | `/sessions` | Create an Artifact-backed agent session |
+| `GET`  | `/sessions` | List recent sessions |
+| `GET`  | `/sessions/:id` | Fetch a session and receipt IDs |
+| `POST` | `/receipts` | Receipt external agent work |
+| `POST` | `/sessions/:id/receipts` | Receipt work directly into a session |
 | `POST` | `/seed` | Write demo KV data |
 | `GET`  | `/lab/catalog` | Capability metadata for agents |
 | `GET`  | `/results/:id` | Human viewer |
 | `GET`  | `/results/:id.json` | Canonical result JSON |
+| `GET`  | `/receipts/:id` | Human receipt viewer |
+| `GET`  | `/receipts/:id.json` | Canonical receipt JSON |
 
 ### TypeScript Client
 
@@ -154,6 +251,11 @@ lab.runKv({ body })                       // With KV snapshot
 lab.runChain(steps)                       // Multi-step
 lab.runSpawn({ body, capabilities?, depth? })  // Nested isolates
 lab.runGenerate({ prompt, capabilities? })     // AI-generated code
+lab.createSession({ title, artifact })         // Start an Artifact-backed session
+lab.getSession(sessionId)                       // Inspect session state
+lab.listSessions()                             // Recent sessions
+lab.createReceipt({ source, action, ... })     // MCP/browser/task receipt
+lab.createSessionReceipt(sessionId, receipt)   // Attach receipt to session
 lab.seed()                                // Seed demo data
 lab.getResult(resultId)                   // Fetch saved result JSON
 ```
@@ -200,7 +302,7 @@ npm install -g @acoyfellow/lab-mcp
 }
 ```
 
-Tools: `find` (discover capabilities, fetch results) and `execute` (run any mode).
+Tools: `find` (discover capabilities, fetch results), `execute` (run any mode), `session` (create/get/list Artifact-backed work sessions), and `receipt` (save proof for MCP calls, browser work, long-running task checkpoints, and handoffs).
 
 ---
 
@@ -239,11 +341,23 @@ alchemy.run.ts       Infrastructure-as-code
 ## Development
 
 ```bash
-bun dev        # Worker (port 1337) + SvelteKit app
-bun test       # Guest body syntax validation
-bun run lint   # oxlint
-bun run check  # svelte-check + typecheck
+bun run dev     # full stack: Worker (:1337) + SvelteKit app (:5173)
+bun run dev:ui  # UI only (:4179); set LAB_WORKER_ORIGIN to a running Worker
+bun test        # Guest body syntax validation
+bun run lint    # oxlint
+bun run check   # svelte-check + typecheck
 ```
+
+Full-stack dev uses Alchemy and requires local Cloudflare auth. If you only want
+to work on the app shell, run:
+
+```bash
+LAB_WORKER_ORIGIN=https://lab.coey.dev bun run dev:ui
+```
+
+Compose and result JSON proxy calls use `LAB_WORKER_ORIGIN`, then `LAB_URL`, then
+`http://localhost:1337`. If no Worker is reachable, Compose returns a visible
+"Lab Worker unavailable" error instead of a Svelte 500.
 
 Integration tests in `worker/index.test.ts` run against a live Worker.
 

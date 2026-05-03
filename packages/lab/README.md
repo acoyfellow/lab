@@ -1,6 +1,6 @@
 # `@acoyfellow/lab`
 
-Typed HTTP client for the [Lab](https://github.com/acoyfellow/lab) public app API — sandboxed isolates, capability chains, and saved results.
+Typed client and local run spine for [Lab](https://github.com/acoyfellow/lab): repo runs, receipts, sandboxed isolates, capability chains, and saved results.
 
 > **0.0.3** — early feedback. API may change.
 
@@ -13,6 +13,24 @@ npm install @acoyfellow/lab
 Requires Node 18+ or any runtime with global `fetch` (Cloudflare Workers, Deno, Bun).
 
 ## Usage
+
+### Repo Runs
+
+```ts
+import { createLabRun, listLabRuns } from "@acoyfellow/lab";
+
+const run = await createLabRun({
+  repo: { type: "local", path: process.cwd() },
+  snapshot: { mode: "branch", prefix: "lab/run" },
+  executor: { type: "local" },
+  command: ["sh", "-lc", "bun test"],
+});
+
+console.log(run.receipt);
+console.log(await listLabRuns({ root: process.cwd() }));
+```
+
+### Hosted API
 
 ```ts
 import { createLabClient } from "@acoyfellow/lab";
@@ -35,6 +53,9 @@ console.log(r.result);  // [2, 4, 6]
 
 | Method | HTTP route |
 |--------|------|
+| `createLabRun(input)` | local package API |
+| `listLabRuns({ root })` | local package API |
+| `getLabRun(id, { root })` | local package API |
 | `runSandbox({ body, capabilities? })` | `POST /run` |
 | `runKv({ body, capabilities? })` | `POST /run/kv` |
 | `runChain(steps)` | `POST /run/chain` |

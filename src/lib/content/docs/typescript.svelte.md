@@ -32,8 +32,32 @@ const out = await lab.runChain([
 | `runChain(steps)` | Run a multi-step pipeline | [POST /run/chain](/docs/http-api#post-runchain) |
 | `runSpawn(opts)` | Run code that can launch nested sandboxes | [POST /run/spawn](/docs/http-api#post-runspawn) |
 | `runGenerate(opts)` | Have an AI write and run code from a prompt | [POST /run/generate](/docs/http-api#post-rungenerate) |
+| `createSession(opts)` | Start an Artifact-backed work session | [Sessions](/docs/http-api#sessions) |
+| `getSession(id)` | Fetch session state and summary | [Sessions](/docs/http-api#sessions) |
+| `listSessions()` | List recent sessions | [Sessions](/docs/http-api#sessions) |
+| `updateSessionSummary(id, opts)` | Update goal, state, next action, and risks | [Sessions](/docs/http-api#sessions) |
+| `createSessionReceipt(id, opts)` | Save a receipt directly into a session | [POST /receipts](/docs/http-api#post-receipts) |
+| `createReceipt(opts)` | Save a receipt for external agent work | [POST /receipts](/docs/http-api#post-receipts) |
 | `seed()` | Load demo data into KV | [POST /seed](/docs/http-api#post-seed) |
 | `getResult(id)` | Fetch canonical saved-result JSON | [GET /results/:id.json](/docs/http-api#get-resultsidjson) |
+
+## Receipts for external work
+
+```ts
+const receipt = await lab.createReceipt({
+  source: "playwright",
+  action: "checkout-flow",
+  capabilities: ["browser.read", "browser.click"],
+  input: { url: "https://example.com/checkout" },
+  output: { finalUrl: "https://example.com/done", assertions: 8 },
+  replay: {
+    mode: "continue-from-here",
+    reason: "Another agent can inspect the browser evidence and continue"
+  }
+});
+
+console.log(receipt.resultId);
+```
 
 ## Important notes
 

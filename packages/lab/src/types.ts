@@ -11,6 +11,119 @@ export type RunResult = {
   runMs?: number;
 };
 
+export type ReceiptReplayMode =
+  | "inspect-only"
+  | "rerun-sandbox"
+  | "rerun-live-requires-approval"
+  | "continue-from-here";
+
+export type ReceiptReplay = {
+  mode: ReceiptReplayMode;
+  available?: boolean;
+  reason?: string;
+};
+
+export type CreateReceiptPayload = {
+  source: string;
+  action: string;
+  actor?: unknown;
+  input?: unknown;
+  output?: unknown;
+  capabilities?: string[];
+  replay?: ReceiptReplay;
+  evidence?: unknown;
+  metadata?: unknown;
+  ok?: boolean;
+  error?: string;
+  reason?: string;
+  parentId?: string;
+  supersedes?: string;
+  sessionId?: string;
+  artifact?: ArtifactRef;
+  timing?: {
+    totalMs?: number;
+    generateMs?: number;
+    runMs?: number;
+  };
+};
+
+export type CreateReceiptResult = {
+  ok: boolean;
+  resultId?: string;
+  error?: string;
+};
+
+export type ArtifactRef = {
+  provider?: "cloudflare-artifacts";
+  repo: string;
+  branch?: string;
+  head?: string;
+  remote?: string;
+};
+
+export type LabSessionStatus = "active" | "handoff" | "complete" | "failed";
+
+export type LabSession = {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  status: LabSessionStatus;
+  artifact: ArtifactRef;
+  receiptIds: string[];
+  summary?: LabSessionSummary;
+};
+
+export type LabSessionSummary = {
+  goal?: string;
+  state?: string;
+  nextAction?: string;
+  risks: string[];
+  importantReceiptIds: string[];
+  updatedByReceiptId?: string;
+  updatedAt: string;
+};
+
+export type CreateSessionPayload = {
+  title?: string;
+  artifact?: ArtifactRef;
+};
+
+export type CreateSessionResult = {
+  ok: boolean;
+  session?: LabSession;
+  sessionId?: string;
+  error?: string;
+};
+
+export type GetSessionResult = {
+  ok: boolean;
+  session?: LabSession;
+  error?: string;
+};
+
+export type ListSessionsResult = {
+  ok: boolean;
+  sessions: LabSession[];
+  error?: string;
+};
+
+export type UpdateSessionSummaryPayload = {
+  goal?: string;
+  state?: string;
+  nextAction?: string;
+  risks?: string[];
+  importantReceiptIds?: string[];
+  updatedByReceiptId?: string;
+};
+
+export type UpdateSessionSummaryResult = {
+  ok: boolean;
+  session?: LabSession;
+  summary?: LabSessionSummary;
+  error?: string;
+};
+
 export type SavedResultStep = {
   step: number;
   name?: string;
@@ -86,6 +199,8 @@ export type SavedResult = {
   timing?: Record<string, number>;
   generated?: string;
   steps?: Array<Record<string, unknown>>;
+  receipt?: Record<string, unknown>;
+  lineage?: Record<string, string>;
 };
 
 // Story types

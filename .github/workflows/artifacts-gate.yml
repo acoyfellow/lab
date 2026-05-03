@@ -1,0 +1,17 @@
+name: Artifacts Gate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  artifacts-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - name: Run real Artifacts Lab gate
+        run: LAB_ARTIFACTS_TEST=1 bun test src/lib/runs/run-spine.artifacts.test.ts
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

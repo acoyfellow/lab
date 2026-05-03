@@ -22,6 +22,17 @@ export function buildLabCatalog() {
           : `Guest template ${id}`,
     })),
     execute: {
+      session: {
+        method: "POST",
+        path: "/sessions",
+        body: {
+          title: "string",
+          artifact: "optional { repo, branch?, head?, remote? } Cloudflare Artifacts ref",
+        },
+        read: "GET /sessions and GET /sessions/:id",
+        receipt: "POST /sessions/:id/receipts with the same body as /receipts; Lab adds sessionId",
+        summary: "POST /sessions/:id/summary with { goal?, state?, nextAction?, risks?, importantReceiptIds?, updatedByReceiptId? }",
+      },
       sandbox: {
         method: "POST",
         path: "/run",
@@ -63,11 +74,34 @@ export function buildLabCatalog() {
           template: "optional",
         },
       },
+      receipt: {
+        method: "POST",
+        path: "/receipts",
+        body: {
+          source: "string - MCP server, browser, task runner, or external system",
+          action: "string - tool/action name",
+          actor: "optional object/string - agent/session identity",
+          input: "optional unknown - input or intent",
+          output: "optional unknown - observed result",
+          capabilities: "optional string[] - authority used, e.g. cf.workers.read, browser.click",
+          replay: "optional { mode, available?, reason? }; mode: inspect-only | rerun-sandbox | rerun-live-requires-approval | continue-from-here",
+          evidence: "optional unknown - logs, screenshots, artifact refs, before/after data",
+          metadata: "optional unknown",
+          ok: "optional boolean; default true",
+          error: "optional string for failed external actions",
+          parentId: "optional string - previous receipt this continues from",
+          supersedes: "optional string - receipt this replaces",
+          sessionId: "optional string - Lab session this receipt belongs to",
+          artifact: "optional { repo, branch?, head?, remote? } Cloudflare Artifacts ref",
+        },
+      },
     },
     result: {
       get: "GET /results/:id",
       getJson: "GET /results/:id.json",
-      note: "Use resultId from persisted run responses. `GET /results/:id.json` is the canonical machine-readable saved-result JSON. On the public app, `GET /results/:id` is the human viewer over that same saved result.",
+      receiptGet: "GET /receipts/:id",
+      receiptGetJson: "GET /receipts/:id.json",
+      note: "Use resultId from persisted run/receipt responses. `GET /results/:id.json` and `/receipts/:id.json` return the canonical machine-readable saved-result JSON. On the public app, `/results/:id` and `/receipts/:id` are human viewers over that same saved result.",
     },
     seed: {
       method: "POST",

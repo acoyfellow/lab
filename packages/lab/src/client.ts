@@ -20,6 +20,14 @@ import type {
   FixProposal,
   VerificationResult,
   Comparison,
+  CreateReceiptPayload,
+  CreateReceiptResult,
+  CreateSessionPayload,
+  CreateSessionResult,
+  GetSessionResult,
+  ListSessionsResult,
+  UpdateSessionSummaryPayload,
+  UpdateSessionSummaryResult,
 } from './types.js';
 import { chainStepsForWire, guestWirePayload, normalizeBaseUrl, requestJSON } from './wire.js';
 
@@ -42,6 +50,13 @@ export type LabClient = {
   runChain: (steps: ChainStep[]) => Promise<RunResult>;
   runSpawn: (payload: RunSpawnPayload) => Promise<RunResult>;
   runGenerate: (payload: RunGeneratePayload) => Promise<RunResult>;
+  /** Save a receipt for external agent work such as MCP calls, browser actions, or long-running tasks. */
+  createReceipt: (payload: CreateReceiptPayload) => Promise<CreateReceiptResult>;
+  createSession: (payload?: CreateSessionPayload) => Promise<CreateSessionResult>;
+  getSession: (sessionId: string) => Promise<GetSessionResult>;
+  listSessions: () => Promise<ListSessionsResult>;
+  createSessionReceipt: (sessionId: string, payload: Omit<CreateReceiptPayload, 'sessionId'>) => Promise<CreateReceiptResult>;
+  updateSessionSummary: (sessionId: string, payload: UpdateSessionSummaryPayload) => Promise<UpdateSessionSummaryResult>;
   seed: () => Promise<SeedResult>;
   /** Fetch saved-result JSON from the canonical `GET /results/:id.json` path. */
   getResult: (resultId: string) => Promise<SavedResult | { error: string }>;
@@ -132,6 +147,44 @@ export function createLabClient(options: LabClientOptions): LabClient {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(o),
+      });
+    },
+    createReceipt(payload) {
+      return requestJSON<CreateReceiptResult>(baseUrl, fetchImpl, '/receipts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    },
+    createSession(payload = {}) {
+      return requestJSON<CreateSessionResult>(baseUrl, fetchImpl, '/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    },
+    getSession(sessionId) {
+      return requestJSON<GetSessionResult>(baseUrl, fetchImpl, `/sessions/${sessionId}`, {
+        method: 'GET',
+      });
+    },
+    listSessions() {
+      return requestJSON<ListSessionsResult>(baseUrl, fetchImpl, '/sessions', {
+        method: 'GET',
+      });
+    },
+    createSessionReceipt(sessionId, payload) {
+      return requestJSON<CreateReceiptResult>(baseUrl, fetchImpl, `/sessions/${sessionId}/receipts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    },
+    updateSessionSummary(sessionId, payload) {
+      return requestJSON<UpdateSessionSummaryResult>(baseUrl, fetchImpl, `/sessions/${sessionId}/summary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
     },
     seed() {

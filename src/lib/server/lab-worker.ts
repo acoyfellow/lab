@@ -2,8 +2,17 @@ import { dev } from '$app/environment';
 
 const DEV_LAB_WORKER_ORIGIN = 'http://localhost:1337';
 
+export function labWorkerOrigin(): string {
+  if (!dev) return 'http://worker';
+  return (
+    process.env.LAB_WORKER_ORIGIN?.trim().replace(/\/+$/, '') ||
+    process.env.LAB_URL?.trim().replace(/\/+$/, '') ||
+    DEV_LAB_WORKER_ORIGIN
+  );
+}
+
 function workerUrl(path: string): string {
-  return dev ? `${DEV_LAB_WORKER_ORIGIN}${path}` : `http://worker${path}`;
+  return `${labWorkerOrigin()}${path}`;
 }
 
 export async function fetchLabWorker(

@@ -23,6 +23,14 @@ import {
   type StoryStatus,
 } from "./routes/stories"
 import { handleDiagnose, handlePropose, handleVerify, handleCompare } from "./routes/healing"
+import {
+  appendReceiptToSession,
+  getSession,
+  handleCreateSession,
+  listSessions,
+  updateSessionSummary,
+  type ArtifactRef,
+} from "./routes/sessions"
 
 const AI_MODEL_DEFAULT = "@cf/meta/llama-3.1-8b-instruct" as const
 
@@ -51,7 +59,7 @@ interface Env {
   LAB_CORS_ORIGIN?: string
 }
 
-type RunType = "sandbox" | "kv" | "chain" | "generate" | "spawn"
+type RunType = "sandbox" | "kv" | "chain" | "generate" | "spawn" | "external"
 
 type StepEntry = {
   step: number
@@ -84,6 +92,17 @@ type ResultRequest = {
   capabilities?: string[]
   depth?: number
   steps?: ChainStepStored[]
+  source?: string
+  action?: string
+  actor?: unknown
+  output?: unknown
+  replay?: unknown
+  evidence?: unknown
+  metadata?: unknown
+  parentId?: string
+  supersedes?: string
+  sessionId?: string
+  artifact?: ArtifactRef
 }
 
 function parseGuestRunPayload(p: {
@@ -161,6 +180,51 @@ type StoredResult = {
   }
   generated?: string
   steps?: StepEntry[]
+  receipt?: ExternalReceiptStored
+  lineage?: {
+    parentId?: string
+    supersedes?: string
+  }
+  sessionId?: string
+  artifact?: ArtifactRef
+}
+
+type ReplayMode = "inspect-only" | "rerun-sandbox" | "rerun-live-requires-approval" | "continue-from-here"
+
+type ExternalReceiptStored = {
+  source: string
+  action: string
+  actor?: unknown
+  input?: unknown
+  output?: unknown
+  capabilities: string[]
+  replay: {
+    mode: ReplayMode
+    available: boolean
+    reason?: string
+  }
+  evidence?: unknown
+  metadata?: unknown
+}
+
+type ExternalReceiptPayload = {
+  source?: unknown
+  action?: unknown
+  actor?: unknown
+  input?: unknown
+  output?: unknown
+  capabilities?: unknown
+  replay?: unknown
+  evidence?: unknown
+  metadata?: unknown
+  ok?: unknown
+  error?: unknown
+  reason?: unknown
+  parentId?: unknown
+  supersedes?: unknown
+  sessionId?: unknown
+  artifact?: unknown
+  timing?: unknown
 }
 
 // LabWorker class extending WorkerEntrypoint for proper RPC binding support
@@ -472,6 +536,92 @@ class LabWorker extends WorkerEntrypoint<Env> {
       return withCors(Response.json(buildLabCatalog()))
     }
 
+    const createExternalReceiptResponse = async (payload: ExternalReceiptPayload): Promise<Response> => {
+      const receipt = normalizeExternalReceipt(payload)
+      if (!receipt.ok) {
+        return Response.json({ ok: false, error: receipt.error }, { status: 400 })
+      }
+
+      const timing = normalizeTiming(payload.timing)
+      const outcomeOk = payload.ok === undefined ? true : Boolean(payload.ok)
+      const outcome: ResultOutcome = outcomeOk
+        ? { ok: true, result: receipt.value.output }
+        : {
+            ok: false,
+            error: typeof payload.error === "string" ? payload.error : "external receipt failed",
+            reason: typeof payload.reason === "string" ? payload.reason : undefined,
+          }
+
+      const sessionId = normalizeOptionalId(payload.sessionId)
+      const artifact = normalizeArtifactRef(payload.artifact)
+      const stored = await saveResult(env, {
+        type: "external",
+        request: {
+          source: receipt.value.source,
+          action: receipt.value.action,
+          actor: receipt.value.actor,
+          input: receipt.value.input,
+          output: receipt.value.output,
+          capabilities: receipt.value.capabilities,
+          replay: receipt.value.replay,
+          evidence: receipt.value.evidence,
+          metadata: receipt.value.metadata,
+          parentId: normalizeOptionalId(payload.parentId),
+          supersedes: normalizeOptionalId(payload.supersedes),
+          sessionId,
+          ...(artifact ? { artifact } : {}),
+        },
+        outcome,
+        ...(timing ? { timing } : {}),
+        receipt: receipt.value,
+        lineage: {
+          ...(normalizeOptionalId(payload.parentId) ? { parentId: normalizeOptionalId(payload.parentId) } : {}),
+          ...(normalizeOptionalId(payload.supersedes) ? { supersedes: normalizeOptionalId(payload.supersedes) } : {}),
+        },
+        ...(sessionId ? { sessionId } : {}),
+        ...(artifact ? { artifact } : {}),
+      })
+
+      if (sessionId) await appendReceiptToSession(env, sessionId, stored.id)
+
+      return Response.json({ ok: outcome.ok, resultId: stored.id })
+    }
+
+    if (req.method === "POST" && url.pathname === "/sessions") {
+      return withCors(await handleCreateSession(req, env))
+    }
+
+    if (req.method === "GET" && url.pathname === "/sessions") {
+      return withCors(Response.json({ ok: true, sessions: await listSessions(env) }))
+    }
+
+    const sessionMatch = url.pathname.match(/^\/sessions\/([a-z0-9]+)$/i)
+    if (req.method === "GET" && sessionMatch) {
+      const session = await getSession(env, sessionMatch[1])
+      return withCors(session ? Response.json({ ok: true, session }) : Response.json({ ok: false, error: "session not found" }, { status: 404 }))
+    }
+
+    const sessionReceiptMatch = url.pathname.match(/^\/sessions\/([a-z0-9]+)\/receipts$/i)
+    if (req.method === "POST" && sessionReceiptMatch) {
+      const session = await getSession(env, sessionReceiptMatch[1])
+      if (!session) {
+        return withCors(Response.json({ ok: false, error: "session not found" }, { status: 404 }))
+      }
+      const payload = (await req.json()) as ExternalReceiptPayload
+      return withCors(await createExternalReceiptResponse({ ...payload, sessionId: session.id }))
+    }
+
+    const sessionSummaryMatch = url.pathname.match(/^\/sessions\/([a-z0-9]+)\/summary$/i)
+    if (req.method === "POST" && sessionSummaryMatch) {
+      const payload = (await req.json().catch(() => ({}))) as Record<string, unknown>
+      const session = await updateSessionSummary(env, sessionSummaryMatch[1], payload)
+      return withCors(
+        session
+          ? Response.json({ ok: true, session, summary: session.summary })
+          : Response.json({ ok: false, error: "session not found" }, { status: 404 }),
+      )
+    }
+
     // --- Saved-result JSON retrieval: /results/:id.json ---
     const bareResultMatch = url.pathname.match(/^\/results\/([a-z0-9]+)$/i)
     if (req.method === "GET" && bareResultMatch) {
@@ -493,6 +643,26 @@ class LabWorker extends WorkerEntrypoint<Env> {
       return withCors(Response.json(savedResult))
     }
 
+    const bareReceiptMatch = url.pathname.match(/^\/receipts\/([a-z0-9]+)$/i)
+    if (req.method === "GET" && bareReceiptMatch) {
+      return withCors(
+        new Response(null, {
+          status: 307,
+          headers: { Location: `${url.origin}/receipts/${bareReceiptMatch[1]}.json${url.search}` },
+        }),
+      )
+    }
+
+    const receiptJsonMatch = url.pathname.match(/^\/receipts\/([a-z0-9]+)\.json$/i)
+    if (req.method === "GET" && receiptJsonMatch) {
+      const resultId = receiptJsonMatch[1]
+      const savedResult = await getResult(env, resultId)
+      if (!savedResult) {
+        return withCors(Response.json({ error: "receipt not found" }, { status: 404 }))
+      }
+      return withCors(Response.json(savedResult))
+    }
+
     // --- Seed KV with demo data ---
     if (req.method === "POST" && url.pathname === "/seed") {
       await env.KV.put("user:1", JSON.stringify({ name: "Alice", role: "admin" }))
@@ -500,6 +670,12 @@ class LabWorker extends WorkerEntrypoint<Env> {
       await env.KV.put("user:3", JSON.stringify({ name: "Carol", role: "editor" }))
       await env.KV.put("config:theme", "dark")
       return withCors(Response.json({ ok: true, seeded: 4 }))
+    }
+
+    // --- External receipt ingestion ---
+    if (req.method === "POST" && url.pathname === "/receipts") {
+      const payload = (await req.json()) as ExternalReceiptPayload
+      return withCors(await createExternalReceiptResponse(payload))
     }
 
     // --- Run code (optional capabilities) ---
@@ -1184,6 +1360,80 @@ function getResultKey(resultId: string): string {
 
 function makeResultId(): string {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 10)
+}
+
+function normalizeExternalReceipt(
+  payload: ExternalReceiptPayload,
+): { ok: true; value: ExternalReceiptStored } | { ok: false; error: string } {
+  const source = typeof payload.source === "string" ? payload.source.trim() : ""
+  const action = typeof payload.action === "string" ? payload.action.trim() : ""
+  if (!source) return { ok: false, error: "source is required" }
+  if (!action) return { ok: false, error: "action is required" }
+
+  const capabilities = Array.isArray(payload.capabilities)
+    ? payload.capabilities.filter((cap): cap is string => typeof cap === "string" && cap.trim().length > 0)
+    : []
+
+  return {
+    ok: true,
+    value: {
+      source,
+      action,
+      ...(payload.actor !== undefined ? { actor: payload.actor } : {}),
+      ...(payload.input !== undefined ? { input: payload.input } : {}),
+      ...(payload.output !== undefined ? { output: payload.output } : {}),
+      capabilities,
+      replay: normalizeReplay(payload.replay),
+      ...(payload.evidence !== undefined ? { evidence: payload.evidence } : {}),
+      ...(payload.metadata !== undefined ? { metadata: payload.metadata } : {}),
+    },
+  }
+}
+
+function normalizeReplay(value: unknown): ExternalReceiptStored["replay"] {
+  const allowed = new Set<ReplayMode>([
+    "inspect-only",
+    "rerun-sandbox",
+    "rerun-live-requires-approval",
+    "continue-from-here",
+  ])
+  if (!value || typeof value !== "object") {
+    return { mode: "inspect-only", available: false, reason: "No replay metadata provided" }
+  }
+  const obj = value as Record<string, unknown>
+  const mode = typeof obj.mode === "string" && allowed.has(obj.mode as ReplayMode)
+    ? (obj.mode as ReplayMode)
+    : "inspect-only"
+  const available = typeof obj.available === "boolean" ? obj.available : mode !== "inspect-only"
+  const reason = typeof obj.reason === "string" ? obj.reason : undefined
+  return { mode, available, ...(reason ? { reason } : {}) }
+}
+
+function normalizeOptionalId(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined
+}
+
+function normalizeArtifactRef(value: unknown): ArtifactRef | undefined {
+  if (!value || typeof value !== "object") return undefined
+  const obj = value as Record<string, unknown>
+  if (typeof obj.repo !== "string" || !obj.repo.trim()) return undefined
+  return {
+    provider: "cloudflare-artifacts",
+    repo: obj.repo.trim(),
+    ...(typeof obj.branch === "string" && obj.branch.trim() ? { branch: obj.branch.trim() } : {}),
+    ...(typeof obj.head === "string" && obj.head.trim() ? { head: obj.head.trim() } : {}),
+    ...(typeof obj.remote === "string" && obj.remote.trim() ? { remote: obj.remote.trim() } : {}),
+  }
+}
+
+function normalizeTiming(value: unknown): StoredResult["timing"] | undefined {
+  if (!value || typeof value !== "object") return undefined
+  const obj = value as Record<string, unknown>
+  const timing: StoredResult["timing"] = {}
+  if (typeof obj.totalMs === "number") timing.totalMs = obj.totalMs
+  if (typeof obj.generateMs === "number") timing.generateMs = obj.generateMs
+  if (typeof obj.runMs === "number") timing.runMs = obj.runMs
+  return Object.keys(timing).length > 0 ? timing : undefined
 }
 
 function getFailureDetails(cause: Cause.Cause<unknown>) {
