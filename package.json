@@ -43,7 +43,7 @@
     "@sveltejs/adapter-cloudflare": "7.2.8",
     "@sveltejs/kit": "2.55.0",
     "@sveltejs/vite-plugin-svelte": "7.0.0",
-    "@tailwindcss/vite": "4.2.2",
+    "@tailwindcss/vite": "4.2.4",
     "acorn": "^8.16.0",
     "bits-ui": "2.16.3",
     "clsx": "2.1.1",
