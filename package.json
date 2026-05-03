@@ -38,7 +38,7 @@
     "@cloudflare/workers-types": "^4.20260317.1",
     "@fontsource-variable/inter": "^5.2.8",
     "@internationalized/date": "3.12.0",
-    "@lucide/svelte": "1.7.0",
+    "@lucide/svelte": "1.14.0",
     "@mariozechner/pi-coding-agent": "^0.67.2",
     "@sveltejs/adapter-cloudflare": "7.2.8",
     "@sveltejs/kit": "2.55.0",
