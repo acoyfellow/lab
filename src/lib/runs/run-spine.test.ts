@@ -1,0 +1,168 @@
+import { afterEach, describe, expect, test } from 'bun:test';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { $ } from 'bun';
+import {
+	createLabRun,
+	createRunReceipt,
+	createSnapshotBranch,
+	getLabRun,
+	type LabRunInput,
+} from './run-spine';
+
+const tempRoots: string[] = [];
+
+async function makeGitRepo(name = 'repo') {
+	const root = await mkdtemp(join(tmpdir(), `lab-run-${name}-`));
+	tempRoots.push(root);
+	await $`git init -b main`.cwd(root).quiet();
+	await $`git config user.email lab-run@example.test`.cwd(root).quiet();
+	await $`git config user.name "Lab Run Test"`.cwd(root).quiet();
+	await writeFile(join(root, 'package.json'), JSON.stringify({ type: 'module' }, null, 2));
+	await writeFile(join(root, 'answer.txt'), '41\n');
+	await $`git add package.json answer.txt`.cwd(root).quiet();
+	await $`git commit -m init`.cwd(root).quiet();
+	return root;
+}
+
+afterEach(async () => {
+	await Promise.all(tempRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+});
+
+describe('Lab Run north-star spine', () => {
+	test('local executor runs a real command in a real repo and writes logs, result, and receipt', async () => {
+		const repo = await makeGitRepo('local');
+		const run = await createLabRun({
+			repo: { type: 'local', path: repo },
+			executor: { type: 'local' },
+			command: ['sh', '-lc', 'printf "answer=" && cat answer.txt'],
+		});
+
+		expect(run.id).toMatch(/^run_/);
+		expect(run.status).toBe('succeeded');
+		expect(run.repo.type).toBe('local');
+		expect(run.executor.type).toBe('local');
+		expect(run.result.exitCode).toBe(0);
+		expect(run.result.summary).toContain('succeeded');
+		expect(run.logs.text).toContain('answer=41');
+		expect(run.receipt.action).toBe('lab.run');
+		expect(run.receipt.runId).toBe(run.id);
+		expect(run.receipt.artifact.repo).toBe(repo);
+		expect(run.receipt.output.result.exitCode).toBe(0);
+
+		const persisted = await getLabRun(run.id, { root: repo });
+		expect(persisted.id).toBe(run.id);
+		expect(await readFile(persisted.paths.logs, 'utf8')).toContain('answer=41');
+		expect(JSON.parse(await readFile(persisted.paths.result, 'utf8')).exitCode).toBe(0);
+		expect(JSON.parse(await readFile(persisted.paths.receipt, 'utf8')).runId).toBe(run.id);
+	});
+
+	test('failed command is still a completed Lab Run with durable evidence', async () => {
+		const repo = await makeGitRepo('failed');
+		const run = await createLabRun({
+			repo: { type: 'local', path: repo },
+			executor: { type: 'local' },
+			command: ['sh', '-lc', 'echo "before failure"; exit 7'],
+		});
+
+		expect(run.status).toBe('failed');
+		expect(run.result.exitCode).toBe(7);
+		expect(run.logs.text).toContain('before failure');
+		expect(run.receipt.output.status).toBe('failed');
+		expect(run.receipt.output.result.exitCode).toBe(7);
+		expect(await readFile(run.paths.logs, 'utf8')).toContain('before failure');
+	});
+
+	test('snapshot mode turns dirty local work into a real lab branch and commit before running', async () => {
+		const repo = await makeGitRepo('snapshot');
+		await writeFile(join(repo, 'answer.txt'), '42\n');
+		await writeFile(join(repo, 'new-file.txt'), 'created during dirty work\n');
+
+		const run = await createLabRun({
+			repo: { type: 'local', path: repo },
+			snapshot: { mode: 'branch', prefix: 'lab/run' },
+			executor: { type: 'local' },
+			command: ['sh', '-lc', 'git branch --show-current && cat answer.txt && test -f new-file.txt'],
+		});
+
+		expect(run.status).toBe('succeeded');
+		expect(run.snapshot?.mode).toBe('branch');
+		expect(run.snapshot?.branch).toMatch(/^lab\/run-/);
+		expect(run.snapshot?.commit).toMatch(/^[0-9a-f]{7,40}$/);
+		expect(run.logs.text).toContain(run.snapshot!.branch);
+		expect(run.logs.text).toContain('42');
+		expect((await $`git status --porcelain`.cwd(repo).text()).trim()).toBe('');
+		expect((await $`git branch --show-current`.cwd(repo).text()).trim()).toBe(run.snapshot!.branch);
+		expect(run.receipt.artifact.branch).toBe(run.snapshot!.branch);
+		expect(run.receipt.artifact.head).toBe(run.snapshot!.commit);
+	});
+
+	test('snapshot helper is idempotent when repo is already clean', async () => {
+		const repo = await makeGitRepo('clean-snapshot');
+		const beforeHead = (await $`git rev-parse HEAD`.cwd(repo).text()).trim();
+
+		const snapshot = await createSnapshotBranch({
+			repo: { type: 'local', path: repo },
+			prefix: 'lab/run',
+		});
+
+		expect(snapshot.mode).toBe('branch');
+		expect(snapshot.branch).toMatch(/^lab\/run-/);
+		expect(snapshot.commit).toBe(beforeHead);
+		expect(snapshot.createdCommit).toBe(false);
+		expect((await $`git status --porcelain`.cwd(repo).text()).trim()).toBe('');
+	});
+
+	test('receipt shape is enough for another process to understand and continue the run', async () => {
+		const repo = await makeGitRepo('receipt');
+		const receipt = await createRunReceipt({
+			id: 'run_receipt_contract',
+			repo: { type: 'local', path: repo },
+			executor: { type: 'local' },
+			command: ['sh', '-lc', 'echo ok'],
+			status: 'succeeded',
+			startedAt: '2026-05-03T00:00:00.000Z',
+			finishedAt: '2026-05-03T00:00:01.000Z',
+			result: {
+				exitCode: 0,
+				summary: 'command succeeded',
+				durationMs: 1000,
+			},
+			logsPath: join(repo, '.lab/runs/run_receipt_contract/logs.txt'),
+			resultPath: join(repo, '.lab/runs/run_receipt_contract/result.json'),
+		});
+
+		expect(receipt.source).toBe('lab');
+		expect(receipt.action).toBe('lab.run');
+		expect(receipt.runId).toBe('run_receipt_contract');
+		expect(receipt.capabilities).toEqual(['filesystem.read', 'process.spawn']);
+		expect(receipt.artifact.repo).toBe(repo);
+		expect(receipt.input.command).toEqual(['sh', '-lc', 'echo ok']);
+		expect(receipt.output.status).toBe('succeeded');
+		expect(receipt.output.result.exitCode).toBe(0);
+		expect(receipt.replay.available).toBe(true);
+		expect(receipt.replay.mode).toBe('continue-from-here');
+		expect(receipt.evidence.logsPath).toContain('logs.txt');
+		expect(receipt.evidence.resultPath).toContain('result.json');
+	});
+
+	test('run input already speaks Artifacts even before every executor supports it', () => {
+		const input = {
+			repo: {
+				type: 'artifacts',
+				namespace: 'default',
+				name: 'deja',
+				branch: 'main',
+			},
+			executor: { type: 'local' },
+			command: ['bun', 'test'],
+		} satisfies LabRunInput;
+
+		expect(input.repo.type).toBe('artifacts');
+		expect(input.repo.namespace).toBe('default');
+		expect(input.repo.name).toBe('deja');
+		expect(input.repo.branch).toBe('main');
+	});
+
+});
