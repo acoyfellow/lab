@@ -23,6 +23,9 @@ lab runs --repo .
 # Show one run, including logs and receipt
 lab show run_YYYYMMDDHHMMSS_abcdef --repo .
 
+# Replay one run and link the new receipt to the parent
+lab replay run_YYYYMMDDHHMMSS_abcdef --repo .
+
 # Run against Cloudflare Artifacts
 lab repo-run \
   --artifacts default/my-repo \

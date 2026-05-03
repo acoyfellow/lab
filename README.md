@@ -28,6 +28,14 @@ bun install
 bun run --cwd packages/lab-cli build
 ```
 
+Run the complete local demo:
+
+```bash
+bun run demo:local-run
+```
+
+It creates a temporary git repo, makes dirty work, snapshots it onto a `lab/run-*` branch, runs a command, writes a receipt, lists runs, shows one run, and replays it with lineage.
+
 Run a real command in a real repo:
 
 ```bash
@@ -44,6 +52,12 @@ Show one run:
 
 ```bash
 node packages/lab-cli/dist/cli.js show run_YYYYMMDDHHMMSS_abcdef --repo .
+```
+
+Replay one run:
+
+```bash
+node packages/lab-cli/dist/cli.js replay run_YYYYMMDDHHMMSS_abcdef --repo .
 ```
 
 Snapshot dirty work onto a `lab/run-*` branch before running:
