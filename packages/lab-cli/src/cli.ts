@@ -22,6 +22,7 @@ import {
 	createLabRun,
 	getLabRun,
 	listLabRuns,
+	replayLabRun,
 	type ChainStep,
 	type LabRunRepo,
 } from '@acoyfellow/lab';
@@ -182,6 +183,13 @@ async function show(args: string[]) {
 	return getLabRun(id, { root: repo });
 }
 
+async function replay(args: string[]) {
+	const id = args[0];
+	if (!id) throw new CliError('lab replay <run-id> --repo <path> [--snapshot]');
+	const repo = parseRepoFlag(args, 'lab replay <run-id> --repo <path> [--snapshot]');
+	return replayLabRun(id, { root: repo, snapshot: args.includes('--snapshot') });
+}
+
 const USAGE = `Usage:
   lab run <code>                    Run JS in a single isolate
   lab repo-run --repo <path> -- <command...>
@@ -193,6 +201,8 @@ const USAGE = `Usage:
   lab runs --repo <path> [--limit <n>]
                                     List recent Lab runs for a repo
   lab show <run-id> --repo <path>   Show one Lab run with logs and receipt
+  lab replay <run-id> --repo <path> [--snapshot]
+                                    Re-run a previous Lab command and link the receipts
   lab chain <stepsJson>             Run a multi-step chain
   lab spawn <code> [depth]          Run with spawn capability
   lab generate <prompt>             AI generates code, then runs it
@@ -222,6 +232,8 @@ async function route(args: string[]) {
 			return runs(args.slice(1));
 		case 'show':
 			return show(args.slice(1));
+		case 'replay':
+			return replay(args.slice(1));
 		case 'chain':
 			if (!arg) throw new CliError('lab chain <stepsJson>');
 			return chain(arg);

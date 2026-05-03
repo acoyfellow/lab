@@ -17,6 +17,7 @@ export {
   createSnapshotBranch,
   getLabRun,
   listLabRuns,
+  replayLabRun,
   resolveRunRepo,
 } from './run-spine.js';
 export type {

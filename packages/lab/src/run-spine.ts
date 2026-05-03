@@ -29,6 +29,7 @@ export type LabRunInput = {
 	snapshot?: { mode: 'branch'; prefix?: string };
 	executor: LabRunExecutor;
 	command: string[];
+	parentRunId?: string;
 };
 
 export type LabRunStatus = 'succeeded' | 'failed';
@@ -66,6 +67,9 @@ export type LabRunReceipt = {
 	replay: {
 		available: boolean;
 		mode: 'continue-from-here';
+	};
+	lineage?: {
+		parentRunId?: string;
 	};
 	startedAt: string;
 	finishedAt: string;
@@ -208,6 +212,7 @@ export async function createRunReceipt(input: {
 	resultPath: string;
 	branch?: string;
 	head?: string;
+	parentRunId?: string;
 }): Promise<LabRunReceipt> {
 	return {
 		source: 'lab',
@@ -231,6 +236,7 @@ export async function createRunReceipt(input: {
 			available: true,
 			mode: 'continue-from-here',
 		},
+		lineage: input.parentRunId ? { parentRunId: input.parentRunId } : undefined,
 		startedAt: input.startedAt,
 		finishedAt: input.finishedAt,
 	};
@@ -313,6 +319,7 @@ export async function createLabRun(input: LabRunInput): Promise<LabRun> {
 		resultPath: paths.result,
 		branch: branch || undefined,
 		head: snapshot?.commit ?? head,
+		parentRunId: input.parentRunId,
 	});
 	await writeFile(paths.input, JSON.stringify(input, null, 2) + '\n');
 	await writeFile(paths.logs, logsText);
@@ -330,6 +337,17 @@ export async function createLabRun(input: LabRunInput): Promise<LabRun> {
 		receipt,
 		paths,
 	};
+}
+
+export async function replayLabRun(id: string, opts: { root: string; snapshot?: boolean }): Promise<LabRun> {
+	const previous = await getLabRun(id, opts);
+	return createLabRun({
+		repo: previous.repo.type === 'local' ? { type: 'local', path: opts.root } : previous.repo,
+		snapshot: opts.snapshot ? { mode: 'branch', prefix: 'lab/run' } : undefined,
+		executor: previous.executor,
+		command: previous.command,
+		parentRunId: id,
+	});
 }
 
 export async function getLabRun(id: string, opts: { root: string }): Promise<LabRun> {

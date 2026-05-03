@@ -9,6 +9,7 @@ import {
 	createSnapshotBranch,
 	getLabRun,
 	listLabRuns,
+	replayLabRun,
 	type LabRunInput,
 } from './run-spine';
 
@@ -103,6 +104,24 @@ describe('Lab Run north-star spine', () => {
 		await expect(listLabRuns({ root: repo })).resolves.toEqual([]);
 	});
 
+	test('replay re-runs a previous command and links the new receipt to the parent run', async () => {
+		const repo = await makeGitRepo('replay');
+		const first = await createLabRun({
+			repo: { type: 'local', path: repo },
+			executor: { type: 'local' },
+			command: ['sh', '-lc', 'cat answer.txt'],
+		});
+		await writeFile(join(repo, 'answer.txt'), '42\n');
+
+		const replay = await replayLabRun(first.id, { root: repo });
+
+		expect(replay.id).not.toBe(first.id);
+		expect(replay.status).toBe('succeeded');
+		expect(replay.logs.text).toContain('42');
+		expect(replay.receipt.lineage?.parentRunId).toBe(first.id);
+		expect(replay.receipt.input.command).toEqual(first.command);
+	});
+
 	test('snapshot mode turns dirty local work into a real lab branch and commit before running', async () => {
 		const repo = await makeGitRepo('snapshot');
 		await writeFile(join(repo, 'answer.txt'), '42\n');
@@ -160,6 +179,7 @@ describe('Lab Run north-star spine', () => {
 			},
 			logsPath: join(repo, '.lab/runs/run_receipt_contract/logs.txt'),
 			resultPath: join(repo, '.lab/runs/run_receipt_contract/result.json'),
+			parentRunId: 'run_parent_contract',
 		});
 
 		expect(receipt.source).toBe('lab');
@@ -172,6 +192,7 @@ describe('Lab Run north-star spine', () => {
 		expect(receipt.output.result.exitCode).toBe(0);
 		expect(receipt.replay.available).toBe(true);
 		expect(receipt.replay.mode).toBe('continue-from-here');
+		expect(receipt.lineage?.parentRunId).toBe('run_parent_contract');
 		expect(receipt.evidence.logsPath).toContain('logs.txt');
 		expect(receipt.evidence.resultPath).toContain('result.json');
 	});
