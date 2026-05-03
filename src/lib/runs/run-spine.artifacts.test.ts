@@ -12,6 +12,44 @@ afterEach(async () => {
 });
 
 describe('Lab Run north-star Artifacts gate', () => {
+	test('existing Cloudflare Artifacts repo can be cloned and run through Lab', async () => {
+		if (!process.env.LAB_ARTIFACTS_EXISTING_TEST) {
+			console.log('skipping existing Artifacts gate; set LAB_ARTIFACTS_EXISTING_TEST=1');
+			return;
+		}
+		const accountId = process.env.LAB_ARTIFACTS_ACCOUNT_ID ?? process.env.CLOUDFLARE_ACCOUNT_ID;
+		const namespace = process.env.LAB_ARTIFACTS_NAMESPACE;
+		const name = process.env.LAB_ARTIFACTS_REPO;
+		const branch = process.env.LAB_ARTIFACTS_BRANCH ?? 'main';
+		const token = process.env.LAB_ARTIFACTS_REPO_TOKEN;
+		if (!accountId || !namespace || !name || !token) {
+			throw new Error(
+				'LAB_ARTIFACTS_EXISTING_TEST requires LAB_ARTIFACTS_ACCOUNT_ID, LAB_ARTIFACTS_NAMESPACE, LAB_ARTIFACTS_REPO, and LAB_ARTIFACTS_REPO_TOKEN',
+			);
+		}
+
+		const run = await createLabRun({
+			repo: {
+				type: 'artifacts',
+				accountId,
+				namespace,
+				name,
+				branch,
+				token,
+			},
+			executor: { type: 'local' },
+			command: ['sh', '-lc', 'git branch --show-current && git rev-parse HEAD'],
+		});
+
+		expect(run.status).toBe('succeeded');
+		expect(run.logs.text).toContain(branch);
+		expect(run.receipt.artifact.provider).toBe('artifacts');
+		expect(run.receipt.artifact.namespace).toBe(namespace);
+		expect(run.receipt.artifact.repo).toBe(name);
+		expect(run.receipt.artifact.branch).toBe(branch);
+		expect(run.receipt.artifact.head).toMatch(/^[0-9a-f]{40}$/);
+	});
+
 	test('real Cloudflare Artifacts repo can be created, cloned, pushed, resolved, and run', async () => {
 		if (!process.env.LAB_ARTIFACTS_TEST) {
 			console.log('skipping real Artifacts gate; set LAB_ARTIFACTS_TEST=1');

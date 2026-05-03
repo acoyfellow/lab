@@ -12,6 +12,18 @@ function requireBaseUrl() {
     }
     return raw.replace(/\/+$/, '');
 }
+/**
+ * Optional bearer token. Required when the target lab instance has
+ * `LAB_AUTH_TOKEN` configured. Leave unset for the public instance.
+ */
+function getToken() {
+    const raw = process.env.LAB_TOKEN?.trim();
+    return raw && raw.length > 0 ? raw : undefined;
+}
+function authHeaders() {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+}
 const chainStepSchema = z.object({
     name: z.string().optional(),
     template: z.string().optional(),
@@ -50,6 +62,65 @@ const executeInputSchema = z.discriminatedUnion('mode', [
     }),
     z.object({ mode: z.literal('seed') }),
 ]);
+const receiptReplaySchema = z.object({
+    mode: z.enum(['inspect-only', 'rerun-sandbox', 'rerun-live-requires-approval', 'continue-from-here']),
+    available: z.boolean().optional(),
+    reason: z.string().optional(),
+});
+const artifactSchema = z.object({
+    provider: z.literal('cloudflare-artifacts').optional(),
+    repo: z.string(),
+    branch: z.string().optional(),
+    head: z.string().optional(),
+    remote: z.string().optional(),
+});
+const sessionInputSchema = z.discriminatedUnion('mode', [
+    z.object({
+        mode: z.literal('create'),
+        title: z.string().optional(),
+        artifact: artifactSchema.optional(),
+    }),
+    z.object({
+        mode: z.literal('get'),
+        sessionId: z.string(),
+    }),
+    z.object({
+        mode: z.literal('list'),
+    }),
+    z.object({
+        mode: z.literal('summary'),
+        sessionId: z.string(),
+        goal: z.string().optional(),
+        state: z.string().optional(),
+        nextAction: z.string().optional(),
+        risks: z.array(z.string()).optional(),
+        importantReceiptIds: z.array(z.string()).optional(),
+        updatedByReceiptId: z.string().optional(),
+    }),
+]);
+const receiptInputSchema = z.object({
+    source: z.string().describe('Tool/server/system that performed the work, e.g. cf-portal, playwright, the-machine.'),
+    action: z.string().describe('Action or tool name, e.g. workers.list or browser.click.'),
+    actor: z.unknown().optional(),
+    input: z.unknown().optional(),
+    output: z.unknown().optional(),
+    capabilities: z.array(z.string()).optional(),
+    replay: receiptReplaySchema.optional(),
+    evidence: z.unknown().optional(),
+    metadata: z.unknown().optional(),
+    ok: z.boolean().optional(),
+    error: z.string().optional(),
+    reason: z.string().optional(),
+    parentId: z.string().optional(),
+    supersedes: z.string().optional(),
+    sessionId: z.string().optional(),
+    artifact: artifactSchema.optional(),
+    timing: z.object({
+        totalMs: z.number().optional(),
+        generateMs: z.number().optional(),
+        runMs: z.number().optional(),
+    }).optional(),
+});
 function toolJson(data) {
     return {
         content: [
@@ -65,7 +136,9 @@ function mapHttpToError(err) {
     return new Error(msg);
 }
 async function fetchSavedResultJson(baseUrl, resultId) {
-    const response = await fetch(`${baseUrl}/results/${resultId}.json`);
+    const response = await fetch(`${baseUrl}/results/${resultId}.json`, {
+        headers: authHeaders(),
+    });
     if (!response.ok) {
         throw new Error(`GET /results/${resultId}.json failed with status ${response.status}`);
     }
@@ -89,7 +162,7 @@ mcpServer.registerTool('find', {
     if (args.resultId?.trim()) {
         return toolJson(await fetchSavedResultJson(baseUrl, args.resultId.trim()));
     }
-    const catalog = await Effect.runPromise(fetchLabCatalogEffect({ baseUrl }).pipe(Effect.mapError(mapHttpToError)));
+    const catalog = await Effect.runPromise(fetchLabCatalogEffect({ baseUrl, token: getToken() }).pipe(Effect.mapError(mapHttpToError)));
     const data = args.path?.trim()
         ? catalogAtPath(catalog, args.path.trim())
         : catalog;
@@ -101,7 +174,7 @@ mcpServer.registerTool('execute', {
 }, async (input) => {
     const program = Effect.gen(function* () {
         const baseUrl = yield* Effect.sync(requireBaseUrl);
-        const lab = createLabEffectClient({ baseUrl });
+        const lab = createLabEffectClient({ baseUrl, token: getToken() });
         switch (input.mode) {
             case 'sandbox':
                 return yield* lab.runSandbox({
@@ -140,6 +213,50 @@ mcpServer.registerTool('execute', {
                 return _x;
             }
         }
+    }).pipe(Effect.mapError(mapHttpToError));
+    const data = await Effect.runPromise(program);
+    return toolJson(data);
+});
+mcpServer.registerTool('session', {
+    description: 'Create, get, or list Lab sessions. A session binds a Cloudflare Artifact worktree to the receipt trail an agent writes while it works.',
+    inputSchema: sessionInputSchema,
+}, async (input) => {
+    const program = Effect.gen(function* () {
+        const baseUrl = yield* Effect.sync(requireBaseUrl);
+        const lab = createLabEffectClient({ baseUrl, token: getToken() });
+        switch (input.mode) {
+            case 'create':
+                return yield* lab.createSession({ title: input.title, artifact: input.artifact });
+            case 'get':
+                return yield* lab.getSession(input.sessionId);
+            case 'list':
+                return yield* lab.listSessions();
+            case 'summary':
+                return yield* lab.updateSessionSummary(input.sessionId, {
+                    goal: input.goal,
+                    state: input.state,
+                    nextAction: input.nextAction,
+                    risks: input.risks,
+                    importantReceiptIds: input.importantReceiptIds,
+                    updatedByReceiptId: input.updatedByReceiptId,
+                });
+            default: {
+                const _x = input;
+                return _x;
+            }
+        }
+    }).pipe(Effect.mapError(mapHttpToError));
+    const data = await Effect.runPromise(program);
+    return toolJson(data);
+});
+mcpServer.registerTool('receipt', {
+    description: 'Save a Lab receipt for external agent work: MCP calls, browser actions, long-running task checkpoints, decisions, or handoffs. Returns resultId for GET /results/:id.json and viewer URL.',
+    inputSchema: receiptInputSchema,
+}, async (input) => {
+    const program = Effect.gen(function* () {
+        const baseUrl = yield* Effect.sync(requireBaseUrl);
+        const lab = createLabEffectClient({ baseUrl, token: getToken() });
+        return yield* lab.createReceipt(input);
     }).pipe(Effect.mapError(mapHttpToError));
     const data = await Effect.runPromise(program);
     return toolJson(data);
