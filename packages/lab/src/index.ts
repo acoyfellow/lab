@@ -11,6 +11,25 @@ export {
   type LabClient,
   type LabClientOptions,
 } from './client.js';
+export {
+  createLabRun,
+  createRunReceipt,
+  createSnapshotBranch,
+  getLabRun,
+  resolveRunRepo,
+} from './run-spine.js';
+export type {
+  ArtifactsRepoRef,
+  LabRun,
+  LabRunExecutor,
+  LabRunInput,
+  LabRunReceipt,
+  LabRunRepo,
+  LabRunResult,
+  LabRunStatus,
+  LocalRepoRef,
+  ResolvedRunRepo,
+} from './run-spine.js';
 export type {
   ChainStep,
   RunGeneratePayload,

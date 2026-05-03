@@ -17,7 +17,7 @@
  * Every run includes a resultId — the saved-result identifier.
  */
 
-import { createLabClient, type ChainStep } from '@acoyfellow/lab';
+import { createLabClient, createLabRun, type ChainStep } from '@acoyfellow/lab';
 
 class CliError extends Error {
 	constructor(message: string) {
@@ -72,8 +72,38 @@ async function seed() {
 	return createLabClient({ baseUrl: getBaseUrl() }).seed();
 }
 
+function parseRepoRun(args: string[]) {
+	const repoFlag = args.indexOf('--repo');
+	if (repoFlag === -1 || !args[repoFlag + 1]) {
+		throw new CliError('lab repo-run --repo <path> [--snapshot] -- <command...>');
+	}
+	const separator = args.indexOf('--');
+	if (separator === -1 || separator === args.length - 1) {
+		throw new CliError('lab repo-run --repo <path> [--snapshot] -- <command...>');
+	}
+	return {
+		repo: args[repoFlag + 1],
+		snapshot: args.includes('--snapshot'),
+		command: args.slice(separator + 1),
+	};
+}
+
+async function repoRun(args: string[]) {
+	const parsed = parseRepoRun(args);
+	return createLabRun({
+		repo: { type: 'local', path: parsed.repo },
+		snapshot: parsed.snapshot ? { mode: 'branch', prefix: 'lab/run' } : undefined,
+		executor: { type: 'local' },
+		command: parsed.command,
+	});
+}
+
 const USAGE = `Usage:
   lab run <code>                    Run JS in a single isolate
+  lab repo-run --repo <path> -- <command...>
+                                    Run a real command in a real repo and write a Lab receipt
+  lab repo-run --repo <path> --snapshot -- <command...>
+                                    Commit dirty work to a lab/run-* branch before running
   lab chain <stepsJson>             Run a multi-step chain
   lab spawn <code> [depth]          Run with spawn capability
   lab generate <prompt>             AI generates code, then runs it
@@ -97,6 +127,8 @@ async function route(args: string[]) {
 		case 'run':
 			if (!arg) throw new CliError('lab run <code>');
 			return run(arg);
+		case 'repo-run':
+			return repoRun(args.slice(1));
 		case 'chain':
 			if (!arg) throw new CliError('lab chain <stepsJson>');
 			return chain(arg);
