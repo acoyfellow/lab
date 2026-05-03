@@ -1,19 +1,17 @@
 # Lab
 
-> **Status: paused.** This repo explored Lab as a hosted receipt/session layer for agent work. The current conclusion is that the next proof should be smaller: a local repo-actor loop using headless `pi`, filesystem access, policy prompts, native `pi export`, and local receipts. See [PAUSED.md](PAUSED.md).
-
 **Receipts for agent work.**
 
-Artifacts store the worktree. Lab records the receipt trail.
+Repo state goes in. Commands run. Logs, results, and receipts come out.
 
-Cloudflare Artifacts are where the repo state lives: branches, files, diffs, commits. Lab is the adjacent proof layer: every meaningful agent action gets a receipt URL that another agent can inspect, replay, continue from, or hand to a human.
+Cloudflare Artifacts are the north-star repo backend: branches, files, diffs, commits. Lab is the adjacent proof layer: every meaningful agent action gets durable evidence that another agent can inspect, replay, continue from, or hand to a human.
 
-The future shape is simple:
+The standalone shape is simple:
 
-1. Create a session for an Artifact worktree.
-2. Let agents work in that worktree.
-3. After every meaningful action, write a Lab receipt.
-4. Continue from the last receipt instead of asking the next agent to trust a summary.
+1. Resolve repo state: local git today, Cloudflare Artifacts as the durable backend.
+2. Run an executor: local shell today, Cloudshell/Filepath/Flue/Machine later.
+3. Write `.lab/runs/<run_id>/input.json`, `logs.txt`, `result.json`, and `receipt.json`.
+4. Continue from evidence instead of asking the next agent to trust a summary.
 
 **Try it now:** [lab.coey.dev/compose](https://lab.coey.dev/compose)
 
@@ -22,6 +20,56 @@ The future shape is simple:
 ---
 
 ## 7-Minute Quickstart
+
+### Standalone CLI
+
+```bash
+bun install
+bun run --cwd packages/lab-cli build
+```
+
+Run a real command in a real repo:
+
+```bash
+node packages/lab-cli/dist/cli.js repo-run --repo . -- sh -lc 'bun test'
+```
+
+List recent runs:
+
+```bash
+node packages/lab-cli/dist/cli.js runs --repo .
+```
+
+Show one run:
+
+```bash
+node packages/lab-cli/dist/cli.js show run_YYYYMMDDHHMMSS_abcdef --repo .
+```
+
+Snapshot dirty work onto a `lab/run-*` branch before running:
+
+```bash
+node packages/lab-cli/dist/cli.js repo-run --repo . --snapshot -- sh -lc 'bun test'
+```
+
+Run against Cloudflare Artifacts:
+
+```bash
+node packages/lab-cli/dist/cli.js repo-run \
+  --artifacts default/my-repo \
+  --branch main \
+  --account-id "$CLOUDFLARE_ACCOUNT_ID" \
+  --token "$CLOUDFLARE_ARTIFACTS_REPO_TOKEN" \
+  -- sh -lc 'bun test'
+```
+
+That is the product spine:
+
+```text
+repo -> executor -> logs/result/receipt
+```
+
+### Hosted Client
 
 ```bash
 npm install @acoyfellow/lab
@@ -68,7 +116,7 @@ console.log(receipt.resultId);  // Receipt URL id
 // Agent JSON:    $LAB_URL/receipts/:id.json
 ```
 
-That is the whole product loop. Artifacts answer “what changed?” Lab answers “who did what, under which authority, with what evidence, and where should the next agent resume?”
+Artifacts answer “what changed?” Lab answers “who did what, under which authority, with what evidence, and where should the next agent resume?”
 
 ---
 
