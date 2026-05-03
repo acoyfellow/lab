@@ -23,6 +23,7 @@ import {
 	getLabRun,
 	listLabRuns,
 	type ChainStep,
+	type LabRunRepo,
 } from '@acoyfellow/lab';
 
 class CliError extends Error {
@@ -78,17 +79,68 @@ async function seed() {
 	return createLabClient({ baseUrl: getBaseUrl() }).seed();
 }
 
-function parseRepoRun(args: string[]) {
-	const repoFlag = args.indexOf('--repo');
-	if (repoFlag === -1 || !args[repoFlag + 1]) {
-		throw new CliError('lab repo-run --repo <path> [--snapshot] -- <command...>');
+function argValue(args: string[], flag: string) {
+	const index = args.indexOf(flag);
+	return index === -1 ? undefined : args[index + 1];
+}
+
+function parseArtifactsRef(value: string) {
+	const [namespace, name] = value.split('/');
+	if (!namespace || !name || value.split('/').length !== 2) {
+		throw new CliError('Artifacts repo must use <namespace>/<repo>, for example default/my-repo');
 	}
+	return { namespace, name };
+}
+
+function parseRunRepo(args: string[], usage: string): LabRunRepo {
+	const repoFlag = args.indexOf('--repo');
+	const artifactsFlag = args.indexOf('--artifacts');
+	if (repoFlag !== -1 && artifactsFlag !== -1) {
+		throw new CliError('Use either --repo or --artifacts, not both');
+	}
+	if (repoFlag !== -1) {
+		const path = args[repoFlag + 1];
+		if (!path) throw new CliError(usage);
+		return { type: 'local', path };
+	}
+	if (artifactsFlag !== -1) {
+		const ref = args[artifactsFlag + 1];
+		if (!ref) throw new CliError(usage);
+		const { namespace, name } = parseArtifactsRef(ref);
+		const branch = argValue(args, '--branch') ?? 'main';
+		const accountId =
+			argValue(args, '--account-id') ??
+			process.env.CLOUDFLARE_PERSONAL_ACCOUNT_ID ??
+			process.env.CLOUDFLARE_ACCOUNT_ID;
+		const token =
+			argValue(args, '--token') ??
+			process.env.CLOUDFLARE_ARTIFACTS_REPO_TOKEN ??
+			process.env.CLOUDFLARE_ARTIFACTS_TOKEN;
+		const remote = argValue(args, '--remote');
+		if (!accountId && !remote) {
+			throw new CliError(
+				'Artifacts runs require --account-id, --remote, CLOUDFLARE_PERSONAL_ACCOUNT_ID, or CLOUDFLARE_ACCOUNT_ID',
+			);
+		}
+		if (!token) {
+			throw new CliError(
+				'Artifacts runs require --token, CLOUDFLARE_ARTIFACTS_REPO_TOKEN, or CLOUDFLARE_ARTIFACTS_TOKEN',
+			);
+		}
+		return { type: 'artifacts', accountId, namespace, name, branch, token, remote };
+	}
+	throw new CliError(usage);
+}
+
+function parseRepoRun(args: string[]) {
+	const usage =
+		'lab repo-run (--repo <path> | --artifacts <namespace/repo> --branch <branch>) [--snapshot] -- <command...>';
 	const separator = args.indexOf('--');
 	if (separator === -1 || separator === args.length - 1) {
-		throw new CliError('lab repo-run --repo <path> [--snapshot] -- <command...>');
+		throw new CliError(usage);
 	}
 	return {
-		repo: args[repoFlag + 1],
+		repo: parseRunRepo(args, usage),
 		snapshot: args.includes('--snapshot'),
 		command: args.slice(separator + 1),
 	};
@@ -105,7 +157,7 @@ function parseRepoFlag(args: string[], usage: string) {
 async function repoRun(args: string[]) {
 	const parsed = parseRepoRun(args);
 	return createLabRun({
-		repo: { type: 'local', path: parsed.repo },
+		repo: parsed.repo,
 		snapshot: parsed.snapshot ? { mode: 'branch', prefix: 'lab/run' } : undefined,
 		executor: { type: 'local' },
 		command: parsed.command,
@@ -136,6 +188,8 @@ const USAGE = `Usage:
                                     Run a real command in a real repo and write a Lab receipt
   lab repo-run --repo <path> --snapshot -- <command...>
                                     Commit dirty work to a lab/run-* branch before running
+  lab repo-run --artifacts <namespace/repo> --branch <branch> -- <command...>
+                                    Clone an Artifacts repo, run a command, and write a Lab receipt
   lab runs --repo <path> [--limit <n>]
                                     List recent Lab runs for a repo
   lab show <run-id> --repo <path>   Show one Lab run with logs and receipt
