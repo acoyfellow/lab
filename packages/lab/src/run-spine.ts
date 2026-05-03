@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -87,6 +87,23 @@ export type LabRun = {
 		logs: string;
 		result: string;
 		receipt: string;
+	};
+};
+
+export type LabRunSummary = {
+	id: string;
+	status: LabRunStatus;
+	command: string[];
+	branch?: string;
+	head?: string;
+	durationMs: number;
+	startedAt: string;
+	finishedAt: string;
+	paths: {
+		dir: string;
+		receipt: string;
+		logs: string;
+		result: string;
 	};
 };
 
@@ -339,4 +356,50 @@ export async function getLabRun(id: string, opts: { root: string }): Promise<Lab
 		receipt,
 		paths,
 	};
+}
+
+export async function listLabRuns(opts: { root: string; limit?: number }): Promise<LabRunSummary[]> {
+	const root = runRoot(opts.root);
+	let entries: { id: string; dir: string; updatedAt: number }[];
+	try {
+		const dirents = await readdir(root, { withFileTypes: true });
+		entries = await Promise.all(
+			dirents
+				.filter((dirent) => dirent.isDirectory() && dirent.name.startsWith('run_'))
+				.map(async (dirent) => {
+					const dir = join(root, dirent.name);
+					const info = await stat(dir);
+					return { id: dirent.name, dir, updatedAt: info.mtimeMs };
+				}),
+		);
+	} catch {
+		return [];
+	}
+
+	const summaries = await Promise.all(
+		entries
+			.sort((a, b) => b.updatedAt - a.updatedAt)
+			.slice(0, opts.limit ?? 20)
+			.map(async ({ id, dir }) => {
+				const paths = {
+					dir,
+					receipt: join(dir, 'receipt.json'),
+					logs: join(dir, 'logs.txt'),
+					result: join(dir, 'result.json'),
+				};
+				const receipt = JSON.parse(await readFile(paths.receipt, 'utf8')) as LabRunReceipt;
+				return {
+					id,
+					status: receipt.output.status,
+					command: receipt.input.command,
+					branch: receipt.artifact.branch,
+					head: receipt.artifact.head,
+					durationMs: receipt.output.result.durationMs,
+					startedAt: receipt.startedAt,
+					finishedAt: receipt.finishedAt,
+					paths,
+				};
+			}),
+	);
+	return summaries;
 }

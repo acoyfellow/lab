@@ -16,6 +16,7 @@ export {
   createRunReceipt,
   createSnapshotBranch,
   getLabRun,
+  listLabRuns,
   resolveRunRepo,
 } from './run-spine.js';
 export type {
@@ -26,6 +27,7 @@ export type {
   LabRunReceipt,
   LabRunRepo,
   LabRunResult,
+  LabRunSummary,
   LabRunStatus,
   LocalRepoRef,
   ResolvedRunRepo,

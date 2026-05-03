@@ -8,6 +8,7 @@ import {
 	createRunReceipt,
 	createSnapshotBranch,
 	getLabRun,
+	listLabRuns,
 	type LabRunInput,
 } from './run-spine';
 
@@ -72,6 +73,34 @@ describe('Lab Run north-star spine', () => {
 		expect(run.receipt.output.status).toBe('failed');
 		expect(run.receipt.output.result.exitCode).toBe(7);
 		expect(await readFile(run.paths.logs, 'utf8')).toContain('before failure');
+	});
+
+	test('run history lists recent receipts without reading unrelated repo files', async () => {
+		const repo = await makeGitRepo('history');
+		const first = await createLabRun({
+			repo: { type: 'local', path: repo },
+			executor: { type: 'local' },
+			command: ['sh', '-lc', 'echo first'],
+		});
+		const second = await createLabRun({
+			repo: { type: 'local', path: repo },
+			executor: { type: 'local' },
+			command: ['sh', '-lc', 'echo second'],
+		});
+
+		const runs = await listLabRuns({ root: repo });
+
+		expect(runs.map((run) => run.id)).toEqual([second.id, first.id]);
+		expect(runs[0].status).toBe('succeeded');
+		expect(runs[0].command).toEqual(['sh', '-lc', 'echo second']);
+		expect(runs[0].paths.logs).toContain('logs.txt');
+		expect(runs[0].paths.receipt).toContain('receipt.json');
+	});
+
+	test('run history returns an empty list before a repo has Lab runs', async () => {
+		const repo = await makeGitRepo('empty-history');
+
+		await expect(listLabRuns({ root: repo })).resolves.toEqual([]);
 	});
 
 	test('snapshot mode turns dirty local work into a real lab branch and commit before running', async () => {

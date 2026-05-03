@@ -17,7 +17,13 @@
  * Every run includes a resultId — the saved-result identifier.
  */
 
-import { createLabClient, createLabRun, type ChainStep } from '@acoyfellow/lab';
+import {
+	createLabClient,
+	createLabRun,
+	getLabRun,
+	listLabRuns,
+	type ChainStep,
+} from '@acoyfellow/lab';
 
 class CliError extends Error {
 	constructor(message: string) {
@@ -88,6 +94,14 @@ function parseRepoRun(args: string[]) {
 	};
 }
 
+function parseRepoFlag(args: string[], usage: string) {
+	const repoFlag = args.indexOf('--repo');
+	if (repoFlag === -1 || !args[repoFlag + 1]) {
+		throw new CliError(usage);
+	}
+	return args[repoFlag + 1]!;
+}
+
 async function repoRun(args: string[]) {
 	const parsed = parseRepoRun(args);
 	return createLabRun({
@@ -98,12 +112,33 @@ async function repoRun(args: string[]) {
 	});
 }
 
+async function runs(args: string[]) {
+	const repo = parseRepoFlag(args, 'lab runs --repo <path> [--limit <n>]');
+	const limitFlag = args.indexOf('--limit');
+	const limit =
+		limitFlag === -1 || !args[limitFlag + 1] ? undefined : Number.parseInt(args[limitFlag + 1]!, 10);
+	if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) {
+		throw new CliError(`Invalid --limit value: "${args[limitFlag + 1]}". Must be a positive integer.`);
+	}
+	return listLabRuns({ root: repo, limit });
+}
+
+async function show(args: string[]) {
+	const id = args[0];
+	if (!id) throw new CliError('lab show <run-id> --repo <path>');
+	const repo = parseRepoFlag(args, 'lab show <run-id> --repo <path>');
+	return getLabRun(id, { root: repo });
+}
+
 const USAGE = `Usage:
   lab run <code>                    Run JS in a single isolate
   lab repo-run --repo <path> -- <command...>
                                     Run a real command in a real repo and write a Lab receipt
   lab repo-run --repo <path> --snapshot -- <command...>
                                     Commit dirty work to a lab/run-* branch before running
+  lab runs --repo <path> [--limit <n>]
+                                    List recent Lab runs for a repo
+  lab show <run-id> --repo <path>   Show one Lab run with logs and receipt
   lab chain <stepsJson>             Run a multi-step chain
   lab spawn <code> [depth]          Run with spawn capability
   lab generate <prompt>             AI generates code, then runs it
@@ -129,6 +164,10 @@ async function route(args: string[]) {
 			return run(arg);
 		case 'repo-run':
 			return repoRun(args.slice(1));
+		case 'runs':
+			return runs(args.slice(1));
+		case 'show':
+			return show(args.slice(1));
 		case 'chain':
 			if (!arg) throw new CliError('lab chain <stepsJson>');
 			return chain(arg);
