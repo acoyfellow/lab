@@ -21,3 +21,16 @@ jobs:
           cd packages/lab-mcp && bun run build
           cd ../..
           diff -r dist-backup packages/lab-mcp/dist || (echo "dist/ is stale. Run 'cd packages/lab-mcp && bun run build' and commit changes." && exit 1)
+
+  artifacts-gate:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - name: Run real Artifacts Lab gate
+        run: LAB_ARTIFACTS_TEST=1 bun test src/lib/runs/run-spine.artifacts.test.ts
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
