@@ -131,6 +131,16 @@ type CommandResult = {
 	exitCode: number;
 };
 
+export function redactLabSecrets(value: string): string {
+	return value
+		.replace(/cfut_[A-Za-z0-9_-]+/g, '[redacted-cloudflare-token]')
+		.replace(/art_v1_[A-Za-z0-9._~+/?=&%-]+/g, '[redacted-artifacts-token]');
+}
+
+function redactCommand(command: string[]) {
+	return command.map((part) => redactLabSecrets(part));
+}
+
 async function runCommand(command: string[], cwd: string): Promise<CommandResult> {
 	if (command.length === 0) {
 		throw new Error('Lab run command must not be empty');
@@ -157,7 +167,7 @@ async function runCommand(command: string[], cwd: string): Promise<CommandResult
 async function runGit(cwd: string, args: string[]) {
 	const result = await runCommand(['git', ...args], cwd);
 	if (result.exitCode !== 0) {
-		throw new Error(`git ${args.join(' ')} failed: ${result.stderr || result.stdout}`);
+		throw new Error(redactLabSecrets(`git ${args.join(' ')} failed: ${result.stderr || result.stdout}`));
 	}
 	return result.stdout.trim();
 }
@@ -221,7 +231,7 @@ export async function createRunReceipt(input: {
 		capabilities: ['filesystem.read', 'process.spawn'],
 		artifact: artifactFor(input.repo, input.branch, input.head),
 		input: {
-			command: input.command,
+			command: redactCommand(input.command),
 			executor: input.executor,
 		},
 		output: {
@@ -260,17 +270,34 @@ export async function createSnapshotBranch(input: {
 	return { mode: 'branch', branch, commit, createdCommit: true };
 }
 
-function remoteWithToken(repo: ArtifactsRepoRef) {
+function artifactsRemote(repo: ArtifactsRepoRef) {
 	const remote = repo.remote ?? `https://${repo.accountId}.artifacts.cloudflare.net/git/${repo.namespace}/${repo.name}.git`;
 	if (!repo.token) return remote;
-	const token = encodeURIComponent(repo.token.split('?')[0] ?? repo.token);
-	return remote.replace('https://', `https://x-token:${token}@`);
+	return remote;
+}
+
+function artifactsGitArgs(repo: ArtifactsRepoRef) {
+	if (!repo.token) return [];
+	return ['-c', `http.extraHeader=Authorization: Bearer ${repo.token}`];
+}
+
+function persistedRunInput(input: LabRunInput): LabRunInput {
+	const persisted = {
+		...input,
+		command: redactCommand(input.command),
+	};
+	if (input.repo.type !== 'artifacts' || !input.repo.token) return persisted;
+	const { token, ...repo } = input.repo;
+	return {
+		...persisted,
+		repo,
+	};
 }
 
 export async function resolveRunRepo(repo: LabRunRepo): Promise<ResolvedRunRepo> {
 	if (repo.type === 'local') return { type: 'working-copy', path: repo.path, source: repo };
 	const path = await mkdtemp(join(tmpdir(), `lab-run-artifacts-${basename(repo.name)}-`));
-	await runGit(process.cwd(), ['clone', '--branch', repo.branch, remoteWithToken(repo), path]);
+	await runGit(process.cwd(), [...artifactsGitArgs(repo), 'clone', '--branch', repo.branch, artifactsRemote(repo), path]);
 	return { type: 'working-copy', path, source: repo };
 }
 
@@ -298,7 +325,7 @@ export async function createLabRun(input: LabRunInput): Promise<LabRun> {
 	const started = Date.now();
 	const { stdout, stderr, exitCode } = await runCommand(input.command, resolved.path);
 	const finishedAt = new Date().toISOString();
-	const logsText = `${stdout}${stderr}`;
+	const logsText = redactLabSecrets(`${stdout}${stderr}`);
 	const status: LabRunStatus = exitCode === 0 ? 'succeeded' : 'failed';
 	const result: LabRunResult = {
 		exitCode,
@@ -322,7 +349,7 @@ export async function createLabRun(input: LabRunInput): Promise<LabRun> {
 		head: snapshot?.commit ?? head,
 		parentRunId: input.parentRunId,
 	});
-	await writeFile(paths.input, JSON.stringify(input, null, 2) + '\n');
+	await writeFile(paths.input, JSON.stringify(persistedRunInput(input), null, 2) + '\n');
 	await writeFile(paths.logs, logsText);
 	await writeFile(paths.result, JSON.stringify(result, null, 2) + '\n');
 	await writeFile(paths.receipt, JSON.stringify(receipt, null, 2) + '\n');

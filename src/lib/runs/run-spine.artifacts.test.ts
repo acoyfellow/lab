@@ -90,17 +90,17 @@ describe('Lab Run north-star Artifacts gate', () => {
 		const clone = await mkdtemp(join(tmpdir(), 'lab-run-artifacts-'));
 		tempRoots.push(clone);
 		try {
-			const authedRemote = createdJson.result!.remote.replace(
-				'https://',
-				`https://x-token:${createdJson.result!.token}@`,
-			);
-			await $`git clone ${authedRemote} .`.cwd(clone).quiet();
+			await $`git -c ${`http.extraHeader=Authorization: Bearer ${createdJson.result!.token}`} clone ${createdJson.result!.remote} .`
+				.cwd(clone)
+				.quiet();
 			await $`git config user.email lab-run@example.test`.cwd(clone).quiet();
 			await $`git config user.name "Lab Run Test"`.cwd(clone).quiet();
 			await writeFile(join(clone, 'answer.txt'), 'artifacts works\n');
 			await $`git add answer.txt`.cwd(clone).quiet();
 			await $`git commit -m "seed artifacts run"`.cwd(clone).quiet();
-			await $`git push origin main`.cwd(clone).quiet();
+			await $`git -c ${`http.extraHeader=Authorization: Bearer ${createdJson.result!.token}`} push origin main`
+				.cwd(clone)
+				.quiet();
 
 			const resolved = await resolveRunRepo({
 				type: 'artifacts',
@@ -138,5 +138,5 @@ describe('Lab Run north-star Artifacts gate', () => {
 				headers: { authorization: `Bearer ${apiToken}` },
 			}).catch(() => undefined);
 		}
-	});
+	}, 30_000);
 });

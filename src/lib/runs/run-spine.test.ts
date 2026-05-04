@@ -9,6 +9,7 @@ import {
 	createSnapshotBranch,
 	getLabRun,
 	listLabRuns,
+	redactLabSecrets,
 	replayLabRun,
 	type LabRunInput,
 } from './run-spine';
@@ -215,4 +216,36 @@ describe('Lab Run north-star spine', () => {
 		expect(input.repo.branch).toBe('main');
 	});
 
+	test('durable evidence redacts Cloudflare and Artifacts tokens', async () => {
+		const repo = await makeGitRepo('artifacts-source');
+		const secret = 'art_v1_0123456789abcdef0123456789abcdef01234567?expires=1760000000';
+		const run = await createLabRun({
+			repo: {
+				type: 'artifacts',
+				namespace: 'default',
+				name: 'artifacts-source',
+				branch: 'main',
+				remote: repo,
+				token: secret,
+			},
+			executor: { type: 'local' },
+			command: ['sh', '-lc', `printf '%s\\n' '${secret}' 'cfut_abcdefghijklmnopqrstuvwxyz0123456789_-TOKEN'`],
+		});
+
+		expect(run.status).toBe('succeeded');
+		expect(run.logs.text).toContain('[redacted-artifacts-token]');
+		expect(run.logs.text).toContain('[redacted-cloudflare-token]');
+		expect(run.logs.text).not.toContain(secret);
+		expect(await readFile(run.paths.logs, 'utf8')).not.toContain(secret);
+		expect(await readFile(run.paths.input, 'utf8')).not.toContain(secret);
+		expect(await readFile(run.paths.receipt, 'utf8')).not.toContain(secret);
+	});
+
+	test('secret redaction covers Cloudflare API and Artifacts repo tokens', () => {
+		expect(
+			redactLabSecrets(
+				'cfut_abcdefghijklmnopqrstuvwxyz0123456789_-TOKEN art_v1_0123456789abcdef0123456789abcdef01234567?expires=1760000000',
+			),
+		).toBe('[redacted-cloudflare-token] [redacted-artifacts-token]');
+	});
 });
