@@ -287,7 +287,7 @@ function persistedRunInput(input: LabRunInput): LabRunInput {
 		command: redactCommand(input.command),
 	};
 	if (input.repo.type !== 'artifacts' || !input.repo.token) return persisted;
-	const { token, ...repo } = input.repo;
+	const { token: _token, ...repo } = input.repo;
 	return {
 		...persisted,
 		repo,
