@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeAll, describe, expect, test } from 'bun:test';
 import { $ } from 'bun';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -6,6 +6,19 @@ import { join } from 'node:path';
 
 const tempRoots: string[] = [];
 const cli = join(import.meta.dir, 'cli.ts');
+
+beforeAll(() => {
+	const result = Bun.spawnSync(['bun', 'run', 'build:client'], {
+		cwd: join(import.meta.dir, '..', '..', '..'),
+		stdout: 'pipe',
+		stderr: 'pipe',
+	});
+	if (result.exitCode !== 0) {
+		throw new Error(
+			`build:client failed\n${new TextDecoder().decode(result.stdout)}${new TextDecoder().decode(result.stderr)}`,
+		);
+	}
+}, 30_000);
 
 afterEach(async () => {
 	await Promise.all(tempRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
