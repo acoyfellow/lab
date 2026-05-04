@@ -184,6 +184,7 @@ describe('Lab Run north-star spine', () => {
 		});
 
 		expect(receipt.source).toBe('lab');
+		expect(receipt.schemaVersion).toBe('lab.run.receipt.v1');
 		expect(receipt.action).toBe('lab.run');
 		expect(receipt.runId).toBe('run_receipt_contract');
 		expect(receipt.capabilities).toEqual(['filesystem.read', 'process.spawn']);

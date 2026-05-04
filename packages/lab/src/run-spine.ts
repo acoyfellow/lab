@@ -41,6 +41,7 @@ export type LabRunResult = {
 };
 
 export type LabRunReceipt = {
+	schemaVersion: 'lab.run.receipt.v1';
 	source: 'lab';
 	action: 'lab.run';
 	runId: string;
@@ -225,6 +226,7 @@ export async function createRunReceipt(input: {
 	parentRunId?: string;
 }): Promise<LabRunReceipt> {
 	return {
+		schemaVersion: 'lab.run.receipt.v1',
 		source: 'lab',
 		action: 'lab.run',
 		runId: input.id,

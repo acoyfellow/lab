@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
       - run: bun install
-      - name: Run real Artifacts Lab gate
+      - name: Run existing Artifacts Lab gate
         run: LAB_ARTIFACTS_EXISTING_TEST=1 bun test src/lib/runs/run-spine.artifacts.test.ts
         env:
           LAB_ARTIFACTS_ACCOUNT_ID: ${{ secrets.LAB_ARTIFACTS_ACCOUNT_ID }}
@@ -37,3 +37,8 @@ jobs:
           LAB_ARTIFACTS_REPO: ${{ secrets.LAB_ARTIFACTS_REPO }}
           LAB_ARTIFACTS_BRANCH: ${{ secrets.LAB_ARTIFACTS_BRANCH }}
           LAB_ARTIFACTS_REPO_TOKEN: ${{ secrets.LAB_ARTIFACTS_REPO_TOKEN }}
+      - name: Run control-plane Artifacts Lab gate
+        run: LAB_ARTIFACTS_TEST=1 bun test src/lib/runs/run-spine.artifacts.test.ts
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

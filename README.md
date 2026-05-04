@@ -77,6 +77,15 @@ node packages/lab-cli/dist/cli.js repo-run \
   -- sh -lc 'bun test'
 ```
 
+For Artifacts control-plane operations such as creating or deleting repos, Lab reads the normal Cloudflare variables:
+
+```bash
+export CLOUDFLARE_ACCOUNT_ID="<your-account-id>"
+export CLOUDFLARE_API_TOKEN="<cf-api-token>"
+```
+
+That API token must be scoped to the same account with **Account > Artifacts:Read** and **Account > Artifacts:Edit**. Git clone and push use repo-scoped `art_v1_*` tokens; Lab passes those tokens with Git `Authorization: Bearer ...` headers and redacts `cfut_*` and `art_v1_*` values from durable run evidence.
+
 That is the product spine:
 
 ```text

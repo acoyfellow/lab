@@ -11,6 +11,14 @@ afterEach(async () => {
 	await Promise.all(tempRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
+function artifactsGateError(message: string, details?: unknown) {
+	return new Error(
+		`${message}\n` +
+			'Cloudflare Artifacts REST control-plane gates require CLOUDFLARE_ACCOUNT_ID and a CLOUDFLARE_API_TOKEN scoped to that account with Account > Artifacts:Read and Account > Artifacts:Edit.\n' +
+			(details ? `Details: ${JSON.stringify(details)}` : ''),
+	);
+}
+
 describe('Lab Run north-star Artifacts gate', () => {
 	test('existing Cloudflare Artifacts repo can be cloned and run through Lab', async () => {
 		if (!process.env.LAB_ARTIFACTS_EXISTING_TEST) {
@@ -55,10 +63,10 @@ describe('Lab Run north-star Artifacts gate', () => {
 			console.log('skipping real Artifacts gate; set LAB_ARTIFACTS_TEST=1');
 			return;
 		}
-		const accountId = process.env.CLOUDFLARE_PERSONAL_ACCOUNT_ID ?? process.env.CLOUDFLARE_ACCOUNT_ID;
-		const apiToken = process.env.CLOUDFLARE_PERSONAL_API_TOKEN ?? process.env.CLOUDFLARE_API_TOKEN;
+		const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+		const apiToken = process.env.CLOUDFLARE_API_TOKEN;
 		if (!accountId || !apiToken) {
-			throw new Error('LAB_ARTIFACTS_TEST requires CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN');
+			throw artifactsGateError('LAB_ARTIFACTS_TEST is missing required environment.');
 		}
 
 		const namespace = `lab-test-${Date.now()}`;
@@ -78,9 +86,7 @@ describe('Lab Run north-star Artifacts gate', () => {
 			errors?: unknown[];
 		};
 		if (!created.ok || !createdJson.success) {
-			throw new Error(
-				`Artifacts repo create failed: HTTP ${created.status} ${JSON.stringify(createdJson.errors ?? createdJson)}`,
-			);
+			throw artifactsGateError(`Artifacts repo create failed: HTTP ${created.status}`, createdJson.errors ?? createdJson);
 		}
 		expect(created.ok).toBe(true);
 		expect(createdJson.success).toBe(true);

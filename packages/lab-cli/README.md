@@ -65,6 +65,8 @@ Every command prints JSON to stdout. Repo runs write `.lab/runs/<run_id>/input.j
 | `CLOUDFLARE_ARTIFACTS_REPO_TOKEN` | | Repo-scoped `art_v1_*` token for Artifacts git clone |
 | `CLOUDFLARE_ARTIFACTS_TOKEN` | | Alternate repo token env var |
 
+Artifacts repo create/delete gates use `CLOUDFLARE_ACCOUNT_ID` plus `CLOUDFLARE_API_TOKEN` scoped to the same account with `Account > Artifacts:Read` and `Account > Artifacts:Edit`. Repo runs that clone Git content use repo-scoped `art_v1_*` tokens.
+
 ## For agents
 
 An agent shells out to `lab`, reads the JSON result, and uses the `resultId` as proof of execution:
