@@ -104,7 +104,7 @@ describe('Lab Run north-star Artifacts gate', () => {
 			await writeFile(join(clone, 'answer.txt'), 'artifacts works\n');
 			await $`git add answer.txt`.cwd(clone).quiet();
 			await $`git commit -m "seed artifacts run"`.cwd(clone).quiet();
-			await $`git -c ${`http.extraHeader=Authorization: Bearer ${createdJson.result!.token}`} push origin main`
+			await $`git -c ${`http.extraHeader=Authorization: Bearer ${createdJson.result!.token}`} push origin HEAD:main`
 				.cwd(clone)
 				.quiet();
 
