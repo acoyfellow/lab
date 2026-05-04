@@ -1,7 +1,12 @@
 /**
- * Homepage code samples — shared by +page.server (Shiki) and kept in one place.
- * Chain: seed KV → Load (kvRead) → Pack → Line — roll call, not role filtering.
+ * Homepage code samples — driven by `+page.svelte` (runnable demo) and
+ * `+page.server.ts` (Shiki-rendered receipt-shape sample).
+ *
+ * Also exports `CHAIN_STEPS_FOR_CURL` which is consumed by
+ * `src/lib/guest-code-fixtures.ts` for test fixtures.
  */
+
+/** Used by `guest-code-fixtures.ts` — keep stable. */
 export const CHAIN_STEPS_FOR_CURL = [
 	{
 		name: 'Load',
@@ -33,79 +38,15 @@ return rows;`,
 	},
 ] as const;
 
-/** Bash single-quoted -d body: escape any `'` in JSON as `'\''` */
-export function bashSingleQuoted(s: string): string {
-	return `'${s.replace(/'/g, "'\\''")}'`;
-}
-
-const CHAIN_JSON = JSON.stringify({ steps: [...CHAIN_STEPS_FOR_CURL] });
-
-export const SEED_CURL = 'curl -X POST $LAB_URL/seed';
-
-/** POST /run/chain — body matches seeded demo KV (three user:* rows). */
-export const CHAIN_CURL = `curl -X POST $LAB_URL/run/chain \\
-  -H 'Content-Type: application/json' \\
-  -d ${bashSingleQuoted(CHAIN_JSON)}`;
-
-const SPAWN_JSON = JSON.stringify({
-	body: 'const a = await spawn("return 10 * 10", []); const b = await spawn("return 20 * 20", []); return { a, b }',
-	capabilities: ['spawn'],
-	depth: 2,
-});
-
-export const SPAWN_PARALLEL_CURL = `curl -X POST $LAB_URL/run/spawn \\
-  -H 'Content-Type: application/json' \\
-  -d ${bashSingleQuoted(SPAWN_JSON)}`;
-
-/**
- * Homepage TypeScript sample — agent-oriented workflow.
- * Shows an agent building a self-healing pipeline and using the saved result.
- */
-export const CLIENT_SNIPPET = `import { createLabClient } from "@acoyfellow/lab";
-
-const lab = createLabClient({ baseUrl: process.env.LAB_URL });
-
-// Agent builds a self-healing chain.
-// Each step = fresh V8 isolate. No shared state.
-const out = await lab.runChain([
-  {
-    name: "Load broken data",
-    body: \`return {
-  raw: '{"users": [{"id": 1,}]}',
-  source: "webhook-ingest",
-};\`,
-    capabilities: [],
-  },
-  {
-    name: "Parse (will fail)",
-    body: \`try {
-  return { ok: true, data: JSON.parse(input.raw) };
-} catch (e) {
-  return { ok: false, error: e.message, raw: input.raw };
-}\`,
-    capabilities: [],
-  },
-  {
-    name: "Heal",
-    body: \`if (input.ok) return input;
-const fixed = input.raw.replace(/,(\\\\s*[}\\\\]])/g, "$1");
-return { ok: true, data: JSON.parse(fixed), healed: true };\`,
-    capabilities: [],
-  },
-]);
-
-// The saved result is the proof. Share it with another agent or a reviewer.
-console.log(out.result);   // { ok: true, data: {...}, healed: true }
-console.log(out.resultId);  // → JSON: /results/<id>.json, viewer: /results/<id>`;
-
 // ═══════════════════════════════════════════════════════════════════════════
-// "You've used these before" — recognizable agent patterns mapped to Lab
+// "You've used these before" — recognizable agent patterns mapped to Lab.
+// Used by the homepage runnable demo (tabs + chain runs).
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const KNOWN_PATTERNS = [
   {
     id: 'code-mode',
-    tab: 'Code Mode',
+    tab: 'Code mode',
     knownFrom: 'Cursor, Claude Code',
     whatItDoes: 'Write a function → run tests → prove it works',
     lines: 25,
@@ -151,11 +92,11 @@ export const KNOWN_PATTERNS = [
     capabilities: []
   },
 ]);
-// → saved result JSON proves 3/3 pass. Ship the receipt, not "trust me."`,
+// → receipt JSON proves 3/3 pass. Ship the receipt, not "trust me."`,
   },
   {
     id: 'deep-research',
-    tab: 'Deep Research',
+    tab: 'Deep research',
     knownFrom: 'Perplexity, Gemini Deep Research',
     whatItDoes: 'Gather sources → reconcile → write report',
     lines: 25,
@@ -193,17 +134,17 @@ export const KNOWN_PATTERNS = [
       return {
         summary: input.activeUsers + " active users (avg of "
           + input.sources + " sources, " + input.confidence + " confidence)",
-        resultUrl: "Open the saved result to verify the data pipeline.",
+        resultUrl: "Open the receipt to verify the data pipeline.",
       };
     \`,
     capabilities: []
   },
 ]);
-// → saved result shows every source, the reconciliation math, the final report.`,
+// → receipt shows every source, the reconciliation math, the final report.`,
   },
   {
     id: 'pr-review',
-    tab: 'PR Review Bot',
+    tab: 'PR review',
     knownFrom: 'CodeRabbit, Ralph',
     whatItDoes: 'Pull diff → review → post comment',
     lines: 25,
@@ -257,13 +198,13 @@ export const KNOWN_PATTERNS = [
     capabilities: []
   },
 ]);
-// → saved result shows the diff, the analysis, and the drafted comment.`,
+// → receipt shows the diff, the analysis, and the drafted comment.`,
   },
 ] as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Runnable chain steps for homepage demo — one per tab.
-// Code Mode runs as-is. Deep Research and PR Review use cached/mock data
+// Code mode runs as-is. Deep research and PR review use cached/mock data
 // so they work without external APIs or auth.
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -362,49 +303,3 @@ return { action: "would-comment", flagged: input.flagged, body: "## Review\\n" +
     },
   ],
 };
-
-/** Illustrative RunResult.steps shape for seeded KV + Load → Pack → Line. */
-export const EXAMPLE_RUN_RESULT_SHAPE = JSON.stringify(
-	{
-		ok: true,
-		result: 'Roll call: Alice, Bob, Carol (3)',
-		resultId: 'clu01example00shape00only',
-		steps: [
-			{
-				step: 0,
-				name: 'Load',
-				template: 'guest@v1',
-				capabilities: ['kvRead'],
-				input: null,
-				output: [
-					{ name: 'Alice', role: 'admin' },
-					{ name: 'Bob', role: 'viewer' },
-					{ name: 'Carol', role: 'editor' },
-				],
-				ms: 14,
-			},
-			{
-				step: 1,
-				name: 'Pack',
-				capabilities: [],
-				input: [
-					{ name: 'Alice', role: 'admin' },
-					{ name: 'Bob', role: 'viewer' },
-					{ name: 'Carol', role: 'editor' },
-				],
-				output: { n: 3, names: ['Alice', 'Bob', 'Carol'] },
-				ms: 3,
-			},
-			{
-				step: 2,
-				name: 'Line',
-				capabilities: [],
-				input: { n: 3, names: ['Alice', 'Bob', 'Carol'] },
-				output: 'Roll call: Alice, Bob, Carol (3)',
-				ms: 2,
-			},
-		],
-	},
-	null,
-	2,
-);

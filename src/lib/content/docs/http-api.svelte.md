@@ -23,8 +23,8 @@ Related: [Permissions](/docs/capabilities) · [Limits](/docs/limits) · [Failure
 | POST | `/sessions/:id/receipts` | Save a receipt directly into a session |
 | POST | `/receipts` | Save a receipt for external agent work |
 | POST | `/seed` | Load demo data into KV |
-| GET | `/results/:id` | Open the saved-result viewer |
-| GET | `/results/:id.json` | Fetch canonical saved-result JSON |
+| GET | `/results/:id` | Open the receipt viewer |
+| GET | `/results/:id.json` | Fetch canonical receipt JSON |
 | GET | `/lab/catalog` | Machine-readable API description (for agents) |
 
 ## Quick examples
@@ -58,7 +58,7 @@ Run a single piece of JavaScript in a sandbox.
 
 **Body:** `{ body, capabilities? }`
 
-**Response:** `{ ok, result }` — plus `resultId`. `POST /seed` is the only endpoint that does not create a saved result.
+**Response:** `{ ok, result }` — plus `resultId`. `POST /seed` is the only endpoint that does not create a receipt.
 
 ---
 
@@ -109,7 +109,7 @@ Include permission strings so the AI knows what APIs are available when writing 
 
 ## POST /seed
 
-Loads demo data into KV for testing. No saved result is created.
+Loads demo data into KV for testing. No receipt is created.
 
 ---
 
@@ -175,11 +175,11 @@ Replay modes:
 
 ## GET /results/:id
 
-Open the saved result in the public app viewer. Agents and scripts should read `GET /results/:id.json` instead.
+Open the receipt in the public app viewer. Agents and scripts should read `GET /results/:id.json` instead.
 
 ## GET /results/:id.json
 
-Fetch the canonical saved-result JSON. See [result schema](/docs/result-schema) for the full format.
+Fetch the canonical receipt JSON. See [result schema](/docs/result-schema) for the full format.
 
 ---
 

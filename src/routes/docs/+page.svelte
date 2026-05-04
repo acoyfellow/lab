@@ -3,96 +3,46 @@
   import DocsSequentialFooter from '$lib/DocsSequentialFooter.svelte';
   import DocsShell from '$lib/DocsShell.svelte';
   import SEO from '$lib/SEO.svelte';
-  import { docsHubByGroup } from '$lib/docs-hub';
-  import { paths } from '$lib/paths';
-  import { GraduationCap, Play, Zap } from '@lucide/svelte';
+  import { DOCS_HUB_GROUPS, docsHubByGroup } from '$lib/docs-hub';
 
-  const hubSections = [
-    { id: 'guides' as const, heading: 'Guides', cards: docsHubByGroup('guides') },
-    { id: 'reference' as const, heading: 'Reference', cards: docsHubByGroup('reference') },
-  ];
+  const sections = DOCS_HUB_GROUPS.map((g) => ({
+    ...g,
+    cards: docsHubByGroup(g.id),
+  }));
 
-  const tocItems = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'quick-start', label: 'Quick Start' },
-    { id: 'guides', label: 'Guides' },
-    { id: 'reference', label: 'Reference' },
-  ];
+  const tocItems = sections.map((s) => ({ id: s.id, label: s.heading }));
 </script>
 
 <SEO
-  title="Docs — lab"
-  description="HTTP API, architecture, limits, security, failures, TypeScript client, capabilities, and saved-result JSON."
+  title="Docs — Lab"
+  description="Run JavaScript in Cloudflare V8 isolates. Every run gets a receipt URL. HTTP API, TypeScript client, capabilities, and operating guides."
   path="/docs"
   type="website"
 />
 
 <DocsShell {tocItems}>
-  <div class="max-w-3xl space-y-8 docs-prose">
-    <header id="overview" class="space-y-2">
-      <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Documentation</h1>
+  <div class="max-w-3xl space-y-10 docs-prose">
+    <header class="space-y-2">
+      <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Docs</h1>
       <p class="max-w-2xl">
-        Everything you need to run JavaScript in Cloudflare isolates. From quick starts to deep dives on
-        architecture and the HTTP API.
+        Lab runs JavaScript in V8 isolates and saves a receipt for every run. Pick a thread below — read top-to-bottom or jump to what you need.
       </p>
     </header>
 
-    <section id="quick-start" class="space-y-4">
-      <h2 class="docs-section-label">Quick Start</h2>
-      <div class="grid gap-4 sm:grid-cols-3">
-        <a
-          href="/docs/install"
-          class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
-        >
-          <div class="flex items-center gap-2 mb-2">
-            <Zap class="w-4 h-4 text-(--text-2) group-hover:text-(--accent)" />
-            <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Install</h3>
-          </div>
-          <p>
-            Deploy the public app, private Worker, and backing Cloudflare resources.
-          </p>
-        </a>
-        <a
-          href={paths.tutorial}
-          class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
-        >
-          <div class="flex items-center gap-2 mb-2">
-            <GraduationCap class="w-4 h-4 text-(--text-2) group-hover:text-(--accent)" />
-            <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Tutorial</h3>
-          </div>
-          <p>Install, connect your agent, run code, see the result.</p>
-        </a>
-        <a
-          href="/compose"
-          class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) transition-colors no-underline group"
-        >
-          <div class="flex items-center gap-2 mb-2">
-            <Play class="w-4 h-4 text-(--text-2) group-hover:text-(--accent)" />
-            <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">Compose</h3>
-          </div>
-          <p>Skip ahead and start building in the browser.</p>
-        </a>
-      </div>
-    </section>
-
-    {#each hubSections as block}
-      <section id={block.id} class="space-y-4">
-        <h2 class="docs-section-label">{block.heading}</h2>
-        <div class="grid gap-4 sm:grid-cols-2">
-          {#each block.cards as card}
+    {#each sections as section}
+      <section id={section.id} class="space-y-3">
+        <div class="space-y-0.5">
+          <h2 class="text-lg font-semibold text-(--text) m-0">{section.heading}</h2>
+          <p class="text-[0.875rem] text-(--text-2) m-0">{section.subheading}</p>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          {#each section.cards as card}
             <AppLink
               to={card.to}
-              class="block p-5 rounded-(--radius) border border-(--border) bg-(--surface) hover:bg-(--surface-alt) no-underline group"
+              class="block p-4 rounded-(--radius) border border-(--border) bg-(--surface) hover:border-(--accent) no-underline group"
             >
-              <div class="flex items-center justify-between mb-2">
-                <h3 class="font-semibold text-(--text) group-hover:text-(--accent)">{card.title}</h3>
-                <div class="flex gap-1">
-                  {#each card.tags as tag}
-                    <span class="text-[0.6875rem] px-1.5 py-0.5 rounded bg-(--surface-alt) text-(--text-3)">{tag}</span>
-                  {/each}
-                </div>
-              </div>
-              <p>{card.description}</p>
+              <div class="font-semibold text-(--text) group-hover:text-(--accent) text-[0.9375rem]">{card.title}</div>
+              <p class="text-[0.8125rem] text-(--text-2) m-0 mt-1">{card.description}</p>
             </AppLink>
           {/each}
         </div>

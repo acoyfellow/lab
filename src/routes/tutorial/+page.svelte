@@ -9,15 +9,15 @@
 
 <SEO
   title="Tutorial — Lab"
-  description="Install Lab, connect your agent, run code in a sandbox, and see the result."
+  description="Install the client, run code in a sandbox, open the receipt URL. Two minutes."
   path="/tutorial"
   type="website"
 />
 
 <header class="space-y-2">
-  <h1 class="text-2xl font-semibold tracking-tight">Get started</h1>
+  <h1 class="text-2xl font-semibold tracking-tight">2-minute tutorial</h1>
   <p class="leading-relaxed">
-    Install the client, connect an agent, run code, see the result. Takes about two minutes.
+    Install, run, open the receipt. We'll use the public hosted instance — no signup.
   </p>
 </header>
 
@@ -29,57 +29,54 @@
   </div>
 </section>
 
-<!-- 2. Connect your agent -->
+<!-- 2. Run code -->
 <section class="space-y-3">
-  <h2 class="docs-section-label">2. Connect your agent</h2>
-  <p>
-    Add Lab as a stdio MCP server so your agent can run code and read saved results. Works with Claude Desktop, Cursor, or any MCP client.
-  </p>
-  <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4">
-    <div class="docs-section-label mb-2">MCP config</div>
-    <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
-      {@html data.codeHtml.mcpConfig}
-    </div>
-  </div>
-  <p class="text-[0.8125rem] text-(--text-3)">
-    Replace <code class="font-mono text-[0.8125rem]">$LAB_URL</code> with your public app origin.
-    Don't have one yet? <AppLink to={paths.docsSelfHost} class="text-(--accent) hover:underline">Self-host guide →</AppLink>
-  </p>
-</section>
-
-<!-- 3. Run code -->
-<section class="space-y-3">
-  <h2 class="docs-section-label">3. Run code</h2>
-  <p>
-    Send code to Lab. It runs in a Cloudflare Worker sandbox and returns the result plus a persisted <code class="font-mono text-[0.8125rem]">resultId</code>.
-  </p>
+  <h2 class="docs-section-label">2. Run code</h2>
   <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
     {@html data.codeHtml.runFromAgent}
   </div>
-
-  <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 space-y-2">
-    <div class="docs-section-label">Or with curl</div>
-    <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
-      {@html data.codeHtml.runCurl}
+  <details class="rounded-(--radius) border border-(--border) bg-(--surface) overflow-hidden">
+    <summary class="px-4 py-2.5 cursor-pointer text-[0.8125rem] text-(--text-2) hover:text-(--text) select-none">
+      Or with curl
+    </summary>
+    <div class="px-4 pb-3">
+      <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+        {@html data.codeHtml.runCurl}
+      </div>
     </div>
+  </details>
+</section>
+
+<!-- 3. Open the receipt -->
+<section class="space-y-3">
+  <h2 class="docs-section-label">3. Open the receipt</h2>
+  <p>
+    Every run is saved. The response includes a <code class="font-mono text-[0.8125rem]">resultId</code>. Two URLs:
+  </p>
+  <ul class="list-disc pl-5 space-y-1 text-[0.875rem]">
+    <li><code class="font-mono text-[0.8125rem]">/results/&#123;id&#125;</code> — open in a browser</li>
+    <li><code class="font-mono text-[0.8125rem]">/results/&#123;id&#125;.json</code> — fetch from another agent</li>
+  </ul>
+  <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
+    {@html data.codeHtml.fetchResult}
   </div>
 </section>
 
-<!-- 4. See the result -->
+<!-- Optional: MCP -->
 <section class="space-y-3">
-  <h2 class="docs-section-label">4. See the result</h2>
+  <h2 class="docs-section-label">Optional: wire up an MCP server</h2>
   <p>
-    Every run saves a JSON result. Agents should read <code class="font-mono text-[0.8125rem]">/results/&#123;id&#125;.json</code>. Humans can open <code class="font-mono text-[0.8125rem]">/results/&#123;id&#125;</code> in the viewer. Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial.
+    Drop Lab into Claude Desktop, Cursor, or any MCP client so your agent can call <code class="font-mono text-[0.8125rem]">execute</code> directly. Replace <code class="font-mono text-[0.8125rem]">$LAB_URL</code> with <code class="font-mono text-[0.8125rem]">https://lab.coey.dev</code> or your self-hosted origin.
   </p>
   <div class="shiki-code-block rounded-(--radius) border border-(--border) bg-(--code-bg) overflow-hidden">
-    {@html data.codeHtml.fetchResult}
+    {@html data.codeHtml.mcpConfig}
   </div>
 </section>
 
 <!-- What's next -->
 <section class="rounded-(--radius) border border-(--border) bg-(--surface-alt) p-5 space-y-3">
   <h3 class="font-semibold text-(--text)">That's it.</h3>
-  <p>Install, connect, run, see the result. Here's where to go next:</p>
+  <p>Three things you can do next:</p>
   <div class="flex flex-wrap gap-3">
     <AppLink
       to="/compose"

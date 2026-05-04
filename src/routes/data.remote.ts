@@ -141,7 +141,7 @@ export const seedKv = command(
   },
 );
 
-// Get a saved result by ID
+// Get a receipt by ID
 export const getResult = query('unchecked', async (resultId: string): Promise<SavedResult | { error: string }> => {
   const platform = getRequestEvent().platform;
   return callWorkerJSON<SavedResult | { error: string }>(platform, `/results/${resultId}.json`);

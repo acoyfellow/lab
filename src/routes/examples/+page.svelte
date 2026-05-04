@@ -143,7 +143,7 @@
 
 <SEO
   title="Examples — lab"
-  description="Runnable workflows for agents: open in Compose, run a chain, and share the saved result URL."
+  description="Runnable workflows for agents: open in Compose, run a chain, and share the receipt URL."
   path="/examples"
   type="website"
 />
@@ -154,7 +154,7 @@
       Examples
     </h1>
     <p class="text-[1.0625rem] text-(--text-2) max-w-[60ch]">
-      Pick a workflow, open it in Compose, run it, and inspect the saved result.
+      Pick a workflow, open it in Compose, run it, and inspect the receipt.
     </p>
     <div class="mt-6">
       <input

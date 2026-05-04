@@ -1,11 +1,11 @@
-# Saved result document schema
+# Receipt document schema
 
 Canonical narrative + tables: [`src/lib/content/docs/result-schema.svelte.md`](../src/lib/content/docs/result-schema.svelte.md) (rendered at `/docs/result-schema`).
 
 ## Summary
 
 - **Storage:** KV key `result:<id>`; **`id`** is 10 hex chars (UUID slice).
-- **Fetch:** `GET /results/:id.json` is the canonical machine JSON. `GET /results/:id` is the human viewer over that same saved result.
+- **Fetch:** `GET /results/:id.json` is the canonical machine JSON. `GET /results/:id` is the human viewer over that same receipt.
 - **Guest runs** persist **`template`** (e.g. `guest@v1`) and **`body`** (JavaScript inserted into the host shell). Legacy payloads may still show **`code`** only; readers should treat `body ?? code` as the guest source.
 
 ## `request` shapes (by `type`)

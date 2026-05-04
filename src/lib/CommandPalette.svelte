@@ -4,10 +4,13 @@
 
 	const items = [
 		{ label: "Compose", href: "/compose" },
-		{ label: "Examples", href: "/examples" },
-		{ label: "Docs", href: "/docs" },
 		{ label: "Tutorial", href: "/tutorial" },
-		{ label: "Guides", href: "/guides" },
+		{ label: "Patterns", href: "/docs/patterns" },
+		{ label: "Examples", href: "/examples" },
+		{ label: "Sessions", href: "/sessions" },
+		{ label: "Docs", href: "/docs" },
+		{ label: "HTTP API", href: "/docs/http-api" },
+		{ label: "Self-host", href: "/docs/self-host" },
 	] as const;
 
 	let open = $state(false);

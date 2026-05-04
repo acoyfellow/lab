@@ -262,7 +262,7 @@
 
 <SEO
   title="Versus — Lab"
-  description="1v1 Connect 4 against an AI that learns from saved-result history. Tactics are search. The model is interchangeable."
+  description="1v1 Connect 4 against an AI that learns from receipt history. Tactics are search. The model is interchangeable."
   path="/experiments/versus"
 />
 
@@ -270,7 +270,7 @@
   <header class="space-y-2">
     <h1 class="text-2xl font-semibold tracking-tight text-(--text)">Versus</h1>
     <p class="text-sm text-(--text-3) max-w-2xl leading-relaxed">
-      Deterministic search plays the game. When moves are equal, a model breaks the tie. Swap it for any other model and the result barely changes. After each loss, the saved result becomes a one-line insight that feeds the next game. The system improves through structure, not better prompts.
+      Deterministic search plays the game. When moves are equal, a model breaks the tie. Swap it for any other model and the result barely changes. After each loss, the receipt becomes a one-line insight that feeds the next game. The system improves through structure, not better prompts.
     </p>
   </header>
 

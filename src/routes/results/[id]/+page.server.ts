@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
   const response = await fetch(`/results/${resultId}.json`);
 
   if (!response.ok) {
-    error(404, `Saved result ${resultId} not found`);
+    error(404, `Receipt ${resultId} not found`);
   }
 
   const result = await response.json();

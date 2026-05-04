@@ -12,12 +12,12 @@ Guest code runs in **Worker Loader** isolates with an explicit **capability** se
 
 ## 3. What’s the observability story for agent runs?
 
-Every persisted run returns a **`resultId`**. The saved result document contains the request shape, outcome, timing, and per-step data for successful chains. Agents should read **`/results/:id.json`**. Humans can open **`/results/:id`** as the viewer over that same saved result. It’s a shareable artifact, not a full “agent session” product—you correlate tool calls to saved results in your own control plane. See [Saved result schema](/docs/result-schema) and [Failures & step data](/docs/failures) (including chain failure behavior).
+Every persisted run returns a **`resultId`**. The receipt document contains the request shape, outcome, timing, and per-step data for successful chains. Agents should read **`/results/:id.json`**. Humans can open **`/results/:id`** as the viewer over that same receipt. It’s a shareable artifact, not a full “agent session” product—you correlate tool calls to receipts in your own control plane. See [Receipt schema](/docs/result-schema) and [Failures & step data](/docs/failures) (including chain failure behavior).
 
 ## 4. Cost and limits—what breaks first?
 
-Platform **CPU/time** and **Workers** limits apply; Lab doesn’t add a separate chain step cap in code. Spawn depth is bounded; R2 invoke caps list/size in the Worker. See [Limits](/docs/limits). For dollars-on-the-bill precision, use Cloudflare’s published pricing and your account—not the saved result’s wall `ms` alone.
+Platform **CPU/time** and **Workers** limits apply; Lab doesn’t add a separate chain step cap in code. Spawn depth is bounded; R2 invoke caps list/size in the Worker. See [Limits](/docs/limits). For dollars-on-the-bill precision, use Cloudflare’s published pricing and your account—not the receipt’s wall `ms` alone.
 
 ## 5. Why edge instead of a Python sidecar or local sandbox?
 
-**Fit:** short, chainable, **least-privilege** guest JS next to **KV / AI / R2 / …** with **saved results**. **Poor fit:** long CPU-heavy batch jobs or arbitrary host access—see [When to use Lab](/docs/when-to-use) and [Architecture](/docs/architecture).
+**Fit:** short, chainable, **least-privilege** guest JS next to **KV / AI / R2 / …** with **receipts**. **Poor fit:** long CPU-heavy batch jobs or arbitrary host access—see [When to use Lab](/docs/when-to-use) and [Architecture](/docs/architecture).

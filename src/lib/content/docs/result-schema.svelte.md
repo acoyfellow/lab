@@ -1,12 +1,12 @@
-# Run result format
+# Receipt schema
 
-When you run code on Lab or save an external receipt, the saved result is a JSON document. `GET /results/:id.json` is the canonical machine-readable form, and `GET /results/:id` is the human viewer over that same saved result on the public app. Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial or empty. See [Failures & step data](/docs/failures). This page describes the saved-result schema.
+Every run on Lab produces a receipt: a JSON document at `GET /results/:id.json` (canonical, machine-readable) with a human viewer at `GET /results/:id`. Successful runs include full per-step data. Failed or aborted runs include the error and reason; per-step detail may be partial or empty. See [Failures & step data](/docs/failures).
 
 ## Top-level fields
 
 | Field | Type | What it is |
 |---|---|---|
-| `id` | string | Unique ID (same as the `resultId` and saved-result paths) |
+| `id` | string | Unique ID (same as the `resultId` and receipt paths) |
 | `type` | string | How the result was created: `sandbox`, `kv`, `chain`, `generate`, `spawn`, or `external` |
 | `createdAt` | string | When it ran (ISO 8601) |
 | `request` | object | What was sent in (code, permissions, prompt, etc.) |
@@ -55,9 +55,9 @@ When you run a pipeline (`/run/chain`), the `steps` array contains one entry per
 
 ## Getting the result
 
-Every run response includes a `resultId`. Use it to fetch the saved result later:
+Every run response includes a `resultId`. Use it to fetch the receipt later:
 
-- `GET /results/:id.json` — canonical machine-readable saved-result JSON
+- `GET /results/:id.json` — canonical machine-readable receipt JSON
 - `GET /results/:id` — human viewer on the public app
 
-`POST /seed` is the only endpoint that doesn't create a saved result.
+`POST /seed` is the only endpoint that doesn't create a receipt.

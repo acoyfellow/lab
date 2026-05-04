@@ -20,11 +20,11 @@
   ];
 
   const resources = [
-    { name: 'Public App', detail: 'Public origin for docs, saved-result viewer, and HTTP API proxy routes', required: true },
+    { name: 'Public App', detail: 'Public origin for docs, receipt viewer, and HTTP API proxy routes', required: true },
     { name: 'Private Worker', detail: 'Sandbox execution engine and internal invoke routes', required: true },
     { name: 'Auth D1 Database', detail: 'Auth sessions and user accounts (Better Auth)', required: true },
     { name: 'Engine D1 Database', detail: 'Guest-readable D1 for d1Read demos and tests', required: true },
-    { name: 'KV Namespace', detail: 'Saved results and guest KV read data', required: true },
+    { name: 'KV Namespace', detail: 'Receipts and guest KV read data', required: true },
     { name: 'Worker Loader', detail: 'Creates guest isolates at runtime', required: true },
     { name: 'Durable Objects', detail: 'Lab stub DO and Petri dish backing state', required: true },
     { name: 'R2 Bucket', detail: 'Optional guest file storage for r2Read', required: false },
@@ -145,7 +145,7 @@
         <li><strong class="text-(--text)">WORKER</strong>: private sandbox engine with invoke routes</li>
         <li><strong class="text-(--text)">DB</strong>: Better Auth data</li>
         <li><strong class="text-(--text)">ENGINE_D1</strong>: guest-readable D1 for <code class="font-mono text-[0.8125rem]">d1Read</code></li>
-        <li><strong class="text-(--text)">KV</strong>: saved results and guest KV read data</li>
+        <li><strong class="text-(--text)">KV</strong>: receipts and guest KV read data</li>
         <li><strong class="text-(--text)">LAB_DO / PETRI_DO</strong>: durable backing state</li>
         <li><strong class="text-(--text)">R2 / Workers AI</strong>: optional feature bindings</li>
       </ul>

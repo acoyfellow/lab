@@ -6,7 +6,7 @@ export const apiRetry: ExampleData = {
 	description: 'Handle flaky upstreams with deterministic retries, exponential backoff, and circuit breaker logic',
 	problem: 'Upstream services fail intermittently. Blind retries overwhelm failing dependencies.',
 	solution: 'Simulate a flaky upstream, retry with exponential backoff, and record when the circuit would fail fast.',
-	result: 'Stable retry behavior you can run locally and inspect in a saved result',
+	result: 'Stable retry behavior you can run locally and inspect in a receipt',
 	icon: 'refresh',
 	tags: ['api', 'resilience', 'retry', 'circuit-breaker'],
 	steps: [
@@ -134,7 +134,7 @@ export const multiSourceAggregator: ExampleData = {
 	title: 'Multi-Source Aggregator',
 	description: 'Merge multiple source snapshots, then combine and analyze them in one workflow',
 	problem: 'Need to combine related datasets from multiple upstream snapshots for unified reporting.',
-	solution: 'Load mocked source snapshots, merge them, and compute aggregated metrics in one saved result.',
+	solution: 'Load mocked source snapshots, merge them, and compute aggregated metrics in one receipt.',
 	result: 'Unified dataset with computed metrics across both source snapshots',
 	icon: 'aggregate',
 	tags: ['api', 'aggregation', 'parallel', 'analytics'],

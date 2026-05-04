@@ -12,10 +12,10 @@
 />
 
 <div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-6">
-  <header class="space-y-1">
+  <header class="space-y-2">
     <h1 class="text-lg font-semibold tracking-tight">Sessions</h1>
-    <p class="text-[0.8125rem] text-(--text-2)">
-      Artifacts store the worktree. Lab records the receipt trail.
+    <p class="text-[0.875rem] text-(--text-2) max-w-[60ch] leading-relaxed">
+      A session ties one repo (Cloudflare Artifact or local git) to the receipt trail an agent writes against it. Open one to see the goal, current state, next action, and every receipt the agent has produced.
     </p>
   </header>
 

@@ -19,5 +19,5 @@ export const DOCS_READING_ORDER: readonly { to: string; label: string }[] = [
 	{ to: paths.docsSecurity, label: 'Security' },
 	{ to: paths.docsLimits, label: 'Limits' },
 	{ to: paths.docsFailures, label: 'Failures & step data' },
-	{ to: paths.docsResultSchema, label: 'Saved result schema' },
+	{ to: paths.docsResultSchema, label: 'Receipt schema' },
 ];

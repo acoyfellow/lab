@@ -1,8 +1,8 @@
 # How Lab works
 
-## You send code. Lab runs it. You get a saved result.
+## You send code. Lab runs it. You get a receipt.
 
-That's the whole idea. Your agent (or script, or curl command) sends JavaScript to Lab. Lab runs it inside a Cloudflare sandbox — a fresh, isolated environment that starts in milliseconds. When you run code on Lab, the saved-result JSON is available at `GET /results/:id.json`. Humans can open `GET /results/:id` in the public app viewer. Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial.
+That's the whole idea. Your agent (or script, or curl command) sends JavaScript to Lab. Lab runs it inside a Cloudflare sandbox — a fresh, isolated environment that starts in milliseconds. When you run code on Lab, the receipt JSON is available at `GET /results/:id.json`. Humans can open `GET /results/:id` in the public app viewer. Successful runs include full step data. Failed or aborted runs include the error and reason; per-step detail may be partial.
 
 ---
 

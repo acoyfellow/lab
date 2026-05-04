@@ -62,11 +62,8 @@
       <nav
         class="flex flex-wrap items-center gap-x-4 gap-y-1 justify-end text-[0.8125rem]"
       >
-        <AppLink to={paths.docsPatterns} class={navClass(paths.docsPatterns)}>Patterns</AppLink>
-        <AppLink to="/examples" class={navClass('/examples')}>Examples</AppLink>
-        <AppLink to={paths.docs} class={navClass(paths.docs)}>Docs</AppLink>
-        <AppLink to="/sessions" class={navClass('/sessions')}>Sessions</AppLink>
         <AppLink to="/compose" class={navClass('/compose')}>Compose</AppLink>
+        <AppLink to={paths.docs} class={navClass(paths.docs)}>Docs</AppLink>
         <a
           href="https://github.com/acoyfellow/lab"
           class="inline-flex items-center justify-center w-8 h-8 rounded-(--radius) text-(--text-3) hover:text-(--text) hover:bg-(--surface-alt) transition-colors"
@@ -97,12 +94,12 @@
       <div class="grid gap-8 sm:grid-cols-3 text-[0.8125rem]">
         <div class="space-y-2">
           <div class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
-            Build
+            Use
           </div>
           <div class="flex flex-col gap-1.5">
             <AppLink to="/compose" class="text-(--text-2) no-underline hover:text-(--text)">Compose</AppLink>
-            <AppLink to="/sessions" class="text-(--text-2) no-underline hover:text-(--text)">Sessions</AppLink>
             <AppLink to="/examples" class="text-(--text-2) no-underline hover:text-(--text)">Examples</AppLink>
+            <AppLink to="/sessions" class="text-(--text-2) no-underline hover:text-(--text)">Sessions</AppLink>
           </div>
         </div>
 
@@ -111,9 +108,9 @@
             Learn
           </div>
           <div class="flex flex-col gap-1.5">
+            <AppLink to={paths.tutorial} class="text-(--text-2) no-underline hover:text-(--text)">Tutorial</AppLink>
             <AppLink to={paths.docsPatterns} class="text-(--text-2) no-underline hover:text-(--text)">Patterns</AppLink>
             <AppLink to={paths.docs} class="text-(--text-2) no-underline hover:text-(--text)">Docs</AppLink>
-            <AppLink to={paths.tutorial} class="text-(--text-2) no-underline hover:text-(--text)">Tutorial</AppLink>
           </div>
         </div>
 
@@ -126,7 +123,7 @@
               href="https://github.com/acoyfellow/lab"
               class="text-(--text-2) no-underline hover:text-(--text)"
             >GitHub</a>
-            <AppLink to="/docs/self-host" class="text-(--text-2) no-underline hover:text-(--text)">Self-host</AppLink>
+            <AppLink to={paths.docsSelfHost} class="text-(--text-2) no-underline hover:text-(--text)">Self-host</AppLink>
           </div>
         </div>
       </div>

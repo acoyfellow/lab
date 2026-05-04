@@ -79,7 +79,7 @@
   let { data } = $props();
   const result = $derived(data.result as ResultPageData);
 
-  // State for saved-result viewer
+  // State for receipt viewer
   let selectedStep = $state<number | null>(null);
   let expandedSteps = $state<Set<number>>(new Set());
   let activeFilter = $state<string | null>(null);
@@ -95,7 +95,7 @@
     return items;
   });
 
-  // Available capability filters based on saved-result step data
+  // Available capability filters based on receipt step data
   const availableFilters = $derived(() => {
     if (!result.steps) return [];
     const caps = new Set<string>();
@@ -127,7 +127,7 @@
     return err.length > 160 ? `${err.slice(0, 160)}…` : err;
   });
 
-  const resultKind = $derived(result.type === 'external' ? 'Receipt' : 'Saved result');
+  const resultKind = 'Receipt';
   const typeSummary = $derived.by(() => {
     if (result.type === 'external' && result.receipt) {
       return `${result.receipt.source}.${result.receipt.action}`;
@@ -278,8 +278,8 @@
 </script>
 
 <SEO
-  title={`Saved result ${result.id} — lab`}
-  description="Saved result viewer — inspect what ran, what returned, and how long it took. Fork it or share it."
+  title={`Receipt ${result.id} — Lab`}
+  description="Inspect what ran, what returned, and how long it took. Fork it or share it."
   path={page.url.pathname}
   type="website"
 />

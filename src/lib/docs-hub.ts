@@ -1,108 +1,125 @@
 import { paths } from '$lib/paths';
 
-/** Drives `/docs` Guides vs Reference grids (no slice indices). */
+/**
+ * Doc index groups, in reading order. Keep this list short and grouped by
+ * intent ("what am I trying to do?"), not by document type.
+ */
+export type DocsHubGroup = 'start' | 'api' | 'concepts' | 'operate';
+
 export type DocsHubCard = {
-	group: 'guides' | 'reference';
+	group: DocsHubGroup;
 	to: string;
 	title: string;
 	description: string;
-	tags: string[];
 };
 
+export const DOCS_HUB_GROUPS: { id: DocsHubGroup; heading: string; subheading: string }[] = [
+	{ id: 'start', heading: 'Start here', subheading: 'Get something running and read the receipt.' },
+	{ id: 'api', heading: 'API', subheading: 'How agents call Lab.' },
+	{ id: 'concepts', heading: 'How it works', subheading: 'The execution model in plain language.' },
+	{ id: 'operate', heading: 'Operate', subheading: 'Deploy and run Lab in production.' }
+];
+
 export const docsHubCards: DocsHubCard[] = [
-		{
-			group: 'guides',
-			to: '/docs/self-host',
-			title: 'Self-Hosting',
-			description: 'Deploy the public app, private Worker, and backing Cloudflare resources.',
-			tags: ['Production', 'Cloudflare']
-		},
+	// Start here
 	{
-		group: 'guides',
-		to: paths.docsHttpApi,
-		title: 'HTTP API',
-		description: 'Run modes, endpoints, curl, request/response shapes.',
-		tags: ['REST', 'JSON']
-	},
-		{
-			group: 'guides',
-			to: paths.docsAgentIntegration,
-			title: 'Agents',
-			description: 'stdio MCP find + execute, or GET /lab/catalog + HTTP runs.',
-			tags: ['MCP', 'AI']
-		},
-	{
-		group: 'guides',
-		to: paths.docsFaq,
-		title: 'FAQ',
-		description: 'Agents, sandbox, saved results, limits, why edge — for AI-curious SWEs.',
-		tags: ['FAQ', 'AI']
+		group: 'start',
+		to: paths.tutorial,
+		title: '2-minute tutorial',
+		description: 'Install the client, run code, open the receipt URL.'
 	},
 	{
-		group: 'guides',
-		to: paths.docsTypescript,
-		title: 'TypeScript Client',
-		description: '@acoyfellow/lab — install, createLabClient, methods.',
-		tags: ['npm', 'TypeScript']
-	},
-	{
-		group: 'guides',
+		group: 'start',
 		to: paths.docsPatterns,
-		title: 'Agent Patterns',
-		description: 'Prove it, self-heal, handoff, canary — saved results as the protocol.',
-		tags: ['Agent', 'Patterns']
+		title: 'Patterns',
+		description: 'Prove-it, self-heal, handoff, canary — receipts as the protocol.'
 	},
 	{
-		group: 'guides',
+		group: 'start',
 		to: paths.docsWhenToUse,
 		title: 'When to use Lab',
-		description: 'Good fit vs poor fit; relationship to plain Workers.',
-		tags: ['Product']
+		description: 'Good fit vs poor fit. How it differs from a plain Worker.'
+	},
+
+	// API
+	{
+		group: 'api',
+		to: paths.docsHttpApi,
+		title: 'HTTP API',
+		description: 'Endpoints, request bodies, curl examples.'
 	},
 	{
-		group: 'reference',
+		group: 'api',
+		to: paths.docsTypescript,
+		title: 'TypeScript client',
+		description: '@acoyfellow/lab — createLabClient and methods.'
+	},
+	{
+		group: 'api',
+		to: paths.docsAgentIntegration,
+		title: 'MCP for agents',
+		description: 'stdio MCP find + execute, or GET /lab/catalog.'
+	},
+	{
+		group: 'api',
+		to: paths.docsResultSchema,
+		title: 'Receipt schema',
+		description: 'The JSON shape at /results/:id.json.'
+	},
+
+	// How it works
+	{
+		group: 'concepts',
+		to: '/docs/how-it-works',
+		title: 'Execution model',
+		description: 'Isolates, capabilities, chains, spawn, receipts.'
+	},
+	{
+		group: 'concepts',
+		to: paths.docsCapabilities,
+		title: 'Capabilities reference',
+		description: 'What each capability does and how denials surface.'
+	},
+	{
+		group: 'concepts',
 		to: paths.docsArchitecture,
 		title: 'Architecture',
-		description: 'Worker loaders, Effect, KV snapshot, spawn, chains.',
-		tags: ['Cloudflare', 'Effect']
-	},
-		{
-			group: 'reference',
-			to: paths.docsCapabilities,
-			title: 'Capabilities',
-			description: 'Registry-backed capability IDs, denied errors, and runtime semantics.',
-			tags: ['Security']
-		},
-		{
-			group: 'reference',
-			to: paths.docsResultSchema,
-			title: 'Saved Result Schema',
-			description: 'Saved-result JSON, viewer semantics, and `resultId`.',
-			tags: ['Schema']
-		},
-	{
-		group: 'reference',
-		to: paths.docsLimits,
-		title: 'Limits',
-		description: 'Repo-enforced caps, chains, R2 invoke, platform limits.',
-		tags: ['Reference']
+		description: 'Worker Loaders, Effect, KV snapshot, spawn semantics.'
 	},
 	{
-		group: 'reference',
-		to: paths.docsSecurity,
-		title: 'Security model',
-		description: 'Untrusted guest code, capabilities, operators.',
-		tags: ['Reference']
-	},
-	{
-		group: 'reference',
+		group: 'concepts',
 		to: paths.docsFailures,
 		title: 'Failures & step data',
-		description: 'Chain errors, partial-or-empty step data on failure, isolate reasons.',
-		tags: ['Reference']
+		description: 'How errors surface in receipts and which fields you can rely on.'
+	},
+
+	// Operate
+	{
+		group: 'operate',
+		to: paths.docsSelfHost,
+		title: 'Self-host',
+		description: 'Deploy to your Cloudflare account with one bearer token.'
+	},
+	{
+		group: 'operate',
+		to: paths.docsLimits,
+		title: 'Limits',
+		description: 'Repo-enforced caps, chain depth, platform limits.'
+	},
+	{
+		group: 'operate',
+		to: paths.docsSecurity,
+		title: 'Security model',
+		description: 'Untrusted guest code, capabilities, operator surface.'
+	},
+	{
+		group: 'operate',
+		to: paths.docsFaq,
+		title: 'FAQ',
+		description: 'Common questions about agents, sandbox, receipts, edge.'
 	}
 ];
 
-export function docsHubByGroup(g: DocsHubCard['group']): DocsHubCard[] {
+export function docsHubByGroup(g: DocsHubGroup): DocsHubCard[] {
 	return docsHubCards.filter((c) => c.group === g);
 }

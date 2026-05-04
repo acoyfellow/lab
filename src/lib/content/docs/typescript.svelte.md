@@ -39,7 +39,7 @@ const out = await lab.runChain([
 | `createSessionReceipt(id, opts)` | Save a receipt directly into a session | [POST /receipts](/docs/http-api#post-receipts) |
 | `createReceipt(opts)` | Save a receipt for external agent work | [POST /receipts](/docs/http-api#post-receipts) |
 | `seed()` | Load demo data into KV | [POST /seed](/docs/http-api#post-seed) |
-| `getResult(id)` | Fetch canonical saved-result JSON | [GET /results/:id.json](/docs/http-api#get-resultsidjson) |
+| `getResult(id)` | Fetch canonical receipt JSON | [GET /results/:id.json](/docs/http-api#get-resultsidjson) |
 
 ## Receipts for external work
 

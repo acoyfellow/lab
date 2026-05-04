@@ -74,16 +74,16 @@ return {
 export const proofOfCorrectness: ExampleData = {
 	id: 'proof-of-correctness',
 	title: 'Proof of Correctness',
-	description: 'Agent writes a function, proves it handles 10 edge cases, delivers the saved result as a receipt.',
+	description: 'Agent writes a function, proves it handles 10 edge cases, hands you the receipt.',
 	problem: 'AI-generated code comes with "this should work." No proof, no edge case coverage.',
-	solution: 'Specify edge cases → execute the function → assert every output → return a verdict with the saved result.',
-	result: 'The saved result IS the deliverable. Not "I think this works" — here is the execution receipt.',
+	solution: 'Specify edge cases → execute the function → assert every output → return a verdict with the receipt.',
+	result: 'The receipt IS the deliverable. Not "I think this works" — here is the execution proof.',
 	icon: 'check-circle',
 	tags: ['agent', 'testing', 'proof', 'trust', 'correctness'],
 	complexity: 'workflow',
 	startHere: true,
 	featured: true,
-	resultValue: 'In this successful example run, the saved result records the cases, assertions, and final verdict so the proof artifact is inspectable and shareable.',
+	resultValue: 'In this successful example run, the receipt records the cases, assertions, and final verdict so the proof artifact is inspectable and shareable.',
 	steps: [
 		{ name: 'Specify', description: '10 edge cases with expected outputs', code: '{ input: "$1,234.56", expected: 1234.56 }', input: {}, output: { totalCases: 10 }, capabilities: [], ms: 1 },
 		{ name: 'Execute', description: 'Run parseAmount() against every case', code: 'parseAmount("$1,234.56") → 1234.56', input: { cases: '...' }, output: { executed: 10 }, capabilities: [], ms: 3 },
@@ -170,7 +170,7 @@ return {
 export const canaryRun: ExampleData = {
 	id: 'canary-run',
 	title: 'Canary Run',
-	description: 'Old logic vs new logic, same inputs. The saved result shows exactly what changes before you ship.',
+	description: 'Old logic vs new logic, same inputs. The receipt shows exactly what changes before you ship.',
 	problem: 'Refactoring is risky. "It should behave the same" is hope, not proof.',
 	solution: 'Run old and new logic against identical inputs in separate isolates. Diff the outputs.',
 	result: 'Side-by-side comparison. 2 cases changed, both improvements. Approve with confidence.',
@@ -178,7 +178,7 @@ export const canaryRun: ExampleData = {
 	tags: ['canary', 'diff', 'refactor', 'safety', 'agent'],
 	complexity: 'workflow',
 	featured: true,
-	resultValue: 'In this successful comparison run, the saved result becomes a review artifact: same inputs, old output, new output, exact diff.',
+	resultValue: 'In this successful comparison run, the receipt becomes a review artifact: same inputs, old output, new output, exact diff.',
 	steps: [
 		{ name: 'Test Data', description: '6 emails including edge cases', code: '{ cases: [{ email: "alice@example.com" }, ...] }', input: {}, output: { cases: 6 }, capabilities: [], ms: 1 },
 		{ name: 'Old Logic (v1)', description: 'email.toLowerCase()', code: '"  BOB@EXAMPLE.COM  " → "  bob@example.com  "', input: { cases: '...' }, output: { version: 'v1' }, capabilities: [], ms: 1 },
@@ -254,7 +254,7 @@ export const zeroBleed: ExampleData = {
 	tags: ['security', 'isolation', 'zero-trust', 'v8', 'agent'],
 	complexity: 'workflow',
 	featured: true,
-	resultValue: 'The saved result proves the security model step by step: poison first, inspect second, confirm nothing leaked.',
+	resultValue: 'The receipt proves the security model step by step: poison first, inspect second, confirm nothing leaked.',
 	steps: [
 		{ name: 'Poison', description: 'Globals, prototypes, fake process.env', code: 'globalThis.__leaked = "POISONED"', input: {}, output: { poisoned: true, targets: 4 }, capabilities: [], ms: 2 },
 		{ name: 'Clean Room', description: 'Fresh isolate checks every vector', code: 'typeof globalThis.__leaked → "undefined"', input: {}, output: { clean: true, leaked: 0 }, capabilities: [], ms: 1 },
@@ -337,7 +337,7 @@ return {
   operations: ['fibonacci', 'prime_sieve', 'matrix_multiply'],
   lastStep: { operation: input.operation, dimensions: input.dimensions, checksum: input.checksum },
   message: 'Three computations an LLM would hallucinate. The edge got them right.',
-  note: 'Open the saved result — every step has the exact answer with per-isolate timing.',
+  note: 'Open the receipt — every step has the exact answer with per-isolate timing.',
 };`,
 		capabilities: [],
 	},
@@ -348,7 +348,7 @@ export const computeOffload: ExampleData = {
 	title: 'Compute Offload',
 	description: 'Fibonacci, prime sieve, matrix multiply — real math on the edge, not hallucinated.',
 	problem: 'LLMs guess at arithmetic. They hallucinate fib(50), miscount primes, can\'t multiply matrices.',
-	solution: 'Ship the computation to a Lab isolate. Get the exact answer with a saved result proving it.',
+	solution: 'Ship the computation to a Lab isolate. Get the exact answer with a receipt proving it.',
 	result: 'fib(50) = 12,586,269,025. 1,229 primes under 10k. 50x50 matrix. Zero hallucination.',
 	icon: 'cpu',
 	tags: ['compute', 'math', 'offload', 'agent', 'accuracy'],
@@ -426,7 +426,7 @@ return {
   message: warnings.length === 0
     ? 'Migration is safe. Approve to proceed.'
     : 'Review ' + warnings.length + ' warning(s) before approving.',
-  instruction: 'Share this saved result URL with your team. Approve or reject.',
+  instruction: 'Share this receipt URL with your team. Approve or reject.',
 };`,
 		capabilities: [],
 	},
@@ -435,17 +435,17 @@ return {
 export const preflightCheck: ExampleData = {
 	id: 'preflight-check',
 	title: 'Preflight Check',
-	description: 'Simulate a DB migration against sample data. The saved result is the approval artifact.',
+	description: 'Simulate a DB migration against sample data. The receipt is the approval artifact.',
 	problem: 'Agent is about to run a migration. "This should be safe" is not proof.',
 	solution: 'Simulate against sample rows → check for warnings → generate rollback plan → produce approval.',
-	result: '1 warning caught (null email row). Rollback available. Review the saved result, then approve.',
+	result: '1 warning caught (null email row). Rollback available. Review the receipt, then approve.',
 	icon: 'alert-triangle',
 	tags: ['preflight', 'simulation', 'safety', 'migration', 'agent'],
 	steps: [
 		{ name: 'Load Migration', description: 'ALTER TABLE + 4 sample rows', code: '{ sql: "ALTER TABLE users ADD COLUMN status..." }', input: {}, output: { rowCount: 4 }, capabilities: [], ms: 1 },
 		{ name: 'Simulate', description: 'Apply migration in-memory', code: 'rows.map(r => ({ ...r, status: "active" }))', input: { sampleRows: '...' }, output: { warnings: 1 }, capabilities: [], ms: 2 },
 		{ name: 'Rollback Plan', description: 'Verify reversibility', code: '{ rollbackSafe: true, dataLoss: false }', input: {}, output: { rollbackSafe: true }, capabilities: [], ms: 1 },
-		{ name: 'Approval', description: 'For human review', code: '{ status: "REVIEW", warnings: 1 }', input: {}, output: { status: 'REVIEW', instruction: 'Share this saved result URL.' }, capabilities: [], ms: 1 },
+		{ name: 'Approval', description: 'For human review', code: '{ status: "REVIEW", warnings: 1 }', input: {}, output: { status: 'REVIEW', instruction: 'Share this receipt URL.' }, capabilities: [], ms: 1 },
 	],
 };
 
@@ -467,7 +467,7 @@ return [...prev, { isolate: ${i + 1}, primes: primes.length, ms: Date.now() % 10
 }));
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 7. RESULT HANDOFF — Agent A produces work, Agent B picks it up via saved result
+// 7. RESULT HANDOFF — Agent A produces work, Agent B picks it up via receipt
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const RESULT_HANDOFF_STEPS: ChainStep[] = [
@@ -511,7 +511,7 @@ return {
   conclusion,
   recommendation,
   agentsInvolved: 3,
-  note: 'Each agent ran in a separate isolate. The saved result shows the full handoff chain.',
+  note: 'Each agent ran in a separate isolate. The receipt shows the full handoff chain.',
 };`,
 		capabilities: [],
 	},
@@ -519,17 +519,17 @@ return {
 
 export const resultHandoff: ExampleData = {
 	id: 'result-handoff',
-	title: 'Saved Result Handoff',
-	description: 'Three agents in a relay. Each picks up where the last left off. The saved result is the handoff protocol.',
+	title: 'Receipt Handoff',
+	description: 'Three agents in a relay. Each picks up where the last left off. The receipt is the handoff protocol.',
 	problem: 'How do agents share work? Custom APIs? Shared databases? Message queues?',
-	solution: 'Agent A → isolate → saved result. Agent B reads the saved result, continues in a new isolate. Repeat.',
-	result: '3 agents, 3 isolates, 1 saved result URL. The saved result IS the coordination layer.',
+	solution: 'Agent A → isolate → receipt. Agent B reads the receipt, continues in a new isolate. Repeat.',
+	result: '3 agents, 3 isolates, 1 receipt URL. The receipt IS the coordination layer.',
 	icon: 'arrow-right-left',
-	tags: ['handoff', 'multi-agent', 'coordination', 'saved-result', 'relay'],
+	tags: ['handoff', 'multi-agent', 'coordination', 'receipt', 'relay'],
 	complexity: 'agentic',
 	startHere: true,
 	featured: true,
-	resultValue: 'In this handoff example, one saved result URL preserves the research, synthesis, and final draft for the next agent.',
+	resultValue: 'In this handoff example, one receipt URL preserves the research, synthesis, and final draft for the next agent.',
 	steps: [
 		{ name: 'Agent A: Research', description: 'Gather and structure findings', code: '{ sources: 3, summary: "All consistent" }', input: {}, output: { sources: 3, handoff: 'Ready for Agent B' }, capabilities: [], ms: 2 },
 		{ name: 'Agent B: Synthesize', description: 'Filter and conclude', code: '{ conclusion: "3/3 high-confidence" }', input: { sources: '...' }, output: { recommendation: 'Proceed' }, capabilities: [], ms: 1 },
@@ -556,7 +556,7 @@ try {
 	{
 		name: 'Diagnose failure',
 		body: `if (input.ok) return { ...input, diagnosis: 'No repair needed' };
-// Agent reads the error and raw data from the saved result
+// Agent reads the error and raw data from the receipt
 const diagnosis = [];
 if (input.raw.match(/\\b\\w+:/)) diagnosis.push('unquoted_keys');
 if (input.raw.match(/'/)) diagnosis.push('single_quotes');
@@ -610,16 +610,16 @@ try {
 export const iterativeRepair: ExampleData = {
 	id: 'iterative-repair',
 	title: 'Iterative Repair',
-	description: 'Agent tries to parse, fails, reads the error, diagnoses the problem, applies a fix, retries. The saved result shows the thinking.',
+	description: 'Agent tries to parse, fails, reads the error, diagnoses the problem, applies a fix, retries. The receipt shows the thinking.',
 	problem: 'Data is broken in unpredictable ways. A single-shot parser either works or crashes.',
 	solution: 'Try → fail → diagnose from the error → apply targeted fix → retry. Each step in its own isolate.',
-	result: 'Attempt 1 failed (unquoted keys). Diagnosed. Attempt 2 succeeded. The saved result shows the full reasoning chain.',
+	result: 'Attempt 1 failed (unquoted keys). Diagnosed. Attempt 2 succeeded. The receipt shows the full reasoning chain.',
 	icon: 'refresh-cw',
 	tags: ['self-healing', 'repair', 'iterative', 'diagnosis', 'agent'],
 	complexity: 'agentic',
 	startHere: true,
 	featured: true,
-	resultValue: 'In this successful example run, the saved result captures the failure, diagnosis, repair strategy, and retry so the debugging loop is auditable.',
+	resultValue: 'In this successful example run, the receipt captures the failure, diagnosis, repair strategy, and retry so the debugging loop is auditable.',
 	steps: [
 		{ name: 'Attempt 1', description: 'Naive JSON.parse', code: 'JSON.parse(raw) → throws', input: {}, output: { ok: false, error: 'Unexpected token' }, capabilities: [], ms: 1 },
 		{ name: 'Diagnose', description: 'Read error + raw data', code: '{ diagnosis: ["unquoted_keys"] }', input: { error: '...' }, output: { strategy: 'Quote all keys' }, capabilities: [], ms: 1 },
@@ -643,7 +643,7 @@ export const iterativeRepair: ExampleData = {
  * Task: implement a fuzzy string matcher.
  * Two candidates take different approaches.
  * Same test cases. Same scoring. Best score wins.
- * The saved result is the lab notebook for this experiment.
+ * The receipt is the lab notebook for this experiment.
  */
 export const SELF_IMPROVING_LOOP_STEPS: ChainStep[] = [
 	{
@@ -770,7 +770,7 @@ return {
   },
   delta: Math.abs(a.fitness - b.fitness) + '% fitness difference',
   next: 'Feed the winner as parent to the next generation. Mutate and repeat.',
-  note: 'This is one cycle. An outer loop calls Lab repeatedly — each generation is a chain, each chain yields one saved result.',
+  note: 'This is one cycle. An outer loop calls Lab repeatedly — each generation is a chain, each chain yields one receipt.',
 };`,
 		capabilities: [],
 	},
@@ -781,12 +781,12 @@ export const selfImprovingLoop: ExampleData = {
 	title: 'Self-Improving Loop',
 	description: 'Two candidate implementations, same test cases, winner selected by fitness. One generation of an evolutionary agent loop.',
 	problem: 'Self-improving agents need to generate code, evaluate it safely, and pick the best variant. That requires isolated execution with verifiable results.',
-	solution: 'Each generation is a Lab chain: define test cases → run candidate A → run candidate B → select winner. The saved result is the lab notebook.',
-	result: 'Levenshtein beats Trigram 100% vs 63%. Winner feeds into the next generation. The saved result records the full experiment.',
+	solution: 'Each generation is a Lab chain: define test cases → run candidate A → run candidate B → select winner. The receipt is the lab notebook.',
+	result: 'Levenshtein beats Trigram 100% vs 63%. Winner feeds into the next generation. The receipt records the full experiment.',
 	icon: 'repeat',
 	tags: ['agent', 'self-improving', 'evolution', 'evaluation', 'meta'],
 	complexity: 'agentic',
-	resultValue: 'The saved result acts as the lab notebook for one generation: same harness, two candidates, measured winner.',
+	resultValue: 'The receipt acts as the lab notebook for one generation: same harness, two candidates, measured winner.',
 	steps: [
 		{ name: 'Test Cases', description: '8 string pairs with minimum similarity thresholds', code: '{ a: "kitten", b: "sitting", minScore: 0.5 }', input: {}, output: { cases: 8 }, capabilities: [], ms: 1 },
 		{ name: 'Candidate A', description: 'Trigram overlap — fast, approximate', code: 'trigramSimilarity("kitten", "sitting")', input: { cases: '...' }, output: { fitness: 63, passed: '5/8' }, capabilities: [], ms: 2 },
@@ -799,7 +799,7 @@ export const selfImprovingLoop: ExampleData = {
 export const coldBootSprint: ExampleData = {
 	id: 'cold-boot-sprint',
 	title: 'Cold Boot Sprint',
-	description: '20 unique isolates, each a fresh V8. See per-step timing in the saved result.',
+	description: '20 unique isolates, each a fresh V8. See per-step timing in the receipt.',
 	problem: 'How fast can Cloudflare spin up isolated V8 instances on demand?',
 	solution: '20 chain steps, each with unique code. Every step is a cold boot — no cache hits.',
 	result: '20 isolates, single-digit ms per boot. This is the engine.',

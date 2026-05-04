@@ -1,217 +1,85 @@
 <script lang="ts">
   import DocsArticle from '$lib/DocsArticle.svelte';
-  import { version as appVersion } from '$app/environment';
 
   const tocItems = [
     { id: 'overview', label: 'Overview' },
-    { id: 'what-gets-created', label: 'What Gets Created' },
-    { id: 'step-by-step', label: 'Step-by-Step' },
-    { id: 'commands', label: 'Commands' },
-    { id: 'next-steps', label: 'Next Steps' },
-  ];
-
-  const steps = [
-    {
-      number: 1,
-      title: 'Prerequisites',
-      content:
-        'Cloudflare account with Workers Paid plan (required for D1 and some bindings). Bun or Node.js installed locally.',
-    },
-    {
-      number: 2,
-      title: 'Clone and Install',
-      content: 'Clone the repository and install dependencies.',
-    },
-    {
-      number: 3,
-      title: 'Authentication',
-      content: 'Get your Cloudflare API token. See the permissions list below.',
-    },
-    {
-      number: 4,
-      title: 'Deploy',
-      content:
-        'Run the deploy command. Alchemy creates the public app, the private Worker, and the backing bindings automatically.',
-    },
-    {
-      number: 5,
-      title: 'Environment Variables',
-      content: 'Set up your public app URL as LAB_URL and add any external API keys separately.',
-    },
-    {
-      number: 6,
-      title: 'Verify',
-      content: 'Verify the public app origin and the catalog version.',
-    },
-  ];
-
-  const infrastructure = [
-    { name: 'Public App', purpose: 'Public origin for docs, saved-result viewer, and HTTP API proxy routes', required: true },
-    { name: 'Private Worker', purpose: 'Sandbox execution engine and internal invoke routes', required: true },
-    { name: 'Auth D1 Database', purpose: 'Auth sessions and user accounts (Better Auth)', required: true },
-    { name: 'Engine D1 Database', purpose: 'Guest-readable D1 for d1Read demos and tests', required: true },
-    { name: 'KV Namespace', purpose: 'Saved results and guest KV read data', required: true },
-    { name: 'Worker Loader', purpose: 'Creates guest isolates at runtime', required: true },
-    { name: 'Durable Objects', purpose: 'Lab stub DO and Petri dish backing state', required: true },
-    { name: 'R2 Bucket', purpose: 'Optional guest file storage for r2Read', required: false },
-    { name: 'AI Binding', purpose: 'Optional Workers AI for generate mode', required: false },
+    { id: 'use-hosted', label: 'Use the hosted instance' },
+    { id: 'self-host', label: 'Self-host on Cloudflare' },
+    { id: 'next', label: 'Next steps' },
   ];
 </script>
 
 <DocsArticle
-  pageTitle="Installation"
-  segment="Installation"
-  description="Step-by-step guide to deploying Lab to your Cloudflare account."
+  pageTitle="Install"
+  segment="Install"
+  description="Two paths: use the hosted Lab instance, or deploy your own to Cloudflare."
   {tocItems}
   mdDoc={false}
 >
   <header id="overview" class="space-y-3">
-    <h1 class="text-2xl font-semibold tracking-tight">Installation</h1>
+    <h1 class="text-2xl font-semibold tracking-tight">Install</h1>
     <p class="leading-relaxed">
-      Deploy Lab to your own Cloudflare account. You control the deployment, bindings, and capability configuration.
+      You have two options. If you just want to call Lab from an agent, use the public hosted instance. If you want full control over the data and capabilities, deploy your own.
     </p>
   </header>
 
-  <section id="what-gets-created" class="space-y-4">
-    <h2 class="text-lg font-semibold">What Gets Created</h2>
-    <p>
-      The deploy script provisions these Cloudflare resources automatically:
+  <section id="use-hosted" class="space-y-4">
+    <h2 class="text-lg font-semibold">Use the hosted instance</h2>
+    <p class="leading-relaxed">
+      The fastest path. Public instance at <code class="font-mono text-[0.8125rem]">lab.coey.dev</code>. No account, no token, best-effort.
     </p>
-    <div class="rounded-(--radius) border border-(--border) overflow-hidden">
-      <table class="w-full text-[0.875rem]">
-        <thead class="bg-(--surface-alt)">
-          <tr>
-            <th class="text-left px-4 py-2 font-semibold text-(--text-3)">Resource</th>
-            <th class="text-left px-4 py-2 font-semibold text-(--text-3)">Purpose</th>
-            <th class="text-left px-4 py-2 font-semibold text-(--text-3)">Required</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-(--border)">
-          {#each infrastructure as item}
-            <tr class="bg-(--surface)">
-              <td class="px-4 py-2.5 font-medium text-(--text)">{item.name}</td>
-              <td class="px-4 py-2.5 text-(--text-2)">{item.purpose}</td>
-              <td class="px-4 py-2.5">
-                {#if item.required}
-                  <span class="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-500">Required</span>
-                {:else}
-                  <span class="text-xs px-2 py-0.5 rounded-full bg-(--surface-alt) text-(--text-3)">Optional</span>
-                {/if}
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+
+    <div>
+      <p class="docs-section-label mb-2">Install the client</p>
+      <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">npm install @acoyfellow/lab</pre>
     </div>
-    <div class="mt-4 space-y-2 text-[0.875rem] leading-relaxed">
-      <p class="font-semibold text-(--text) m-0">Default bindings</p>
-      <ul class="list-disc pl-5 space-y-1 m-0 text-(--text-2)">
-        <li><strong class="text-(--text)">APP</strong>: public app origin and HTTP API proxy</li>
-        <li><strong class="text-(--text)">WORKER</strong>: private sandbox engine with invoke routes</li>
-        <li><strong class="text-(--text)">DB</strong>: Better Auth data</li>
-        <li><strong class="text-(--text)">ENGINE_D1</strong>: guest-readable D1 for <code class="font-mono text-[0.8125rem]">d1Read</code></li>
-        <li><strong class="text-(--text)">KV</strong>: saved results and guest KV read data</li>
-        <li><strong class="text-(--text)">LAB_DO / PETRI_DO</strong>: durable backing state</li>
-        <li><strong class="text-(--text)">R2 / Workers AI</strong>: optional feature bindings</li>
-      </ul>
-      <p class="text-(--text-3) m-0 mt-2">
-        Same summary on <a href="/docs/self-host#infrastructure-created" class="text-(--accent) hover:underline">Self-hosting → Infrastructure</a>.
+
+    <div>
+      <p class="docs-section-label mb-2">Run code</p>
+      <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">{`import { createLabClient } from "@acoyfellow/lab";
+
+const lab = createLabClient({ baseUrl: "https://lab.coey.dev" });
+
+const r = await lab.runSandbox({ body: "return 40 + 2" });
+console.log(r.result);    // 42
+console.log(r.resultId);  // open at https://lab.coey.dev/results/<id>`}</pre>
+    </div>
+
+    <div class="rounded-(--radius) border border-(--border) bg-(--surface-alt) p-4">
+      <p class="text-[0.8125rem] m-0 text-(--text-2)">
+        Anyone with a receipt URL can read it. Don't put secrets in code or capabilities you wouldn't want public.
       </p>
     </div>
   </section>
 
-  <section id="step-by-step" class="space-y-6">
-    <h2 class="text-lg font-semibold">Step-by-Step</h2>
+  <section id="self-host" class="space-y-4">
+    <h2 class="text-lg font-semibold">Self-host on Cloudflare</h2>
+    <p class="leading-relaxed">
+      For private use, set <code class="font-mono text-[0.8125rem]">LAB_AUTH_TOKEN</code> on the deployed worker; every request must then carry <code class="font-mono text-[0.8125rem]">Authorization: Bearer …</code>.
+    </p>
 
-    {#each steps as step}
-      <div class="space-y-3">
-        <div class="flex items-center gap-3">
-          <span
-            class="w-8 h-8 rounded-full bg-(--accent) text-white flex items-center justify-center font-semibold text-sm"
-          >
-            {step.number}
-          </span>
-          <h3 class="font-semibold text-(--text)">{step.title}</h3>
-        </div>
-        <p class="pl-11">{step.content}</p>
-      </div>
-    {/each}
-  </section>
-
-  <section id="commands" class="space-y-4">
-    <h2 class="text-lg font-semibold">Commands</h2>
-
-    <div class="space-y-4">
-      <div>
-        <p class="docs-section-label mb-2">
-          Clone and install
-        </p>
-        <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">git clone https://github.com/acoyfellow/lab
-cd lab
-
+    <div>
+      <p class="docs-section-label mb-2">Quick path</p>
+      <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">{`git clone https://github.com/acoyfellow/lab.git && cd lab
 bun install
-npm install</pre>
-      </div>
-
-      <div>
-        <p class="docs-section-label mb-2">Create API token</p>
-        <p class="mb-2">
-          Go to Cloudflare dashboard → My Profile → API Tokens → Create Token. Use the "Custom token" template with
-          these permissions:
-        </p>
-        <ul class="list-disc pl-5 space-y-1 mb-3">
-          <li>Account: Workers Scripts:Edit</li>
-          <li>Account: Cloudflare Pages:Edit</li>
-          <li>Zone: Workers Routes:Edit (optional — only if using a custom domain)</li>
-        </ul>
-      </div>
-
-      <div>
-        <p class="docs-section-label mb-2">Deploy</p>
-        <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">export CLOUDFLARE_API_TOKEN=your-token-here
-bun run deploy</pre>
-        <p class="text-(--text-3) mt-2">
-          This creates all infrastructure and deploys the Worker. Takes 2-3 minutes.
-        </p>
-      </div>
-
-      <div>
-        <p class="docs-section-label mb-2">
-          Set environment variables
-        </p>
-        <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">echo 'LAB_URL=https://YOUR-LAB-APP-URL' >> .env</pre>
-        <p class="text-(--text-3) mt-2">
-          Use the public app URL that Alchemy prints after deploy, not the private Worker origin.
-        </p>
-      </div>
-
-      <div>
-        <p class="docs-section-label mb-2">Verify</p>
-        <pre class="docs-pre bg-(--code-bg) p-3 rounded-(--radius) font-mono overflow-x-auto">curl $LAB_URL/health
-curl -s $LAB_URL/lab/catalog | jq '.version'</pre>
-        <p class="text-(--text-3) mt-2">
-          Expected: <code class="font-mono text-[0.8125rem]">{'{"ok":true}'}</code> and then
-          <code class="font-mono text-[0.8125rem]">{` "${appVersion}" `}</code> from the catalog.
-        </p>
-      </div>
+export CLOUDFLARE_API_TOKEN=your-token
+bun run deploy`}</pre>
+      <p class="text-[0.8125rem] text-(--text-3) mt-2">
+        Alchemy provisions the public app, private Worker, KV, D1 (auth + engine), Worker Loader, Durable Objects, and optional R2/AI bindings. Takes ~2 minutes.
+      </p>
     </div>
+
+    <p class="leading-relaxed">
+      Full requirements, Cloudflare token permissions, and configuration: <a href="/docs/self-host" class="text-(--accent) hover:underline">self-host guide</a>.
+    </p>
   </section>
 
-  <section id="next-steps" class="rounded-(--radius) border border-(--border) bg-(--surface) p-5 space-y-3">
-    <h2 class="font-semibold text-(--text)">Next Steps</h2>
-    <ul class="space-y-2">
-      <li class="flex items-center gap-2">
-        <span class="text-(--accent)">→</span>
-        <a href="/tutorial" class="text-(--accent) hover:underline">Complete the tutorial</a>
-      </li>
-      <li class="flex items-center gap-2">
-        <span class="text-(--accent)">→</span>
-        <a href="/docs/typescript" class="text-(--accent) hover:underline">Set up the TypeScript client</a>
-      </li>
-      <li class="flex items-center gap-2">
-        <span class="text-(--accent)">→</span>
-        <a href="/docs/capabilities" class="text-(--accent) hover:underline">Configure capabilities</a>
-      </li>
+  <section id="next" class="rounded-(--radius) border border-(--border) bg-(--surface) p-5 space-y-3">
+    <h2 class="font-semibold text-(--text)">Next</h2>
+    <ul class="space-y-2 text-[0.875rem]">
+      <li><a href="/tutorial" class="text-(--accent) hover:underline">2-minute tutorial</a> — install, run, see the JSON</li>
+      <li><a href="/docs/typescript" class="text-(--accent) hover:underline">TypeScript client reference</a></li>
+      <li><a href="/docs/agent-integration" class="text-(--accent) hover:underline">Wire it up as an MCP server</a></li>
     </ul>
   </section>
 </DocsArticle>

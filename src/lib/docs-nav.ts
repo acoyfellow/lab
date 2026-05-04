@@ -12,41 +12,41 @@ function isNavActive(pathname: string, to: string): boolean {
 function buildSections(pathname: string): DocsNavSection[] {
 	const items: { title: string; entries: { label: string; to: string }[] }[] = [
 		{
-			title: 'Getting started',
+			title: 'Start',
 			entries: [
-				{ label: 'Introduction', to: '/docs' },
-				{ label: 'How It Works', to: '/docs/how-it-works' },
-				{ label: 'When to use Lab', to: paths.docsWhenToUse },
-				{ label: 'Installation', to: '/docs/install' },
-				{ label: 'Self-Hosting', to: '/docs/self-host' },
+				{ label: 'Overview', to: '/docs' },
 				{ label: 'Tutorial', to: paths.tutorial },
+				{ label: 'Patterns', to: paths.docsPatterns },
+				{ label: 'When to use Lab', to: paths.docsWhenToUse },
 			],
 		},
 		{
-			title: 'Integration',
+			title: 'API',
 			entries: [
 				{ label: 'HTTP API', to: paths.docsHttpApi },
-				{ label: 'TypeScript Client', to: paths.docsTypescript },
-				{ label: 'Agent Integration', to: paths.docsAgentIntegration },
+				{ label: 'TypeScript client', to: paths.docsTypescript },
+				{ label: 'MCP for agents', to: paths.docsAgentIntegration },
+				{ label: 'Receipt schema', to: paths.docsResultSchema },
+			],
+		},
+		{
+			title: 'How it works',
+			entries: [
+				{ label: 'Execution model', to: '/docs/how-it-works' },
 				{ label: 'Capabilities', to: paths.docsCapabilities },
-			],
-		},
-		{
-			title: 'Guides',
-			entries: [
-				{ label: 'Agent Patterns', to: paths.docsPatterns },
-				{ label: 'FAQ', to: paths.docsFaq },
-				{ label: 'Petri', to: paths.docsPetri },
-			],
-		},
-		{
-			title: 'Reference',
-			entries: [
 				{ label: 'Architecture', to: paths.docsArchitecture },
-				{ label: 'Security', to: paths.docsSecurity },
-				{ label: 'Limits', to: paths.docsLimits },
+				{ label: 'Petri (shared state)', to: paths.docsPetri },
 				{ label: 'Failures & step data', to: paths.docsFailures },
-				{ label: 'Saved Result Schema', to: paths.docsResultSchema },
+			],
+		},
+		{
+			title: 'Operate',
+			entries: [
+				{ label: 'Install', to: '/docs/install' },
+				{ label: 'Self-host', to: paths.docsSelfHost },
+				{ label: 'Limits', to: paths.docsLimits },
+				{ label: 'Security', to: paths.docsSecurity },
+				{ label: 'FAQ', to: paths.docsFaq },
 			],
 		},
 	];

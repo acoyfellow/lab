@@ -2,7 +2,7 @@
 
 ## Pipeline failures
 
-If every step succeeds, the saved result includes full details for each step — code, inputs, outputs, and timing.
+If every step succeeds, the receipt includes full details for each step — code, inputs, outputs, and timing.
 
 If a step fails, Lab still saves a result, but the per-step details may be incomplete. Failed or aborted runs always include the top-level `error` and `reason`. The chain `steps` array may be partial or empty depending on where execution stopped.
 
@@ -19,7 +19,7 @@ When code fails, the error includes a `reason` that tells you what went wrong:
 | `capability_denied` | The code tried to use a permission it wasn't granted |
 | `runtime` | Syntax error, thrown exception, bad JSON, or other code-level failure |
 
-These show up in the saved result's `outcome` field, alongside the `error` message.
+These show up in the receipt's `outcome` field, alongside the `error` message.
 
 ## See also
 

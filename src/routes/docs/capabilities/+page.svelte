@@ -8,7 +8,7 @@
     { id: 'overview', label: 'Overview' },
     { id: 'available-capabilities', label: 'Available capabilities' },
     { id: 'how-they-work', label: 'How they work' },
-    { id: 'results', label: 'Saved results' },
+    { id: 'results', label: 'Receipts' },
   ];
 </script>
 
@@ -78,9 +78,9 @@
   </section>
 
   <section id="results" class="space-y-3">
-    <h2 class="text-lg font-semibold">Saved results</h2>
+    <h2 class="text-lg font-semibold">Receipts</h2>
     <p>
-      Saved results always record the top-level request and outcome. Successful chain runs include full per-step data.
+      Receipts always record the top-level request and outcome. Successful chain runs include full per-step data.
       Failed or aborted runs still include the top-level error and reason, but the per-step data may be partial or
       empty depending on where execution stopped.
     </p>

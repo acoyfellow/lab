@@ -69,7 +69,7 @@
         <pre class="text-xs font-mono whitespace-pre-wrap text-(--text) m-0">{error}</pre>
         {#if resultId}
           <p class="text-[0.75rem] text-(--text-2) m-0">
-            The saved result still includes the top-level failure. Open it to review the saved result or share it for debugging.
+            The receipt still captures the top-level failure. Open it to review or share for debugging.
           </p>
           <div class="flex flex-wrap gap-2 pt-1">
             <a
@@ -77,13 +77,13 @@
               class="inline-flex items-center gap-1.5 rounded-(--radius) bg-(--accent) px-3 py-2 text-xs font-medium text-white no-underline hover:opacity-90"
             >
               <ExternalLink class="w-3.5 h-3.5" />
-              Heal this trace
+              Heal this run
             </a>
             <a
               href="/results/{resultId}"
               class="inline-flex items-center gap-1.5 rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2 text-xs text-(--text) no-underline hover:bg-(--surface-alt)"
             >
-              Open saved result
+              Open receipt
             </a>
             <button
               type="button"
@@ -91,7 +91,7 @@
               class="inline-flex items-center gap-1.5 rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2 text-xs text-(--text) hover:bg-(--surface-alt)"
             >
               <Link2 class="w-3.5 h-3.5" />
-              Copy result URL
+              Copy receipt URL
             </button>
           </div>
           <p class="text-[0.65rem] font-mono text-(--text-3) m-0 break-all">{traceUrl()}</p>
@@ -108,7 +108,7 @@
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <CardTitle class="text-sm text-emerald-500 flex items-center gap-2 m-0">
             <Check class="w-4 h-4 shrink-0" />
-            Result ready
+            Receipt ready
           </CardTitle>
           {#if resultId}
             <div class="flex flex-wrap gap-2">
@@ -117,7 +117,7 @@
                 class="inline-flex items-center gap-1.5 rounded-(--radius) bg-(--accent) px-3 py-2 text-xs font-medium text-white no-underline hover:opacity-90"
               >
                 <ExternalLink class="w-3.5 h-3.5" />
-                Open saved result
+                Open receipt
               </a>
               <button
                 type="button"
@@ -125,14 +125,14 @@
                 class="inline-flex items-center gap-1.5 rounded-(--radius) border border-(--border) bg-(--surface) px-3 py-2 text-xs text-(--text) hover:bg-(--surface-alt)"
               >
                 <Link2 class="w-3.5 h-3.5" />
-                Copy result URL
+                Copy receipt URL
               </button>
             </div>
           {/if}
         </div>
         {#if resultId}
           <p class="text-[0.75rem] text-(--text-2) m-0">
-            Share this URL with another agent or a reviewer. It points to the saved result for the run.
+            Share this URL with another agent or a reviewer. It is the receipt for the run.
           </p>
           <p class="text-[0.65rem] font-mono text-(--text-3) m-0 break-all leading-snug">{traceUrl()}</p>
         {/if}

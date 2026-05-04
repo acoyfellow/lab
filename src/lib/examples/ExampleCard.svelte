@@ -164,7 +164,7 @@
       </div>
       
       <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-5">
-        <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-4">Saved Result</div>
+        <div class="text-[0.6875rem] font-semibold uppercase tracking-wider text-(--text-3) mb-4">Receipt</div>
         <div class="space-y-2">
           {#each data.steps as step, i}
             <div class="flex items-center gap-3 p-3 rounded-(--radius) bg-(--surface-alt) {step.error ? 'border border-red-500/30' : ''}">

@@ -5,14 +5,14 @@ export const jsonHealer: ExampleData = {
 	title: 'JSON Healer',
 	description: 'Fix broken JSON automatically with full audit trail',
 	problem: 'APIs return malformed JSON with trailing commas, missing quotes, or syntax errors',
-	solution: 'Lab iterates until JSON is valid, showing every attempt in the saved result',
+	solution: 'Lab iterates until JSON is valid, showing every attempt in the receipt',
 	result: 'Robust data ingestion that never crashes on bad input',
 	icon: 'wand',
 	tags: ['json', 'validation', 'healing', 'data'],
 	complexity: 'workflow',
 	startHere: true,
 	featured: true,
-	resultValue: 'In this successful example run, the saved result shows the failed parse, the repair step, and the final validated output in one shareable receipt.',
+	resultValue: 'In this successful example run, the receipt shows the failed parse, the repair step, and the final validated output in one shareable URL.',
 	steps: [
 		{
 			name: 'Load Broken JSON',

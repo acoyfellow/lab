@@ -1,348 +1,170 @@
-# Agent Patterns
+# Patterns
 
-Lab is built for agents. These patterns show how agents use sandboxed code and saved results to do real work — not toy demos, but workflows where "it works" becomes a URL you can verify.
-
-Every run saves a result. For successful runs, that result can also serve as the proof artifact, handoff artifact, or review artifact.
+Five workflows agents build with Lab. Each one turns "it works" into a URL someone else can verify.
 
 ---
 
-## Prove It
+## Prove it
 
-**The core pattern.** An agent makes a claim — "this function handles edge cases." Instead of asserting, it proves.
-
-**How it works:**
-
-1. Agent defines the edge cases and expected outputs
-2. Agent implements the function in a fresh sandbox and runs every case
-3. Final step asserts every result and returns a verdict
-
-**In a successful Prove It run, the result shows** the cases, actual outputs, pass flags, and final verdict. That run's JSON is the proof artifact you can share.
+An agent claims a function handles edge cases. Instead of asserting, it runs every case and returns a verdict. Ship the receipt, not "trust me."
 
 ```js
 const out = await lab.runChain([
   {
     name: "Spec",
-    body: `
-      return {
-        cases: [
-          { input: "$1,234.56", expected: 1234.56 },
-          { input: "free", expected: null },
-          { input: null, expected: null },
-        ],
-      };
-    `,
+    body: `return {
+      cases: [
+        { input: "$1,234.56", expected: 1234.56 },
+        { input: "free",       expected: null },
+        { input: null,         expected: null },
+      ],
+    };`,
     capabilities: []
   },
   {
     name: "Implement + test",
-    body: `
-      function parseAmount(raw) {
-        if (!raw) return null;
-        const n = parseFloat(String(raw).replace(/[^\d.\-]/g, ""));
-        return Number.isNaN(n) ? null : Math.round(n * 100) / 100;
-      }
-
-      return input.cases.map((c) => {
-        const actual = parseAmount(c.input);
-        return { ...c, actual, pass: actual === c.expected };
-      });
-    `,
+    body: `function parseAmount(raw) {
+      if (!raw) return null;
+      const n = parseFloat(String(raw).replace(/[^\d.\-]/g, ""));
+      return Number.isNaN(n) ? null : Math.round(n * 100) / 100;
+    }
+    return input.cases.map((c) => {
+      const actual = parseAmount(c.input);
+      return { ...c, actual, pass: actual === c.expected };
+    });`,
     capabilities: []
   },
   {
     name: "Verdict",
-    body: `
-      const results = input;
-      return {
-        verdict: results.every((r) => r.pass) ? "PASS" : "FAIL",
-        score: results.filter((r) => r.pass).length + "/" + results.length,
-      };
-    `,
+    body: `return {
+      verdict: input.every((r) => r.pass) ? "PASS" : "FAIL",
+      score: input.filter((r) => r.pass).length + "/" + input.length,
+    };`,
     capabilities: []
   },
 ]);
-
-// Agent's response: "Proof JSON: $LAB_URL/results/<resultId>.json"
 ```
 
-**When to use:** Before shipping generated code. Before claiming correctness. Whenever "it works" needs to become "here's the receipt."
+Use it before shipping generated code, claiming correctness, or handing work to a reviewer.
 
-[Run this pattern →](/examples)
+[Run it →](/examples)
 
 ---
 
-## Self-Healing Loop
+## Self-heal
 
-An agent doesn't give up on first failure. It reads the error, diagnoses the problem, applies a fix, and retries — all within one run.
-
-This follows the same principle as [closed-loop control systems](https://en.wikipedia.org/wiki/Closed-loop_controller): measure the output, compare it to what you wanted, feed the error back in.
-
-**How it works:**
-
-1. Step 1 attempts the operation (e.g., parse data)
-2. Step 2 reads the error and raw input, diagnoses what's wrong
-3. Step 3 applies a targeted fix based on the diagnosis
-4. Step 4 validates the repair
-
-**In a successful self-healing run, the result shows** the failure path, the repair step, and the final outcome. Depending on where execution stops, failed runs may have partial step detail.
+A step fails. The agent reads the error, applies a fix, retries — all in one run. The receipt records the failure path *and* the repair, so the next agent (or you, tomorrow) can see what happened.
 
 ```js
 const out = await lab.runChain([
   {
     name: "Try parse",
-    body: `
-      try {
-        return { ok: true, data: JSON.parse(input.raw) };
-      } catch (e) {
-        return { ok: false, error: e.message, raw: input.raw };
-      }
-    `,
-    capabilities: []
-  },
-  {
-    name: "Diagnose",
-    body: `
-      if (input.ok) return input;
-
-      const issues = [];
-      if (input.raw.match(/\\w+:/)) issues.push("unquoted_keys");
-      if (input.raw.match(/,\\s*[}\\]]/)) issues.push("trailing_commas");
-
-      return {
-        ...input,
-        issues,
-        strategy: "apply regex fixes",
-      };
-    `,
+    body: `try {
+      return { ok: true, data: JSON.parse(input.raw) };
+    } catch (e) {
+      return { ok: false, error: e.message, raw: input.raw };
+    }`,
     capabilities: []
   },
   {
     name: "Heal",
-    body: `
-      if (input.ok) return input;
-
-      let fixed = input.raw;
-      if (input.issues.includes("unquoted_keys")) {
-        fixed = fixed.replace(/(\\w+):/g, '"$1":');
-      }
-      if (input.issues.includes("trailing_commas")) {
-        fixed = fixed.replace(/,\\s*([}\\]])/g, '$1');
-      }
-
-      return { ok: true, data: JSON.parse(fixed), healed: true };
-    `,
+    body: `if (input.ok) return input;
+    const fixed = input.raw
+      .replace(/(\w+):/g, '"$1":')           // unquoted keys
+      .replace(/,\s*([}\]])/g, '$1');        // trailing commas
+    return { ok: true, data: JSON.parse(fixed), healed: true };`,
     capabilities: []
   },
 ]);
 ```
 
-**When to use:** Parsing unreliable data. Handling flaky APIs. Any situation where the first attempt might fail and the agent should adapt.
+Use it for unreliable parses, flaky upstream APIs, or anywhere the first try might fail in a recoverable way.
 
-[Run this pattern →](/examples)
+[Run it →](/examples)
 
 ---
 
-## Agent Handoff
+## Handoff
 
-Multiple agents, one run. Agent A does research. Agent B synthesizes. Agent C produces the deliverable. No message queue, no shared database — output flows forward automatically.
-
-This is a [pipeline architecture](https://en.wikipedia.org/wiki/Pipeline_(computing)): each stage transforms data and passes it to the next.
-
-**How it works:**
-
-1. Each "agent" is a step in the pipeline
-2. Agent A's output becomes Agent B's input automatically
-3. Agent C's output is the final result
-4. In a successful handoff run, the saved result shows what each step contributed
+Agent A finishes, returns a `resultId`. Agent B opens `/results/<id>.json` and continues from there. No queue, no shared DB — the receipt is the entire interface.
 
 ```js
-const out = await lab.runChain([
-  {
-    name: "Agent A: Research",
-    body: `
-      return {
-        findings: [
-          { source: "API", data: { users: 1200, active: 890 } },
-          { source: "DB", data: { users: 1198, active: 887 } },
-        ],
-        note: "Sources roughly agree. Minor discrepancy.",
-      };
-    `,
-    capabilities: []
-  },
-  {
-    name: "Agent B: Reconcile",
-    body: `
-      const avg = {
-        users: Math.round(
-          input.findings.reduce((s, f) => s + f.data.users, 0) / input.findings.length
-        ),
-        active: Math.round(
-          input.findings.reduce((s, f) => s + f.data.active, 0) / input.findings.length
-        ),
-      };
-
-      return {
-        reconciled: avg,
-        sources: input.findings.length,
-        confidence: "high",
-      };
-    `,
-    capabilities: []
-  },
-  {
-    name: "Agent C: Report",
-    body: `
-      return {
-        summary: input.reconciled.active + " active users of " + input.reconciled.users + " total",
-        confidence: input.confidence,
-        sources: input.sources,
-      };
-    `,
-    capabilities: []
-  },
+// Agent A
+const a = await lab.runChain([
+  { name: "Research",  body: `return { findings: [...] };`, capabilities: [] },
+  { name: "Reconcile", body: `return { reconciled: ..., confidence: "high" };`, capabilities: [] },
 ]);
+return { handoffUrl: `${LAB_URL}/results/${a.resultId}.json` };
+
+// Agent B (separate process, hours later)
+const prev = await fetch(handoffUrl).then(r => r.json());
+const b = await lab.runSandbox({
+  body: `return formatReport(${JSON.stringify(prev.outcome.result)});`,
+});
 ```
 
-**When to use:** Multi-step workflows where different agents (or different prompts/models) handle different phases. Research-then-synthesize. Gather-then-validate. Plan-then-execute.
+Use it for multi-agent pipelines: research → synthesize → publish, or plan → execute → review.
 
-[Run this pattern →](/examples)
-
----
-
-## Canary Deploy
-
-Old logic vs new logic, same inputs. See exactly what changed before you ship.
-
-Named after the [canary release](https://en.wikipedia.org/wiki/Feature_toggle#Canary_release) strategy in software deployment, but applied to code an agent wrote.
-
-**How it works:**
-
-1. Step 1 generates test inputs (edge cases, real data)
-2. Step 2 runs the **old** logic against all inputs
-3. Step 3 runs the **new** logic against the same inputs
-4. Step 4 diffs the outputs
-
-**In a successful canary run, the result shows** the inputs where v1 and v2 disagree. An agent (or human) reviews the diffs and decides: ship it, fix it, or roll back.
-
-**When to use:** Refactoring. Upgrading a dependency. Any time "it should behave the same" needs verification.
-
-[Run this pattern →](/examples)
+[Run it →](/examples)
 
 ---
 
-## Stress Test
+## Canary
 
-You wrote a skill, a prompt, or a pipeline. It works once. But does it work reliably? And does it work because your instructions are clear, or because the model is smart enough to guess what you meant?
+Old logic vs new logic, same inputs. The receipt diffs them so you (or a reviewer agent) can decide: ship, fix, or roll back.
 
-This applies the same idea as [minimax](https://en.wikipedia.org/wiki/Minimax) in game theory: assume the worst case and see if things still hold. In games, that means assuming your opponent plays perfectly. Here, it means assuming the model is as dumb as possible.
+```js
+const [old, neu] = await Promise.all([
+  lab.runSandbox({ body: oldLogic, capabilities: [] }),
+  lab.runSandbox({ body: newLogic, capabilities: [] }),
+]);
+const divergence = diff(old.result, neu.result);
+```
 
-**How it works:**
+Use it before refactors, dependency upgrades, or model swaps.
 
-1. Run your pipeline N times, collect results
-2. Check: did every run produce the same (correct) output?
-3. If not, read the failing results — they show exactly where the ambiguity hit
-4. Fix the instructions, run again
-5. Once it's reliable, try with a smaller/cheaper model to find the floor
+[Run it →](/examples)
 
-```ts
-const lab = createLabClient({ baseUrl: process.env.LAB_URL });
+---
 
-const results = [];
+## Stress test
 
-for (let i = 0; i < 10; i++) {
-  const out = await lab.runChain([
-    {
-      name: "Generate",
-      body: `
-        // your skill/prompt logic here
-        return parseUserInput("$1,234.56");
-      `,
-      capabilities: []
-    },
-    {
-      name: "Verify",
-      body: `
-        const expected = 1234.56;
-        return {
-          run: ${i + 1},
-          output: input,
-          pass: input === expected,
-        };
-      `,
-      capabilities: []
-    },
-  ]);
+Run a workflow N times. If 9/10 succeed, the 1 failure's receipt tells you exactly where the ambiguity hit.
 
-  results.push({
-    run: i + 1,
-    pass: out.result?.pass,
-    resultId: out.resultId,
-  });
-}
+```js
+const runs = await Promise.all(
+  Array.from({ length: 10 }, () =>
+    lab.runChain(yourPipeline)
+  )
+);
+const passed = runs.filter(r => r.ok).length;
 
-const passed = results.filter(r => r.pass).length;
-console.log(`${passed}/10 passed`);
-
-// Failed runs have saved-result JSON — read it to see where the output diverged
-results.filter(r => !r.pass).forEach(r =>
-  console.log(`Run ${r.run} failed: $LAB_URL/results/${r.resultId}.json`)
+// Failed runs have receipt JSON — open them to see where output diverged
+runs.filter(r => !r.ok).forEach(r =>
+  console.log(`failed: ${LAB_URL}/results/${r.resultId}.json`)
 );
 ```
 
-You can extend this with an evolutionary approach — generate multiple candidate implementations, evaluate each against the same test cases, select the winner by score. One run = one generation. Feed the winner back as the starting point for the next round. This is the same idea behind [genetic algorithms](https://en.wikipedia.org/wiki/Genetic_algorithm): mutate, evaluate, select, repeat.
+Use it before you trust a skill in production, or before swapping to a cheaper model to find the reliability floor.
 
-**When to use:** Before you trust a skill in production. Before you optimize for cost by switching to a smaller model. Any time "it worked once" isn't good enough.
-
-[Run this pattern →](/examples)
+[Run it →](/examples)
 
 ---
 
-## Combining Patterns
+## How agents call Lab
 
-The real power is composition. An agent might:
+Same patterns, three transports:
 
-1. **Prove It** to verify code handles edge cases
-2. **Stress Test** to make sure it's reliable, not lucky
-3. **Hand off** the results to a review agent
-4. **Compare** the new logic against the old before shipping
-
-Each run saves a result. Successful runs can link together into a reviewable story for an agent or human to follow.
-
----
-
-## Using Patterns from Any Agent
-
-Lab doesn't care what agent calls it. Claude Code, a custom script, a GitHub Action, a cron job — if it can make HTTP requests or use the TypeScript client, it can use these patterns.
-
-**TypeScript client:**
 ```bash
+# TypeScript client
 npm install @acoyfellow/lab
-```
 
-**MCP (Claude Desktop, Cursor):**
-```json
-{
-  "mcpServers": {
-    "lab": {
-      "command": "npx",
-      "args": ["-y", "@acoyfellow/lab-mcp"],
-      "env": { "LAB_URL": "https://your-lab.example" }
-    }
-  }
-}
-```
+# MCP (Claude Desktop, Cursor)
+npx @acoyfellow/lab-mcp
 
-**CLI:**
-```bash
-npx @acoyfellow/lab-cli chain '[{"body":"return 1+1","capabilities":[]}]'
-```
-
-**Raw HTTP:**
-```bash
-curl -X POST $LAB_URL/run/chain \
-  -H 'Content-Type: application/json' \
+# Raw HTTP
+curl -X POST $LAB_URL/run/chain -H 'content-type: application/json' \
   -d '{"steps":[{"body":"return 1+1","capabilities":[]}]}'
 ```
 
-The `resultId` in the response identifies the artifact. Agents read `/results/:id.json`. Humans open `/results/:id`. The rest is transport.
+Every response carries a `resultId`. Agents read `/results/:id.json`. Humans open `/results/:id`. See [HTTP API](/docs/http-api) and [TypeScript client](/docs/typescript) for the full surface.
