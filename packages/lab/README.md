@@ -4,6 +4,25 @@ Typed client and local run spine for [Lab](https://github.com/acoyfellow/lab): r
 
 > **0.0.3** — early feedback. API may change.
 
+## Stable 0.0.1 Boundary
+
+The repo-run spine treats this package surface as the stable 0.0.1 contract:
+
+| Export | Purpose |
+|--------|---------|
+| `createLabRun` | Run a command against local or Artifacts repo state and write durable evidence |
+| `createRunReceipt` | Build a versioned `lab.run.receipt.v1` receipt |
+| `createSnapshotBranch` | Snapshot dirty local Git state onto a `lab/run-*` branch |
+| `getLabRun` | Read one `.lab/runs/<id>` record |
+| `listLabRuns` | List recent local run receipts |
+| `replayLabRun` | Re-run a previous command with lineage |
+| `resolveRunRepo` | Resolve local or Artifacts repo refs to a working copy |
+| `redactLabSecrets` | Redact `cfut_*` and `art_v1_*` credentials from durable evidence |
+| `LAB_RUN_RECEIPT_SCHEMA_VERSION` | Current receipt schema version, `lab.run.receipt.v1` |
+| `LAB_RUN_STABLE_API` | Machine-readable list of stable repo-run exports |
+
+Everything outside that table remains usable, but not part of the repo-run 0.0.1 compatibility promise yet.
+
 ## Install
 
 ```bash

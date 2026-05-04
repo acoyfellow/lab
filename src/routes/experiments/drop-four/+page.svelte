@@ -40,13 +40,13 @@
   let view = $state<'tournament' | 'challenge'>('tournament');
 
   // --- Tournament canvas ---
-  let tournCanvas: HTMLCanvasElement = undefined!;
+  let tournCanvas = $state<HTMLCanvasElement | null>(null);
   let tournCtx: CanvasRenderingContext2D;
   const TOURN_W = 1000;
   const TOURN_H = 520;
 
   // --- Challenge state ---
-  let chalCanvas: HTMLCanvasElement = undefined!;
+  let chalCanvas = $state<HTMLCanvasElement | null>(null);
   let chalCtx: CanvasRenderingContext2D;
   const CHAL_W = 700;
   const CHAL_H = 650;
@@ -173,6 +173,7 @@ Return JSON: {"col": <0-6>, "r": "<why>"}`;
   function handleChalClick(e: MouseEvent) {
     if (!authed) { showAuthGate = true; return; }
     if (chalWaiting || chalGameOver) return;
+    if (!chalCanvas) return;
     const rect = chalCanvas.getBoundingClientRect();
     const scaleX = CHAL_W / rect.width;
     const clickX = (e.clientX - rect.left) * scaleX;
@@ -207,6 +208,7 @@ Return JSON: {"col": <0-6>, "r": "<why>"}`;
 
   function handleChalHover(e: MouseEvent) {
     if (chalWaiting || chalGameOver) return;
+    if (!chalCanvas) return;
     const rect = chalCanvas.getBoundingClientRect();
     const scaleX = CHAL_W / rect.width;
     const clickX = (e.clientX - rect.left) * scaleX;
@@ -260,6 +262,7 @@ Return JSON: {"col": <0-6>, "r": "<why>"}`;
 
   // --- Lifecycle ---
   onMount(() => {
+    if (!tournCanvas) return () => stopStartAnim();
     tournCtx = tournCanvas.getContext('2d')!;
     tickStartScreen();
     return () => stopStartAnim();
@@ -268,6 +271,7 @@ Return JSON: {"col": <0-6>, "r": "<why>"}`;
   function switchToChallenge() {
     view = 'challenge';
     requestAnimationFrame(() => {
+      if (!chalCanvas) return;
       chalCtx = chalCanvas.getContext('2d')!;
       initChallenge();
     });

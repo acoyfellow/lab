@@ -19,6 +19,19 @@ function artifactsGateError(message: string, details?: unknown) {
 	);
 }
 
+async function deleteArtifactsRepo(input: { apiBase: string; name: string; apiToken: string }) {
+	const response = await fetch(`${input.apiBase}/repos/${input.name}`, {
+		method: 'DELETE',
+		headers: { authorization: `Bearer ${input.apiToken}` },
+	});
+	const body = (await response.json().catch(() => null)) as { success?: boolean; errors?: unknown[] } | null;
+	return {
+		httpStatus: response.status,
+		success: response.ok && body?.success !== false,
+		errors: body?.errors ?? [],
+	};
+}
+
 describe('Lab Run north-star Artifacts gate', () => {
 	test('existing Cloudflare Artifacts repo can be cloned and run through Lab', async () => {
 		if (!process.env.LAB_ARTIFACTS_EXISTING_TEST) {
@@ -72,6 +85,13 @@ describe('Lab Run north-star Artifacts gate', () => {
 		const namespace = `lab-test-${Date.now()}`;
 		const name = `run-spine-${Math.random().toString(16).slice(2)}`;
 		const apiBase = `https://api.cloudflare.com/client/v4/accounts/${accountId}/artifacts/namespaces/${namespace}`;
+		let cleanup:
+			| {
+					httpStatus: number;
+					success: boolean;
+					errors: unknown[];
+			  }
+			| undefined;
 		const created = await fetch(`${apiBase}/repos`, {
 			method: 'POST',
 			headers: {
@@ -139,10 +159,15 @@ describe('Lab Run north-star Artifacts gate', () => {
 			expect(run.receipt.artifact.repo).toBe(name);
 			expect(run.receipt.artifact.branch).toBe('main');
 		} finally {
-			await fetch(`${apiBase}/repos/${name}`, {
-				method: 'DELETE',
-				headers: { authorization: `Bearer ${apiToken}` },
-			}).catch(() => undefined);
+			cleanup = await deleteArtifactsRepo({ apiBase, name, apiToken }).catch((error: unknown) => ({
+				httpStatus: 0,
+				success: false,
+				errors: [error instanceof Error ? error.message : String(error)],
+			}));
+			console.log(
+				`Artifacts cleanup audit: namespace=${namespace} repo=${name} status=${cleanup.httpStatus} success=${cleanup.success}`,
+			);
+			expect(cleanup.success).toBe(true);
 		}
 	}, 30_000);
 });

@@ -35,6 +35,8 @@ export type LabRunInput = {
 
 export type LabRunStatus = 'succeeded' | 'failed';
 
+export const LAB_RUN_RECEIPT_SCHEMA_VERSION = 'lab.run.receipt.v1' as const;
+
 export type LabRunResult = {
 	exitCode: number;
 	summary: string;
@@ -44,7 +46,7 @@ export type LabRunResult = {
 };
 
 export type LabRunReceipt = {
-	schemaVersion: 'lab.run.receipt.v1';
+	schemaVersion: typeof LAB_RUN_RECEIPT_SCHEMA_VERSION;
 	source: 'lab';
 	action: 'lab.run';
 	runId: string;
@@ -97,6 +99,27 @@ export type LabRun = {
 		receipt: string;
 	};
 };
+
+export type LabRunStableApi =
+	| 'createLabRun'
+	| 'createRunReceipt'
+	| 'createSnapshotBranch'
+	| 'getLabRun'
+	| 'listLabRuns'
+	| 'replayLabRun'
+	| 'resolveRunRepo'
+	| 'redactLabSecrets';
+
+export const LAB_RUN_STABLE_API: readonly LabRunStableApi[] = [
+	'createLabRun',
+	'createRunReceipt',
+	'createSnapshotBranch',
+	'getLabRun',
+	'listLabRuns',
+	'replayLabRun',
+	'resolveRunRepo',
+	'redactLabSecrets',
+] as const;
 
 export type LabRunSummary = {
 	id: string;
@@ -249,7 +272,7 @@ export async function createRunReceipt(input: {
 	parentRunId?: string;
 }): Promise<LabRunReceipt> {
 	return {
-		schemaVersion: 'lab.run.receipt.v1',
+		schemaVersion: LAB_RUN_RECEIPT_SCHEMA_VERSION,
 		source: 'lab',
 		action: 'lab.run',
 		runId: input.id,

@@ -8,6 +8,8 @@ import {
 	createRunReceipt,
 	createSnapshotBranch,
 	getLabRun,
+	LAB_RUN_RECEIPT_SCHEMA_VERSION,
+	LAB_RUN_STABLE_API,
 	listLabRuns,
 	redactLabSecrets,
 	replayLabRun,
@@ -29,11 +31,36 @@ async function makeGitRepo(name = 'repo') {
 	return root;
 }
 
+async function makeUnbornGitRepo(name = 'repo') {
+	const root = await mkdtemp(join(tmpdir(), `lab-run-${name}-`));
+	tempRoots.push(root);
+	await $`git init -b main`.cwd(root).quiet();
+	await $`git config user.email lab-run@example.test`.cwd(root).quiet();
+	await $`git config user.name "Lab Run Test"`.cwd(root).quiet();
+	return root;
+}
+
 afterEach(async () => {
 	await Promise.all(tempRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
 describe('Lab Run north-star spine', () => {
+	test('declares the stable 0.0.1 run API boundary', () => {
+		expect(LAB_RUN_RECEIPT_SCHEMA_VERSION).toBe('lab.run.receipt.v1');
+		expect([...LAB_RUN_STABLE_API].sort()).toEqual(
+			[
+				'createLabRun',
+				'createRunReceipt',
+				'createSnapshotBranch',
+				'getLabRun',
+				'listLabRuns',
+				'redactLabSecrets',
+				'replayLabRun',
+				'resolveRunRepo',
+			].sort(),
+		);
+	});
+
 	test('local executor runs a real command in a real repo and writes logs, result, and receipt', async () => {
 		const repo = await makeGitRepo('local');
 		const run = await createLabRun({
@@ -178,6 +205,79 @@ describe('Lab Run north-star spine', () => {
 		expect(snapshot.branch).toMatch(/^lab\/run-/);
 		expect(snapshot.commit).toBe(beforeHead);
 		expect(snapshot.createdCommit).toBe(false);
+		expect((await $`git status --porcelain`.cwd(repo).text()).trim()).toBe('');
+	});
+
+	test('snapshot mode captures staged-only work', async () => {
+		const repo = await makeGitRepo('snapshot-staged');
+		await writeFile(join(repo, 'answer.txt'), 'staged\n');
+		await $`git add answer.txt`.cwd(repo).quiet();
+
+		const run = await createLabRun({
+			repo: { type: 'local', path: repo },
+			snapshot: { mode: 'branch', prefix: 'lab/run' },
+			executor: { type: 'local' },
+			command: ['sh', '-lc', 'cat answer.txt && git status --porcelain'],
+		});
+
+		expect(run.status).toBe('succeeded');
+		expect(run.snapshot?.createdCommit).toBe(true);
+		expect(run.logs.text).toContain('staged');
+		expect((await $`git status --porcelain`.cwd(repo).text()).trim()).toBe('');
+	});
+
+	test('snapshot mode captures untracked-only work', async () => {
+		const repo = await makeGitRepo('snapshot-untracked');
+		await writeFile(join(repo, 'new-file.txt'), 'untracked\n');
+
+		const run = await createLabRun({
+			repo: { type: 'local', path: repo },
+			snapshot: { mode: 'branch', prefix: 'lab/run' },
+			executor: { type: 'local' },
+			command: ['sh', '-lc', 'cat new-file.txt'],
+		});
+
+		expect(run.status).toBe('succeeded');
+		expect(run.snapshot?.createdCommit).toBe(true);
+		expect(run.logs.text).toContain('untracked');
+		expect((await $`git status --porcelain`.cwd(repo).text()).trim()).toBe('');
+	});
+
+	test('snapshot mode works from detached HEAD', async () => {
+		const repo = await makeGitRepo('snapshot-detached');
+		const head = (await $`git rev-parse HEAD`.cwd(repo).text()).trim();
+		await $`git switch --detach ${head}`.cwd(repo).quiet();
+		await writeFile(join(repo, 'answer.txt'), 'detached\n');
+
+		const run = await createLabRun({
+			repo: { type: 'local', path: repo },
+			snapshot: { mode: 'branch', prefix: 'lab/run' },
+			executor: { type: 'local' },
+			command: ['sh', '-lc', 'git branch --show-current && cat answer.txt'],
+		});
+
+		expect(run.status).toBe('succeeded');
+		expect(run.snapshot?.createdCommit).toBe(true);
+		expect(run.snapshot?.branch).toMatch(/^lab\/run-/);
+		expect(run.logs.text).toContain(run.snapshot!.branch);
+		expect(run.logs.text).toContain('detached');
+	});
+
+	test('snapshot mode works in an unborn repo with no commits', async () => {
+		const repo = await makeUnbornGitRepo('snapshot-unborn');
+		await writeFile(join(repo, 'first.txt'), 'first commit\n');
+
+		const run = await createLabRun({
+			repo: { type: 'local', path: repo },
+			snapshot: { mode: 'branch', prefix: 'lab/run' },
+			executor: { type: 'local' },
+			command: ['sh', '-lc', 'git log --oneline --max-count=1 && cat first.txt'],
+		});
+
+		expect(run.status).toBe('succeeded');
+		expect(run.snapshot?.createdCommit).toBe(true);
+		expect(run.snapshot?.branch).toMatch(/^lab\/run-/);
+		expect(run.logs.text).toContain('first commit');
 		expect((await $`git status --porcelain`.cwd(repo).text()).trim()).toBe('');
 	});
 

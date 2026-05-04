@@ -12,6 +12,8 @@ export {
   type LabClientOptions,
 } from './client.js';
 export {
+  LAB_RUN_RECEIPT_SCHEMA_VERSION,
+  LAB_RUN_STABLE_API,
   createLabRun,
   createRunReceipt,
   createSnapshotBranch,
@@ -19,6 +21,7 @@ export {
   listLabRuns,
   replayLabRun,
   resolveRunRepo,
+  redactLabSecrets,
 } from './run-spine.js';
 export type {
   ArtifactsRepoRef,
@@ -28,6 +31,7 @@ export type {
   LabRunReceipt,
   LabRunRepo,
   LabRunResult,
+  LabRunStableApi,
   LabRunSummary,
   LabRunStatus,
   LocalRepoRef,
