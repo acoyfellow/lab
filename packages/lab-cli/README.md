@@ -17,6 +17,9 @@ lab repo-run --repo . -- sh -lc 'bun test'
 # Snapshot dirty work to a lab/run-* branch before running
 lab repo-run --repo . --snapshot -- sh -lc 'bun test'
 
+# Stop a local command if it hangs
+lab repo-run --repo . --timeout-ms 30000 -- sh -lc 'bun test'
+
 # List recent repo runs
 lab runs --repo .
 

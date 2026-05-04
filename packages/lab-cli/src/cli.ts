@@ -85,6 +85,15 @@ function argValue(args: string[], flag: string) {
 	return index === -1 ? undefined : args[index + 1];
 }
 
+function parsePositiveInteger(value: string | undefined, label: string) {
+	if (!value) return undefined;
+	const parsed = Number.parseInt(value, 10);
+	if (!Number.isInteger(parsed) || parsed < 1 || String(parsed) !== value) {
+		throw new CliError(`Invalid ${label} value: "${value}". Must be a positive integer.`);
+	}
+	return parsed;
+}
+
 function parseArtifactsRef(value: string) {
 	const [namespace, name] = value.split('/');
 	if (!namespace || !name || value.split('/').length !== 2) {
@@ -143,6 +152,7 @@ function parseRepoRun(args: string[]) {
 	return {
 		repo: parseRunRepo(args, usage),
 		snapshot: args.includes('--snapshot'),
+		timeoutMs: parsePositiveInteger(argValue(args, '--timeout-ms'), '--timeout-ms'),
 		command: args.slice(separator + 1),
 	};
 }
@@ -160,7 +170,7 @@ async function repoRun(args: string[]) {
 	return createLabRun({
 		repo: parsed.repo,
 		snapshot: parsed.snapshot ? { mode: 'branch', prefix: 'lab/run' } : undefined,
-		executor: { type: 'local' },
+		executor: { type: 'local', timeoutMs: parsed.timeoutMs },
 		command: parsed.command,
 	});
 }
@@ -168,11 +178,7 @@ async function repoRun(args: string[]) {
 async function runs(args: string[]) {
 	const repo = parseRepoFlag(args, 'lab runs --repo <path> [--limit <n>]');
 	const limitFlag = args.indexOf('--limit');
-	const limit =
-		limitFlag === -1 || !args[limitFlag + 1] ? undefined : Number.parseInt(args[limitFlag + 1]!, 10);
-	if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) {
-		throw new CliError(`Invalid --limit value: "${args[limitFlag + 1]}". Must be a positive integer.`);
-	}
+	const limit = parsePositiveInteger(limitFlag === -1 ? undefined : args[limitFlag + 1], '--limit');
 	return listLabRuns({ root: repo, limit });
 }
 
@@ -196,6 +202,8 @@ const USAGE = `Usage:
                                     Run a real command in a real repo and write a Lab receipt
   lab repo-run --repo <path> --snapshot -- <command...>
                                     Commit dirty work to a lab/run-* branch before running
+  lab repo-run --repo <path> --timeout-ms <ms> -- <command...>
+                                    Stop a local command after a positive millisecond timeout
   lab repo-run --artifacts <namespace/repo> --branch <branch> -- <command...>
                                     Clone an Artifacts repo, run a command, and write a Lab receipt
   lab runs --repo <path> [--limit <n>]
@@ -214,7 +222,7 @@ Environment:
 
 Every command prints JSON to stdout. Every run includes a resultId.`;
 
-async function route(args: string[]) {
+export async function route(args: string[]) {
 	const cmd = args[0];
 	const arg = args[1];
 
@@ -267,14 +275,16 @@ async function main() {
 		console.log(typeof output === 'string' ? output : JSON.stringify(output, null, 2));
 	} catch (error) {
 		if (error instanceof CliError) {
-			console.error(error.message);
+			console.error(JSON.stringify({ ok: false, error: { name: error.name, message: error.message } }, null, 2));
 		} else if (error instanceof Error) {
-			console.error(JSON.stringify({ error: error.message }, null, 2));
+			console.error(JSON.stringify({ ok: false, error: { name: error.name, message: error.message } }, null, 2));
 		} else {
-			console.error(JSON.stringify({ error: String(error) }, null, 2));
+			console.error(JSON.stringify({ ok: false, error: { name: 'Error', message: String(error) } }, null, 2));
 		}
 		process.exit(1);
 	}
 }
 
-void main();
+if (import.meta.main) {
+	void main();
+}

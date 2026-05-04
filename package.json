@@ -12,6 +12,7 @@
     "dev:ui": "vite --host 127.0.0.1 --port 4179",
     "dogfood:lab": "bun run build:client && bun scripts/dogfood-lab.ts",
     "demo:local-run": "bun scripts/demo-local-run.ts",
+    "prove:quickstart": "bun scripts/prove-quickstart.ts",
     "pi:lab-bridge": "bun run scripts/pi-lab-bridge.ts",
     "migrate:results": "bun run scripts/migrate-results.ts",
     "mcp:lab": "bun run --cwd packages/lab-mcp start",

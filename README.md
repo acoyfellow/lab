@@ -25,6 +25,7 @@ The standalone shape is simple:
 
 ```bash
 bun install
+bun run build:client
 bun run --cwd packages/lab-cli build
 ```
 
@@ -35,6 +36,12 @@ bun run demo:local-run
 ```
 
 It creates a temporary git repo, makes dirty work, snapshots it onto a `lab/run-*` branch, runs a command, writes a receipt, lists runs, shows one run, and replays it with lineage.
+
+CI proves the quickstart from a fresh clone in under seven minutes:
+
+```bash
+bun run prove:quickstart
+```
 
 Run a real command in a real repo:
 
@@ -64,6 +71,12 @@ Snapshot dirty work onto a `lab/run-*` branch before running:
 
 ```bash
 node packages/lab-cli/dist/cli.js repo-run --repo . --snapshot -- sh -lc 'bun test'
+```
+
+Stop a local run if it hangs:
+
+```bash
+node packages/lab-cli/dist/cli.js repo-run --repo . --timeout-ms 30000 -- sh -lc 'bun test'
 ```
 
 Run against Cloudflare Artifacts:

@@ -15,6 +15,7 @@ jobs:
       - run: bun test
       - run: bun run lint
       - run: bun run check
+      - run: bun run prove:quickstart
       - name: Verify lab-mcp dist is fresh
         run: |
           cp -r packages/lab-mcp/dist dist-backup

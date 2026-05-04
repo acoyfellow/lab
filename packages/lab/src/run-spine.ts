@@ -22,6 +22,7 @@ export type LabRunRepo = LocalRepoRef | ArtifactsRepoRef;
 
 export type LabRunExecutor = {
 	type: 'local';
+	timeoutMs?: number;
 };
 
 export type LabRunInput = {
@@ -38,6 +39,8 @@ export type LabRunResult = {
 	exitCode: number;
 	summary: string;
 	durationMs: number;
+	timedOut?: boolean;
+	signal?: NodeJS.Signals | null;
 };
 
 export type LabRunReceipt = {
@@ -130,6 +133,8 @@ type CommandResult = {
 	stdout: string;
 	stderr: string;
 	exitCode: number;
+	timedOut: boolean;
+	signal: NodeJS.Signals | null;
 };
 
 export function redactLabSecrets(value: string): string {
@@ -142,14 +147,26 @@ function redactCommand(command: string[]) {
 	return command.map((part) => redactLabSecrets(part));
 }
 
-async function runCommand(command: string[], cwd: string): Promise<CommandResult> {
+async function runCommand(command: string[], cwd: string, timeoutMs?: number): Promise<CommandResult> {
 	if (command.length === 0) {
 		throw new Error('Lab run command must not be empty');
+	}
+	if (timeoutMs !== undefined && (!Number.isInteger(timeoutMs) || timeoutMs < 1)) {
+		throw new Error(`Lab run timeoutMs must be a positive integer, got ${timeoutMs}`);
 	}
 	return new Promise((resolve, reject) => {
 		const child = spawn(command[0]!, command.slice(1), { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
 		let stdout = '';
 		let stderr = '';
+		let timedOut = false;
+		let killTimer: NodeJS.Timeout | undefined;
+		const timeout = timeoutMs
+			? setTimeout(() => {
+					timedOut = true;
+					child.kill('SIGTERM');
+					killTimer = setTimeout(() => child.kill('SIGKILL'), 1_000);
+				}, timeoutMs)
+			: undefined;
 		child.stdout.setEncoding('utf8');
 		child.stderr.setEncoding('utf8');
 		child.stdout.on('data', (chunk) => {
@@ -158,9 +175,15 @@ async function runCommand(command: string[], cwd: string): Promise<CommandResult
 		child.stderr.on('data', (chunk) => {
 			stderr += chunk;
 		});
-		child.on('error', reject);
-		child.on('close', (code) => {
-			resolve({ stdout, stderr, exitCode: code ?? 1 });
+		child.on('error', (error) => {
+			if (timeout) clearTimeout(timeout);
+			if (killTimer) clearTimeout(killTimer);
+			reject(error);
+		});
+		child.on('close', (code, signal) => {
+			if (timeout) clearTimeout(timeout);
+			if (killTimer) clearTimeout(killTimer);
+			resolve({ stdout, stderr, exitCode: timedOut ? 124 : (code ?? 1), timedOut, signal });
 		});
 	});
 }
@@ -325,14 +348,20 @@ export async function createLabRun(input: LabRunInput): Promise<LabRun> {
 	};
 	const startedAt = new Date().toISOString();
 	const started = Date.now();
-	const { stdout, stderr, exitCode } = await runCommand(input.command, resolved.path);
+	const { stdout, stderr, exitCode, timedOut, signal } = await runCommand(
+		input.command,
+		resolved.path,
+		input.executor.timeoutMs,
+	);
 	const finishedAt = new Date().toISOString();
 	const logsText = redactLabSecrets(`${stdout}${stderr}`);
 	const status: LabRunStatus = exitCode === 0 ? 'succeeded' : 'failed';
 	const result: LabRunResult = {
 		exitCode,
-		summary: `command ${status}`,
+		summary: timedOut ? `command timed out after ${input.executor.timeoutMs}ms` : `command ${status}`,
 		durationMs: Date.now() - started,
+		timedOut: timedOut || undefined,
+		signal,
 	};
 	const head = await maybeRunGit(resolved.path, ['rev-parse', 'HEAD']);
 	const branch = snapshot?.branch ?? (await maybeRunGit(resolved.path, ['branch', '--show-current']));

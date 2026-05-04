@@ -77,6 +77,24 @@ describe('Lab Run north-star spine', () => {
 		expect(await readFile(run.paths.logs, 'utf8')).toContain('before failure');
 	});
 
+	test('local executor timeout records a failed run with timeout evidence', async () => {
+		const repo = await makeGitRepo('timeout');
+		const run = await createLabRun({
+			repo: { type: 'local', path: repo },
+			executor: { type: 'local', timeoutMs: 100 },
+			command: ['sh', '-lc', 'echo before-timeout; sleep 2; echo after-timeout'],
+		});
+
+		expect(run.status).toBe('failed');
+		expect(run.result.exitCode).toBe(124);
+		expect(run.result.timedOut).toBe(true);
+		expect(run.result.summary).toContain('timed out');
+		expect(run.logs.text).toContain('before-timeout');
+		expect(run.logs.text).not.toContain('after-timeout');
+		expect(run.receipt.output.result.timedOut).toBe(true);
+		expect(JSON.parse(await readFile(run.paths.result, 'utf8')).timedOut).toBe(true);
+	});
+
 	test('run history lists recent receipts without reading unrelated repo files', async () => {
 		const repo = await makeGitRepo('history');
 		const first = await createLabRun({
