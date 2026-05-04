@@ -8,6 +8,35 @@
   import { goto } from '$app/navigation';
   import PlayIcon from '@lucide/svelte/icons/play';
   import Loader2Icon from '@lucide/svelte/icons/loader-2';
+  import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
+  import FileCheck2Icon from '@lucide/svelte/icons/file-check-2';
+  import GitBranchIcon from '@lucide/svelte/icons/git-branch';
+  import ShieldCheckIcon from '@lucide/svelte/icons/shield-check';
+  import TerminalIcon from '@lucide/svelte/icons/terminal';
+
+  const proofPoints = [
+    { label: 'Repo state', value: 'local git + Cloudflare Artifacts' },
+    { label: 'Execution', value: 'local shell today, more executors later' },
+    { label: 'Evidence', value: 'input, logs, result, receipt' }
+  ];
+
+  const northStar = [
+    {
+      icon: GitBranchIcon,
+      title: 'Resolve repo state',
+      body: 'Run from a real working tree, including dirty snapshots and Artifacts repos.'
+    },
+    {
+      icon: TerminalIcon,
+      title: 'Execute the command',
+      body: 'Commands run with explicit executor settings, timeout evidence, and durable logs.'
+    },
+    {
+      icon: FileCheck2Icon,
+      title: 'Save the receipt',
+      body: 'Every run writes a versioned receipt another agent or reviewer can inspect.'
+    }
+  ];
 
   const primitives = [
     {
@@ -43,22 +72,22 @@
 
   const featuredExamples = [
     {
-      title: 'Verified work',
+      title: 'Verified code work',
       badge: 'Pass',
       href: '/docs/patterns#prove-it',
-      description: 'Agent writes a function, generates edge cases, runs them. The receipt shows the cases, the assertions, and the verdict.'
+      description: 'The agent writes code, runs cases, and hands you the saved evidence instead of a claim.'
     },
     {
-      title: 'Self-healing loop',
+      title: 'Self-healing retries',
       badge: 'Fix',
       href: '/docs/patterns#self-healing-loop',
-      description: 'A run fails. The receipt has the error. The agent reads its own receipt, patches, retries.'
+      description: 'A failed run becomes the next input: error, context, patch, retry, and final receipt.'
     },
     {
-      title: 'Multi-agent handoff',
+      title: 'Agent handoff',
       badge: 'URL',
       href: '/docs/patterns#agent-handoff',
-      description: 'Agent A finishes. Agent B opens the URL and continues. The receipt is the entire interface — no queue, no shared database.'
+      description: 'The next agent opens the URL and continues from evidence, not chat memory.'
     }
   ];
 
@@ -107,8 +136,8 @@
 </script>
 
 <SEO
-  title="Lab — Receipts for agent work"
-  description="When an agent runs code, Lab returns a URL with the full execution record. Readable by the next agent, verifiable by you."
+  title="Lab — Proof-carrying agent work"
+  description="Run agent work against real repo state and keep the receipt: command, logs, result, and replayable evidence."
   path="/"
   type="website"
 />
@@ -129,22 +158,43 @@
     ></div>
 
     <header
-      class="relative z-10 max-w-3xl mx-auto px-6 py-12 max-sm:px-4 sm:py-14 md:py-16 min-h-[min(42vh,400px)] flex flex-col justify-center"
+      class="relative z-10 max-w-3xl mx-auto px-6 py-14 max-sm:px-4 sm:py-16 md:py-20 min-h-[min(58vh,560px)] flex flex-col justify-center"
     >
-      <div class="space-y-5 max-w-160">
-        <h1 class="text-[1.9rem] sm:text-[2.65rem] font-semibold tracking-tight leading-[1.08] text-(--text) drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
-          Agents need receipts.
+      <div class="space-y-6 max-w-170">
+        <div class="flex items-center gap-2 text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3)">
+          <span class="inline-flex size-7 items-center justify-center rounded-(--radius) border border-(--border) bg-(--surface)/80">
+            <ShieldCheckIcon class="size-3.5 text-(--text-2)" />
+          </span>
+          Lab
+        </div>
+
+        <div class="space-y-4">
+          <h1 class="text-[2.25rem] sm:text-[3.2rem] font-semibold tracking-tight leading-[1.02] text-(--text) drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
+            Proof-carrying agent work.
         </h1>
 
-        <p class="text-[1.0625rem] sm:text-[1.125rem] text-(--text-2) leading-relaxed max-w-[60ch]">
-          Lab runs AI-generated work in isolated environments, records what actually happened, and returns a URL anyone can inspect or another agent can continue from.
-          <span class="text-(--text)">Descriptions are not proof. Receipts are.</span>
-        </p>
+          <p class="text-[1.0625rem] sm:text-[1.1875rem] text-(--text-2) leading-relaxed max-w-[62ch]">
+            Lab runs commands against real repo state and writes the durable evidence: input, logs, result, receipt.
+            The next agent can continue from the proof. A human can review the same record.
+          </p>
+        </div>
 
         <div class="flex items-center gap-3 flex-wrap pt-1">
-          <Button href="/compose" variant="default">Create a receipt</Button>
-          <Button href="/docs/patterns" variant="outline">See patterns</Button>
-          <code class="text-[0.8125rem] text-(--text-2) bg-(--surface)/70 px-2.5 py-1 rounded-md border border-(--border)">npm install @acoyfellow/lab</code>
+          <Button href="/compose" variant="default" size="lg">
+            Create a receipt
+            <ArrowRightIcon class="size-4" />
+          </Button>
+          <Button href="/docs/install" variant="outline" size="lg">Install Lab</Button>
+          <code class="text-[0.8125rem] text-(--text-2) bg-(--surface)/75 px-2.5 py-1 rounded-md border border-(--border)">bun run demo:local-run</code>
+        </div>
+
+        <div class="grid gap-2 sm:grid-cols-3 pt-2 max-w-180">
+          {#each proofPoints as point}
+            <div class="border-l border-(--border) pl-3">
+              <div class="text-[0.6875rem] uppercase tracking-wider font-semibold text-(--text-3)">{point.label}</div>
+              <div class="text-[0.8125rem] leading-snug text-(--text-2)">{point.value}</div>
+            </div>
+          {/each}
         </div>
       </div>
     </header>
@@ -152,14 +202,38 @@
 
   <div class="max-w-3xl mx-auto px-6 py-10 max-sm:px-4 max-sm:py-8 space-y-14">
 
+  <section class="space-y-4">
+    <div class="flex items-end justify-between gap-4 flex-wrap">
+      <div class="space-y-1">
+        <h2 class="text-[0.75rem] font-semibold uppercase tracking-wider text-(--text-3) m-0">The spine</h2>
+        <p class="text-[1rem] text-(--text) font-medium m-0">Repo state goes in. Evidence comes out.</p>
+      </div>
+      <code class="text-[0.75rem] text-(--text-3) bg-(--surface) border border-(--border) rounded-(--radius) px-2 py-1">repo -&gt; executor -&gt; receipt</code>
+    </div>
+    <div class="grid gap-3 sm:grid-cols-3">
+      {#each northStar as item}
+        {@const Icon = item.icon}
+        <div class="rounded-(--radius) border border-(--border) bg-(--surface) p-4 space-y-3">
+          <div class="size-8 rounded-(--radius) border border-(--border) bg-(--surface-alt) flex items-center justify-center">
+            <Icon class="size-4 text-(--text-2)" />
+          </div>
+          <div class="space-y-1">
+            <h3 class="text-[0.9375rem] font-semibold text-(--text) m-0">{item.title}</h3>
+            <p class="text-[0.8125rem] text-(--text-2) m-0 leading-relaxed">{item.body}</p>
+          </div>
+        </div>
+      {/each}
+    </div>
+  </section>
+
   <!-- Product thesis + receipt shape -->
   <section class="space-y-4">
     <div class="border-l-2 border-(--accent) pl-5 space-y-2">
       <p class="text-[1.0625rem] text-(--text) leading-relaxed m-0 font-medium">
-        AI agents are starting to do real work. The durable artifact should not be a chat summary.
+        AI agents are starting to do real work. The durable artifact should be the run record, not the chat summary.
       </p>
       <p class="text-[0.875rem] text-(--text-2) leading-relaxed m-0">
-        Lab makes the receipt the unit of AI work: a canonical record at <code class="text-[0.8125rem]">/results/:id</code>, viewable by humans and fetchable as <code class="text-[0.8125rem]">.json</code> by agents.
+        Lab makes the receipt the unit of agent work: a canonical record at <code class="text-[0.8125rem]">/results/:id</code>, viewable by humans and fetchable as <code class="text-[0.8125rem]">.json</code> by agents.
       </p>
     </div>
 
