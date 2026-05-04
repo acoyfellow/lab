@@ -64,15 +64,28 @@ After a persisted run, agents should fetch `GET /results/:id.json`. `GET /result
 
 ## Receipting MCP and long-running work
 
-Use `receipt` when useful work happened outside Lab's sandbox:
+Use `receipt` when useful work happened outside Lab's sandbox — MCP tool calls, browser actions, long-running rig sessions, anything where the proof shouldn't live only in chat memory.
+
+### Worked example: the-machine
+
+[`the-machine`](https://github.com/acoyfellow/lab/blob/main/.context/machine-mcp.ts) is a durable background rig worker that drives an LLM against an objective for N sessions, writing per-run markdown to `.context/runs/`. Each session checkpoint is a natural place to persist a Lab receipt so another agent (or the operator, days later) can resume from evidence rather than chat:
 
 ```json
 {
   "source": "the-machine",
-  "action": "portfolio-loop.checkpoint",
-  "capabilities": ["machine.start", "filesystem.write"],
-  "input": { "objective": "stage prompt bundle" },
-  "output": { "status": "handoff", "receipt": ".context/runs/..." },
+  "action": "machine_start",
+  "capabilities": ["filesystem.write", "process.spawn"],
+  "input": {
+    "name": "portfolio-loop",
+    "objective": "Stage framework-evals prompt bundle",
+    "max": 3,
+    "model": "openai/gpt-5.5"
+  },
+  "output": {
+    "session": 1,
+    "status": "DONE",
+    "runFile": ".context/runs/2026-04-28-e6-step2-staged-prompts-bundle.md"
+  },
   "replay": {
     "mode": "continue-from-here",
     "available": true
@@ -80,22 +93,45 @@ Use `receipt` when useful work happened outside Lab's sandbox:
 }
 ```
 
-For agents, the main next step is often not replay. It is continuation: read the receipt, understand authority and evidence, then keep going from that point.
+Pair the receipt with a session so the trail has a goal, not just a list of events:
 
-Keep the session summary current after meaningful checkpoints:
+```js
+const session = await lab.createSession({
+  title: "E6 step 2: staged prompts bundle",
+  artifact: { repo: "a0", branch: "main" },
+});
 
-```json
-{
-  "mode": "summary",
-  "sessionId": "abc123",
-  "goal": "Ship receipt summaries",
-  "state": "API and UI are implemented",
-  "nextAction": "Run dogfood continuation",
-  "risks": ["Summary can drift if agents forget to update it"],
-  "importantReceiptIds": ["def456"],
-  "updatedByReceiptId": "def456"
-}
+const receipt = await lab.createSessionReceipt(session.sessionId, {
+  source: "the-machine",
+  action: "machine_start",
+  capabilities: ["filesystem.write", "process.spawn"],
+  input: { name: "portfolio-loop", max: 3, objective: "..." },
+  output: { session: 1, status: "DONE", runFile: ".context/runs/..." },
+  replay: { mode: "continue-from-here", available: true },
+});
+
+// After each rig session completes, refresh the summary
+await lab.updateSessionSummary(session.sessionId, {
+  goal: "Stage framework-evals prompt bundle",
+  state: "Session 1 done; staging tree validates against a0 prepush gates",
+  nextAction: "Run framework-evals fetch wiring (step 3)",
+  risks: ["no-secrets gate may flag the word 'Cloudflare' in the judge prompt"],
+  importantReceiptIds: [receipt.resultId],
+  updatedByReceiptId: receipt.resultId,
+});
 ```
+
+### What gets recorded
+
+| Field | Why it matters |
+|---|---|
+| `source` | The system that did the work (`the-machine`, `cf-portal`, `playwright`, `codex`, etc.). Lets the next agent filter by origin. |
+| `action` | The exact tool name. For the-machine: `machine_start`, `machine_stop`, `machine_status` — match the MCP tool you actually called. |
+| `capabilities` | The host privileges the worker held. Filesystem writes, process spawns, network egress — anything the next agent needs to know about the authority used. |
+| `input` / `output` | The arguments and the result. Keep it compact; large blobs go in the local rig receipt and you reference its path here. |
+| `replay.mode` | `inspect-only` for read-only lookups; `continue-from-here` when the next agent is meant to pick up where this one stopped. |
+
+For agents, the main next step is rarely a literal replay. It's **continuation**: read the receipt, understand the authority and the evidence, keep going from that point. The receipt schema is designed to make that continuation legible.
 
 ## Security
 
