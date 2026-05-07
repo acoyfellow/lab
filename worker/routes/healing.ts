@@ -595,6 +595,39 @@ export function compareTraces(
 
 // --- HTTP Route Handlers ---
 
+/**
+ * Extract a human-readable error message from an Effect `Cause` produced by
+ * a healing operation. Looks for the first line mentioning a `HealingError`
+ * and returns its `message: "..."` value, falling back to a generic string.
+ */
+function extractHealingError(cause: Cause.Cause<unknown>): string {
+  for (const reason of Cause.pretty(cause).split("\n")) {
+    if (reason.includes("HealingError")) {
+      const match = reason.match(/message: "([^"]+)"/)
+      if (match && match[1]) return match[1]
+    }
+  }
+  return "Unknown error"
+}
+
+/**
+ * Run a healing-shaped effect and translate its `Exit` into a JSON
+ * `Response`. On success, `body(value)` is wrapped as
+ * `{ ok: true, ...body(value) }`; on failure, the cause is rendered via
+ * `extractHealingError` and returned as `{ ok: false, error }` with HTTP 500.
+ */
+async function respondWithEffect<A, E, R>(
+  effect: Effect.Effect<A, E, R>,
+  body: (value: A) => Record<string, unknown>,
+): Promise<Response> {
+  const exit = await Effect.runPromiseExit(effect as Effect.Effect<A, E, never>)
+  return Exit.match(exit, {
+    onFailure: (cause) =>
+      Response.json({ ok: false, error: extractHealingError(cause) }, { status: 500 }),
+    onSuccess: (value) => Response.json({ ok: true, ...body(value) }),
+  })
+}
+
 export async function handleDiagnose(
   req: Request,
   env: { KV: KVNamespace; AI: any },
@@ -605,22 +638,9 @@ export async function handleDiagnose(
     return Response.json({ ok: false, error: "traceId required" }, { status: 400 })
   }
 
-  const effect = diagnoseTrace(body.traceId, env.KV, env.AI)
-  const exit = await Effect.runPromiseExit(effect)
-
-  return Exit.match(exit, {
-    onFailure: (cause) => {
-      let error = "Unknown error"
-      for (const reason of Cause.pretty(cause).split("\n")) {
-        if (reason.includes("HealingError")) {
-          const match = reason.match(/message: "([^"]+)"/)
-          if (match) error = match[1]
-        }
-      }
-      return Response.json({ ok: false, error }, { status: 500 })
-    },
-    onSuccess: (diagnosis) => Response.json({ ok: true, diagnosis }),
-  })
+  return respondWithEffect(diagnoseTrace(body.traceId, env.KV, env.AI), (diagnosis) => ({
+    diagnosis,
+  }))
 }
 
 export async function handlePropose(
@@ -633,22 +653,7 @@ export async function handlePropose(
     return Response.json({ ok: false, error: "diagnosis object required" }, { status: 400 })
   }
 
-  const effect = proposeFix(body.diagnosis, env.AI)
-  const exit = await Effect.runPromiseExit(effect)
-
-  return Exit.match(exit, {
-    onFailure: (cause) => {
-      let error = "Unknown error"
-      for (const reason of Cause.pretty(cause).split("\n")) {
-        if (reason.includes("HealingError")) {
-          const match = reason.match(/message: "([^"]+)"/)
-          if (match) error = match[1]
-        }
-      }
-      return Response.json({ ok: false, error }, { status: 500 })
-    },
-    onSuccess: (proposal) => Response.json({ ok: true, proposal }),
-  })
+  return respondWithEffect(proposeFix(body.diagnosis, env.AI), (proposal) => ({ proposal }))
 }
 
 export async function handleVerify(
@@ -669,26 +674,14 @@ export async function handleVerify(
     return Response.json({ ok: false, error: "proposal object required" }, { status: 400 })
   }
 
-  const effect = verifyFix(body.proposal, body.baseTraceId ?? null, env.KV, env.LOADER, env.SELF, env.AI)
-  const exit = await Effect.runPromiseExit(effect)
-
-  return Exit.match(exit, {
-    onFailure: (cause) => {
-      let error = "Unknown error"
-      for (const reason of Cause.pretty(cause).split("\n")) {
-        if (reason.includes("HealingError")) {
-          const match = reason.match(/message: "([^"]+)"/)
-          if (match) error = match[1]
-        }
-      }
-      return Response.json({ ok: false, error }, { status: 500 })
-    },
-    // Return the full VerificationResult unchanged so the SDK contract
-    // (`{ ok, result: VerificationResult }`) is preserved. Flattening here
-    // drops `result.ok` and conflates a falsy `result.result` (0, false, "",
-    // null) with a failed run.
-    onSuccess: (result) => Response.json({ ok: true, result }),
-  })
+  // Return the full VerificationResult unchanged so the SDK contract
+  // (`{ ok, result: VerificationResult }`) is preserved. Flattening here
+  // drops `result.ok` and conflates a falsy `result.result` (0, false, "",
+  // null) with a failed run.
+  return respondWithEffect(
+    verifyFix(body.proposal, body.baseTraceId ?? null, env.KV, env.LOADER, env.SELF, env.AI),
+    (result) => ({ result }),
+  )
 }
 
 export async function handleCompare(
@@ -704,20 +697,7 @@ export async function handleCompare(
     return Response.json({ ok: false, error: "b (traceId) required" }, { status: 400 })
   }
 
-  const effect = compareTraces(body.a, body.b, env.KV)
-  const exit = await Effect.runPromiseExit(effect)
-
-  return Exit.match(exit, {
-    onFailure: (cause) => {
-      let error = "Unknown error"
-      for (const reason of Cause.pretty(cause).split("\n")) {
-        if (reason.includes("HealingError")) {
-          const match = reason.match(/message: "([^"]+)"/)
-          if (match) error = match[1]
-        }
-      }
-      return Response.json({ ok: false, error }, { status: 500 })
-    },
-    onSuccess: (comparison) => Response.json({ ok: true, comparison }),
-  })
+  return respondWithEffect(compareTraces(body.a, body.b, env.KV), (comparison) => ({
+    comparison,
+  }))
 }
