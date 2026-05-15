@@ -31,7 +31,7 @@
 
   const canonical = $derived(`${baseUrl}${path}`);
   const ogImageUrl = $derived(
-    `${baseUrl}/og-image?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}`
+    `${baseUrl}/og-image?title=${encodeURIComponent(title)}&description=${encodeURIComponent(description)}&format=svg`
   );
 </script>
 
